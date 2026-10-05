@@ -147,6 +147,43 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .rbtn.busy .ico{animation:rspin 1s linear infinite}
 @keyframes rspin{to{transform:rotate(360deg)}}
 .rbtn.okd{border-color:#58a05f;color:#2f7a45;background:#eef7ef}
+.rbtn.busy{pointer-events:none}
+.rbtn.okd .ico{animation:rpop .4s cubic-bezier(.2,.9,.3,1.4)}
+@keyframes rpop{0%{transform:scale(.4)}70%{transform:scale(1.18)}100%{transform:scale(1)}}
+.rbtn.err{border-color:#d47272;color:#b23b3b;background:#fdf0f0}
+#pill-upd.syncing::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#e0a63e;margin-left:6px;vertical-align:1px;animation:ldp 1s ease-in-out infinite}
+#pill-upd.flash{animation:updfl .9s ease}
+@keyframes updfl{0%{background:#dff3e7;color:#1f6b3a}100%{background:inherit}}
+/* ═══ v75 · EXPORT: modal selector + veil de progreso ═══ */
+#pdfModal{position:fixed;inset:0;z-index:460;display:none;align-items:center;justify-content:center;background:rgba(18,38,58,.38);backdrop-filter:blur(3px);padding:16px}
+#pdfModal.open{display:flex}
+#pdfModal .pm-panel{width:min(540px,96vw);max-height:88vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(18,38,58,.28);padding:22px 20px 18px;font-family:'Plus Jakarta Sans',system-ui,sans-serif;animation:pmIn .26s cubic-bezier(.2,.8,.25,1)}
+@keyframes pmIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:none}}
+#pdfModal h3{font:800 18px/1.2 'Plus Jakarta Sans';color:#12263A;margin:0 0 4px}
+#pdfModal .pm-sub{font:500 12px/1.5 'Plus Jakarta Sans';color:#5d6b7a;margin-bottom:12px}
+#pdfModal .pm-quick{display:flex;gap:14px;font:700 11px/1 'Plus Jakarta Sans';color:#3a7ca5;margin-bottom:12px}
+#pdfModal .pm-quick span{cursor:pointer}#pdfModal .pm-quick span:hover{text-decoration:underline}
+.pm-row{display:flex;align-items:center;gap:11px;padding:11px 13px;border:1.5px solid #E8ECF1;border-radius:12px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,background .15s,transform .12s;font:600 13px/1.3 'Plus Jakarta Sans';color:#1e293b;user-select:none}
+.pm-row:hover{border-color:#b9d2e4;transform:translateX(2px)}
+.pm-row.on{background:#F2F8F4;border-color:#b9ddc8}
+.pm-sq{width:19px;height:19px;border-radius:6px;border:2px solid #c6d2dd;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .16s;background:#fff}
+.pm-row.on .pm-sq{background:#2F7A45;border-color:#2F7A45}
+.pm-sq svg{width:11px;height:11px;stroke:#fff;stroke-width:3.2;fill:none;opacity:0;transform:scale(.4);transition:all .16s}
+.pm-row.on .pm-sq svg{opacity:1;transform:scale(1)}
+.pm-tag{margin-left:auto;font:700 9px/1 'Plus Jakarta Sans';letter-spacing:.09em;color:#9aa7b4;text-transform:uppercase;white-space:nowrap}
+.pm-foot{display:flex;gap:10px;margin-top:14px}
+.pm-btn{flex:1;border:none;border-radius:12px;padding:13px 10px;font:700 13px/1 'Plus Jakarta Sans';cursor:pointer;transition:transform .12s,box-shadow .18s,opacity .15s}
+.pm-btn.pri{background:linear-gradient(135deg,#1c3d54,#2d5a7b);color:#fff;box-shadow:0 10px 22px rgba(28,61,84,.28)}
+.pm-btn.pri:hover{transform:translateY(-1px)}
+.pm-btn.sec{background:#eef2f6;color:#44566B}
+.pm-btn:disabled{opacity:.55;pointer-events:none}
+#pdfVeil{position:fixed;inset:0;z-index:470;display:none;background:#F7F8FA;align-items:center;justify-content:center;flex-direction:column;gap:16px;font-family:'Plus Jakarta Sans',system-ui,sans-serif;text-align:center;padding:20px}
+#pdfVeil.on{display:flex}
+#pdfVeil .v-sp{width:46px;height:46px;border:4px solid #dfe7ee;border-top-color:#3a7ca5;border-radius:50%;animation:rspin .9s linear infinite}
+#pdfVeil .v-t{font:800 16px/1.3 'Plus Jakarta Sans';color:#12263A}
+#pdfVeil .v-s{font:600 11.5px/1 'Plus Jakarta Sans';letter-spacing:.06em;color:#8a97a6;text-transform:uppercase}
+#pdfVeil .v-bar{width:min(300px,70vw);height:8px;border-radius:99px;background:#e7edf2;overflow:hidden}
+#pdfVeil .v-fill{height:100%;width:0;border-radius:99px;background:linear-gradient(90deg,#3a7ca5,#6ab89a);transition:width .4s ease}
 .ldpulse{animation:ldp 1.1s ease-in-out infinite}
 @keyframes ldp{0%,100%{opacity:1}50%{opacity:.45}}
 /* ── Modo app instalada (standalone): respetar notch / safe areas ── */
@@ -475,6 +512,17 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
     <span class="yg-all" onclick="setYear('all')">View all years →</span>
   </div>
 </div>
+<div id="pdfModal" onclick="if(event.target===this)pdfClose()"><div class="pm-panel">
+  <h3>Export PDF</h3>
+  <div class="pm-sub">Pick the sections to include — each one renders in full HD, nothing gets cut.</div>
+  <div class="pm-quick"><span onclick="pdfSelAll(true)">Select all</span><span onclick="pdfSelAll(false)">None</span></div>
+  <div id="pm-rows"></div>
+  <div class="pm-foot">
+    <button class="pm-btn sec" onclick="pdfClose()">Cancel</button>
+    <button class="pm-btn pri" id="pm-go" onclick="pdfRun()">Download PDF</button>
+  </div>
+</div></div>
+<div id="pdfVeil"><div class="v-sp"></div><div class="v-t" id="pv-t">Generating PDF</div><div class="v-s" id="pv-s">Preparing…</div><div class="v-bar"><div class="v-fill" id="pv-f"></div></div></div>
 
 <div class="hdr">
   <div>
@@ -960,7 +1008,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-05.74';
+const VBUILD='2026-10-05.75';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3748,43 +3796,90 @@ function _pdfBlocks(pane){
     out.push(el);});
   return out.length?out:[pane];}
 
-window.exportSectionPDF=async function(){
-  const btn=$('btn-export'); if(btn){btn.disabled=true;btn.classList.add('busy');}
+/* ═══ v75 · EXPORT PDF multi-sección: selector → cola de vistas → captura HD por bloques ═══ */
+const _PDF_LSK='meds_pdf_sel';
+function _pdfCurKey(){const at=document.querySelector('.tab.active');const mt=at?at.dataset.tab:'res';
+  return mt==='pozo'?('pozo:'+(_pzMode==='pre'?'pre':_pzTab)):mt;}
+function _pdfCatalog(){
+  const out=[{k:'res',l:'Overview',t:'portfolio'}];
+  const hasWell=!!(typeof M!=='undefined'&&M&&M.n);
+  if(_pzMode==='pre')out.push({k:'pozo:pre',l:'Well — Pre-Well Design',t:CURRENT_ID||''});
+  else if(hasWell)Object.keys(_PZ_ES).forEach(pz=>out.push({k:'pozo:'+pz,l:'Well — '+_PZ_ES[pz],t:CURRENT_ID||''}));
+  out.push({k:'sts',l:'Status Live',t:'drivers'});
+  out.push({k:'cie',l:'Closeouts',t:'wells'});
+  return out;}
+let _pdfSel=new Set();
+window.pdfOpen=function(){
+  const cat=_pdfCatalog();
+  let saved=null;try{saved=JSON.parse(localStorage.getItem(_PDF_LSK)||'null');}catch(_){}
+  const valid=new Set(cat.map(x=>x.k));
+  _pdfSel=new Set((Array.isArray(saved)?saved:[]).filter(k=>valid.has(k)));
+  if(!_pdfSel.size)_pdfSel.add(_pdfCurKey());
+  if(!valid.has(_pdfCurKey()))_pdfSel.add('res');
+  const host=$('pm-rows');if(!host)return;
+  host.innerHTML=cat.map(x=>`<div class="pm-row${_pdfSel.has(x.k)?' on':''}" data-k="${x.k}" onclick="pdfToggle(this)">
+    <span class="pm-sq"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span>${x.l}</span><span class="pm-tag">${x.t}</span></div>`).join('');
+  $('pdfModal').classList.add('open');};
+window.pdfClose=function(){const m=$('pdfModal');if(m)m.classList.remove('open');};
+window.pdfToggle=function(row){const k=row.dataset.k;
+  if(_pdfSel.has(k)){_pdfSel.delete(k);row.classList.remove('on');}
+  else{_pdfSel.add(k);row.classList.add('on');}
+  try{localStorage.setItem(_PDF_LSK,JSON.stringify(Array.from(_pdfSel)));}catch(_){}};
+window.pdfSelAll=function(on){_pdfSel=new Set(on?_pdfCatalog().map(x=>x.k):[]);
+  document.querySelectorAll('#pm-rows .pm-row').forEach(r=>r.classList.toggle('on',on));
+  try{localStorage.setItem(_PDF_LSK,JSON.stringify(Array.from(_pdfSel)));}catch(_){}};
+function _settle(ms){return new Promise(r=>{requestAnimationFrame(()=>requestAnimationFrame(()=>setTimeout(r,ms||340)));});}
+async function _gotoSection(key){
+  const parts=key.split(':'),mt=parts[0],pz=parts[1]||'';
+  const tabEl=document.querySelector('.tab[data-tab="'+mt+'"]');
+  if(tabEl&&!tabEl.classList.contains('active'))tabEl.click();
+  else try{({res:renderResumen,pozo:renderPozo,sts:renderStatus,cie:renderCie}[mt]||renderResumen)();}catch(_){}
+  if(mt==='pozo'&&pz){
+    if(pz==='pre'){if(_pzMode!=='pre')pzMode('pre');}
+    else{if(_pzMode!=='close')pzMode('close');pzShow(pz);}
+  }
+  await _settle(380);
+  return document.getElementById('p-'+mt);}
+window.pdfRun=async function(){
+  const keys=Array.from(_pdfSel);
+  if(!keys.length){pdfClose();return;}
+  /* orden estable: el del catálogo */
+  const order=_pdfCatalog().map(x=>x.k);keys.sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+  pdfClose();
+  const veil=$('pdfVeil'),vt=$('pv-t'),vs=$('pv-s'),vf=$('pv-f');
+  if(veil)veil.classList.add('on');
+  /* estado a restaurar */
+  const _prev={tab:(document.querySelector('.tab.active')||{}).dataset?document.querySelector('.tab.active').dataset.tab:'res',
+    mode:_pzMode,pz:_pzTab,sy:window.scrollY||0};
+  /* móvil: captura a ancho escritorio — los charts se RECONSTRUYEN a 1240px al navegar cada sección */
+  const isM=window.innerWidth<1100;const _docSt=document.documentElement.style;
+  const forced=[];
+  const forceW=function(pane){if(!isM||!pane||pane.__fw)return;pane.__fw=1;forced.push(pane);
+    pane.style.minWidth='1240px';pane.style.maxWidth='1240px';};
+  if(isM)_docSt.overflow='hidden';
   try{
     const libs=await _ensurePdfLibs();
-    const at=document.querySelector('.tab.active'); const mt=at?at.dataset.tab:'res';
-    const pane=document.getElementById('p-'+mt)||document.querySelector('.pane.active');
-    if(!pane)throw new Error('vista no encontrada');
-    let secName=_SEC_ES[mt]||mt, sub='';
-    if(mt==='pozo'){secName='Well · '+(_PZ_ES[_pzTab]||_pzTab);
-      const wn=$('wh-name')?$('wh-name').textContent:CURRENT_ID;
-      const rn=$('w-range-note')?String($('w-range-note').textContent).replace(/[⚠▲][\s\S]*$/,'').trim():'';
-      sub=(wn||'')+(rn?'  ·  '+rn:'');}
-    const now=new Date(),pz=function(n){return ('0'+n).slice(-2);};
-    const fecha=now.getFullYear()+'-'+pz(now.getMonth()+1)+'-'+pz(now.getDate()),hora=pz(now.getHours())+':'+pz(now.getMinutes());
-    const SCALE=(window.innerWidth<700)?2:3; // HD real en escritorio · memoria segura en móvil
+    const now=new Date(),pz2=n=>('0'+n).slice(-2);
+    const fecha=now.getFullYear()+'-'+pz2(now.getMonth()+1)+'-'+pz2(now.getDate()),hora=pz2(now.getHours())+':'+pz2(now.getMinutes());
+    const SCALE=isM?2:3;
     const IGN_EL='button,.rbtn,.darr,.dcal,.dpop,input,select,.chips,.dleg';
-    // CLAVE ANTI-TENUE: html2canvas clona el DOM y las animaciones CSS se RE-DISPARAN en el clon
-    // (paneIn arranca en opacity .45, fadeIn en 0) → el informe salía lavado. Se matan en el clon.
-    // CLAVE ANTI-LÍNEAS: sombras fuera, borde plano — las box-shadow generan banding al rasterizar.
     const KILL='*{animation:none!important;transition:none!important}'+
       '.pane,.pane.active,.subpane,.subpane.active{animation:none!important;opacity:1!important;transform:none!important}'+
       '.card{box-shadow:none!important;border:1px solid #e3e9f0!important}'+
-      // html2canvas NO soporta background-clip:text → pintaba el degradado como rectángulo
-      // "marcatextos" detrás de cada KPI. En el clon: texto plano con el color sólido de cada variante.
       '.v,.kpi .v{background:none!important;background-image:none!important;-webkit-background-clip:initial!important;background-clip:initial!important;-webkit-text-fill-color:currentColor!important;color:var(--pri-d)!important}'+
       '.v.ca{color:var(--acc)!important}.v.cg{color:var(--grn)!important}.v.cb{color:var(--blu)!important}'+
       '.v.cr{color:var(--red)!important}.v.co{color:var(--ora)!important}.v.cpu{color:var(--pur)!important}'+
       '.v.cp{color:var(--pri)!important}.v.ca2{color:var(--acc2)!important}';
-    const shot=function(el){return libs.h2c(el,{scale:SCALE,backgroundColor:null,useCORS:true,logging:false,
-      ignoreElements:function(x){try{return !!(x.matches&&x.matches(IGN_EL));}catch(_){return false;}},
-      onclone:function(doc){const st=doc.createElement('style');st.textContent=KILL;doc.head.appendChild(st);}});};
-    const blocks=_pdfBlocks(pane);
+    const shot=el=>libs.h2c(el,{scale:SCALE,backgroundColor:null,useCORS:true,logging:false,
+      ignoreElements:x=>{try{return !!(x.matches&&x.matches(IGN_EL));}catch(_){return false;}},
+      onclone:doc=>{const st=doc.createElement('style');st.textContent=KILL;doc.head.appendChild(st);}});
     const pdf=new libs.jsPDF({orientation:'landscape',unit:'pt',format:'a4'});
     const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
     const mL=28,mT=64,mB=36,availW=pw-mL*2,GAP=10;
+    let secName='',sub='';
     const chrome=function(){
-      pdf.setFillColor(244,246,250);pdf.rect(0,0,pw,ph,'F');           // fondo uniforme lo pinta el PDF, sin costuras
+      pdf.setFillColor(244,246,250);pdf.rect(0,0,pw,ph,'F');
       pdf.setFillColor(28,61,84);pdf.rect(0,0,pw,46,'F');
       pdf.setTextColor(255,255,255);pdf.setFont('helvetica','bold');pdf.setFontSize(13);
       pdf.text('MEDS LOGISTICS — PropX Command Center · '+secName,mL,20);
@@ -3792,38 +3887,77 @@ window.exportSectionPDF=async function(){
       pdf.text((sub?sub+'   ·   ':'')+'Extracted: '+fecha+' '+hora+'  ·  build '+VBUILD,mL,35);
       pdf.setDrawColor(200,124,74);pdf.setLineWidth(2);pdf.line(0,46,pw,46);
       pdf.setTextColor(120,134,150);pdf.setFontSize(8);
-      pdf.text('MEDS Logistics · Documento operativo confidencial',mL,ph-14);
+      pdf.text('MEDS Logistics · Confidential operations document',mL,ph-14);
       pdf.text('Page '+pdf.internal.getNumberOfPages()+' of {tp}',pw-mL,ph-14,{align:'right'});};
-    chrome(); let y=mT;
-    const isHdr=function(el){return !!(el.matches&&el.matches('.st,.grp-h'));};
-    for(let bi=0;bi<blocks.length;bi++){
-      const el=blocks[bi];
-      let cv=null; try{cv=await shot(el);}catch(e){console.warn('[export] bloque saltado:',e);continue;}
-      if(!cv||!cv.width||!cv.height)continue;
-      const w=availW,hh=cv.height*(w/cv.width),room=ph-mB-y,pageH=ph-mB-mT;
-      if(isHdr(el)&&(hh+56)>room){pdf.addPage();chrome();y=mT;}     // header nunca huérfano al pie
-      else if(hh>room&&hh<=pageH){pdf.addPage();chrome();y=mT;}     // el bloque no cabe → página nueva COMPLETO
-      if(hh<=pageH){
-        pdf.addImage(cv.toDataURL('image/png'),'PNG',mL,y,w,hh,undefined,'FAST');
-        y+=hh+GAP;
-      }else{ // bloque more alto que una página (tablas largas): rebanado interno alineado a página
-        let off=0;
-        while(off<cv.height){
-          const segPx=Math.min(cv.height-off,Math.floor((ph-mB-y)*(cv.width/w)));
-          if(segPx<=0){pdf.addPage();chrome();y=mT;continue;}
-          const sc=document.createElement('canvas');sc.width=cv.width;sc.height=segPx;
-          sc.getContext('2d').drawImage(cv,0,off,cv.width,segPx,0,0,cv.width,segPx);
-          pdf.addImage(sc.toDataURL('image/png'),'PNG',mL,y,w,segPx*(w/cv.width),undefined,'FAST');
-          off+=segPx;y+=segPx*(w/cv.width)+GAP;
-          if(off<cv.height){pdf.addPage();chrome();y=mT;}}}
+    const isHdr=el=>!!(el.matches&&el.matches('.st,.grp-h'));
+    let first=true;
+    for(let si=0;si<keys.length;si++){
+      const key=keys[si],parts=key.split(':'),mt=parts[0],pzK=parts[1]||'';
+      const cat=_pdfCatalog().find(x=>x.k===key);
+      if(vt)vt.textContent='Rendering — '+((cat&&cat.l)||key);
+      if(vs)vs.textContent='Section '+(si+1)+' of '+keys.length;
+      if(vf)vf.style.width=Math.round(si/keys.length*100)+'%';
+      const pane=await _gotoSection(key);
+      if(!pane)continue;
+      forceW(pane);
+      if(isM){ /* re-render a 1240px: builders del tab actual */
+        try{({res:renderResumen,pozo:renderPozo,sts:renderStatus,cie:renderCie}[mt]||renderResumen)();}catch(_){}
+        if(mt==='pozo'&&pzK&&pzK!=='pre'){try{_pzDirty[pzK]=true;pzShow(pzK);}catch(_){}}
+        await _settle(360);
+      }
+      secName=(mt==='pozo')?('Well · '+(pzK==='pre'?'Pre-Well Design':(_PZ_ES[pzK]||pzK))):(_SEC_ES[mt]||mt);
+      sub='';
+      if(mt==='pozo'){const wn=$('wh-name')?$('wh-name').textContent:CURRENT_ID;
+        const rn=$('w-range-note')?String($('w-range-note').textContent).replace(/[⚠▲][\s\S]*$/,'').trim():'';
+        sub=(wn||'')+(rn?'  ·  '+rn:'');}
+      if(!first){pdf.addPage();}
+      chrome();let y=mT;first=false;
+      const blocks=_pdfBlocks(pane);
+      for(let bi=0;bi<blocks.length;bi++){
+        const el=blocks[bi];
+        let cv=null;try{cv=await shot(el);}catch(e){console.warn('[export] bloque saltado:',e);continue;}
+        if(!cv||!cv.width||!cv.height)continue;
+        const w=availW,hh=cv.height*(w/cv.width),room=ph-mB-y,pageH=ph-mB-mT;
+        if(isHdr(el)&&(hh+56)>room){pdf.addPage();chrome();y=mT;}
+        else if(hh>room&&hh<=pageH){pdf.addPage();chrome();y=mT;}
+        if(hh<=pageH){
+          pdf.addImage(cv.toDataURL('image/png'),'PNG',mL,y,w,hh,undefined,'FAST');
+          y+=hh+GAP;
+        }else{
+          let off=0;
+          while(off<cv.height){
+            const segPx=Math.min(cv.height-off,Math.floor((ph-mB-y)*(cv.width/w)));
+            if(segPx<=0){pdf.addPage();chrome();y=mT;continue;}
+            const sc=document.createElement('canvas');sc.width=cv.width;sc.height=segPx;
+            sc.getContext('2d').drawImage(cv,0,off,cv.width,segPx,0,0,cv.width,segPx);
+            pdf.addImage(sc.toDataURL('image/png'),'PNG',mL,y,w,segPx*(w/cv.width),undefined,'FAST');
+            off+=segPx;y+=segPx*(w/cv.width)+GAP;
+            if(off<cv.height){pdf.addPage();chrome();y=mT;}}}
+      }
     }
+    if(vf)vf.style.width='100%';
     if(pdf.putTotalPages)pdf.putTotalPages('{tp}');
-    const wellTag=(mt==='pozo'&&CURRENT_ID)?CURRENT_ID:'MEDS';
-    const fname='MEDS_'+wellTag+'_'+secName.replace(/[^A-Za-z0-9ÁÉÍÓÚáéíóúÑñ]+/g,'-')+'_'+fecha+'_'+pz(now.getHours())+pz(now.getMinutes())+'.pdf';
-    pdf.save(fname);
+    const wellTag=(keys.some(k=>k.indexOf('pozo')===0)&&CURRENT_ID)?CURRENT_ID:'MEDS';
+    const base=keys.length>1?'Report':String(secName).replace(/[^A-Za-z0-9]+/g,'-');
+    pdf.save('MEDS_'+wellTag+'_'+base+'_'+fecha+'_'+pz2(now.getHours())+pz2(now.getMinutes())+'.pdf');
   }catch(e){console.error('[export]',e);alert('Could not generate the PDF: '+(e&&e.message||e));}
-  finally{if(btn){btn.disabled=false;btn.classList.remove('busy');}}};
-(function(){const be=$('btn-export');if(be)be.onclick=function(){exportSectionPDF();};})();
+  finally{
+    forced.forEach(p=>{try{p.style.minWidth='';p.style.maxWidth='';delete p.__fw;}catch(_){}});
+    if(isM)_docSt.overflow='';
+    /* restaurar la vista del usuario */
+    try{
+      const tb=document.querySelector('.tab[data-tab="'+_prev.tab+'"]');if(tb)tb.click();
+      if(_prev.tab==='pozo'){if(_prev.mode==='pre'){if(_pzMode!=='pre')pzMode('pre');}
+        else{if(_pzMode!=='close')pzMode('close');_pzDirty[_prev.pz]=true;pzShow(_prev.pz);}}
+      else if(isM){try{({res:renderResumen,sts:renderStatus,cie:renderCie}[_prev.tab]||renderResumen)();}catch(_){}}
+      window.scrollTo(0,_prev.sy);
+    }catch(_){}
+    if(veil)veil.classList.remove('on');
+    if(vf)vf.style.width='0';
+  }};
+/* compat: export directo de la vista actual (consola / atajos) */
+window.exportSectionPDF=function(){_pdfSel=new Set([_pdfCurKey()]);return pdfRun();};
+(function(){const be=$('btn-export');if(be)be.onclick=function(){pdfOpen();};})();
 
 let _rlBusy=false,_rlPending=false,_rlAt=0;
 async function refreshLive(manual){
@@ -3840,8 +3974,9 @@ async function refreshLive(manual){
   if(!manual&&document.hidden){_rlPending=true;return;}
   _rlBusy=true;_rlAt=Date.now();
   const _rlEp=WELL_EPOCH; // si el usuario cambia de pozo mid-refresh, NO pisar su selección
-  if(manual){ // ACTUALIZAR-VERDADERO: sin F5 — purga snapshots locales + recarga el Registry del Hub
-    try{const _rm=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf('meds_snap:')===0)_rm.push(k);}_rm.forEach(k=>localStorage.removeItem(k));}catch(_){}
+  if(manual){ // v75: purga SELECTIVA — solo el pozo actual y el pack del portafolio; los cierres cacheados se quedan
+    try{localStorage.removeItem('meds_snap:'+CURRENT_ID);}catch(_){}
+    try{localStorage.removeItem(_PF_KEY);}catch(_){}
     try{
       const _cap=s=>{s=String(s||'');return s?s.charAt(0).toUpperCase()+s.slice(1).toLowerCase():s;};
       const _pv={q:$('f-q')&&$('f-q').value,cu:$('f-cust')&&$('f-cust').value,eq:$('f-eq')&&$('f-eq').value,st:$('f-stat')&&$('f-stat').value};
@@ -3854,29 +3989,49 @@ async function refreshLive(manual){
         if(_pv.eq!=null&&$('f-eq'))$('f-eq').value=_pv.eq; if(_pv.st!=null&&$('f-stat'))$('f-stat').value=_pv.st;}
     }catch(_e){console.warn('[refresh] registry:',_e);}
   }
-  const _rb=$('btn-refresh');
-  if(manual&&_rb){_rb.disabled=true;_rb.classList.add('busy');}
+  const _rb=$('btn-refresh');const _bx=_rb?_rb.querySelector('.btxt'):null;const _bxOld=_bx?_bx.textContent:'';
+  if(manual&&_rb){_rb.disabled=true;_rb.classList.add('busy');_rb.classList.remove('err');if(_bx)_bx.textContent=' Refreshing…';}
+  let _rfErr=null;
   try{
     if(CONFIG.API_URL){
-      STATUS=await apiStatus();
+      /* v75: status + pozo EN PARALELO · manual = fresh del workbook también en lives (verdad, no snapshot) */
       const reg=REGISTRY.find(w=>w.id===CURRENT_ID)||{};
       const _wcl=String(reg.status).toLowerCase()==='closed';
-      if(!_wcl){const w=await apiWell(CURRENT_ID,reg.status);if(w&&_rlEp===WELL_EPOCH)applyWell(w);}
-      else if(manual){const w=await apiWell(CURRENT_ID,reg.status,true);if(w&&_rlEp===WELL_EPOCH)applyWell(w);} // manual en cierre = fresh=1
+      const _pSt=apiStatus().catch(e=>{_rfErr=_rfErr||e;return null;});
+      const _pW=(manual||!_wcl)?apiWell(CURRENT_ID,reg.status,manual?true:undefined).catch(e=>{_rfErr=_rfErr||e;return null;}):Promise.resolve(null);
+      const _rr=await Promise.all([_pSt,_pW]);
+      if(_rr[0])STATUS=_rr[0];
+      if(_rr[1]&&_rlEp===WELL_EPOCH)applyWell(_rr[1]);
+      if(manual&&!_rr[0]&&!_rr[1])throw (_rfErr||new Error('no response'));
     }
     paintHeader();
     Object.keys(RENDERED).forEach(k=>RENDERED[k]=false);
     const cur=document.querySelector('.tab.active').dataset.tab;RENDERED[cur]=true;
     ({res:renderResumen,pozo:renderPozo,sts:renderStatus,cie:renderCie}[cur])();
-    if(manual&&CONFIG.API_URL){Object.keys(RES_DATA).forEach(k=>delete RES_DATA[k]);
-      try{await fetchJSON(CONFIG.API_URL+'?action=portfolio&fresh=1');}catch(_){} // fuerza reconstrucción en el GAS
-      resLoadAll();}
+    if(manual&&CONFIG.API_URL){
+      /* v75: la reconstrucción del portafolio NO bloquea el botón — corre detrás con indicador en el pill */
+      (async function(){const _pu=$('pill-upd');
+        try{
+          if(_pu)_pu.classList.add('syncing');
+          try{await fetchJSON(CONFIG.API_URL+'?action=portfolio&fresh=1');}catch(_){}
+          Object.keys(RES_DATA).forEach(k=>delete RES_DATA[k]);
+          try{await loadPortfolio();}catch(_){}
+          try{const at2=document.querySelector('.tab.active');if(at2&&at2.dataset.tab==='res')renderResumen();}catch(_){}
+          try{yrGateStats();}catch(_){}
+          try{paintHeader();}catch(_){}
+          if(_pu){_pu.classList.remove('syncing');_pu.classList.add('flash');setTimeout(function(){_pu.classList.remove('flash');},950);}
+        }catch(_){if(_pu)_pu.classList.remove('syncing');}})();
+    }
+  }catch(_e){ _rfErr=_rfErr||_e; console.warn('[refresh]',_e);
   }finally{_rlBusy=false;
     if(_rb){_rb.disabled=false;_rb.classList.remove('busy');
-      if(manual){const _t=new Date();_rb.classList.add('okd');
-        const bx=_rb.querySelector('.btxt');const _old=bx?bx.textContent:'';
-        if(bx)bx.textContent=' ✓ '+('0'+_t.getHours()).slice(-2)+':'+('0'+_t.getMinutes()).slice(-2);
-        setTimeout(function(){_rb.classList.remove('okd');if(bx)bx.textContent=_old;},2500);}}
+      if(manual){
+        if(_rfErr){_rb.classList.add('err');if(_bx)_bx.textContent=' Retry';
+          setTimeout(function(){_rb.classList.remove('err');if(_bx)_bx.textContent=_bxOld;},3200);}
+        else{const _t=new Date();_rb.classList.add('okd');
+          if(_bx)_bx.textContent=' Updated '+('0'+_t.getHours()).slice(-2)+':'+('0'+_t.getMinutes()).slice(-2);
+          setTimeout(function(){_rb.classList.remove('okd');if(_bx)_bx.textContent=_bxOld;},2400);}
+      }else if(_bx&&_bx.textContent===' Refreshing…')_bx.textContent=_bxOld;}
     if(_rlPending){_rlPending=false;setTimeout(()=>refreshLive(false),400);}}
 }
 document.addEventListener('visibilitychange',function(){if(!document.hidden&&_rlPending){_rlPending=false;refreshLive(false);}});
