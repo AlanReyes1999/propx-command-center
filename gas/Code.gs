@@ -1,4 +1,8 @@
-/** MEDS · PropX Live API — Code.gs v9.1. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.2. PEGAR TAL CUAL → Nueva versión.
+ *  v9.2 SERIE POR HORA: nuevo campo hourly[] por día (hora del Delivered) con loads,
+ *    drivers únicos, revenue, fsc, tons y promedios de ciclo (terminal/transit OW/offload)
+ *    por hora — el portal lo usa para la vista por hora al filtrar UN día. El portfolio
+ *    slim NO lo incluye (sin peso extra en el Resumen).
  *  v9.1 DESGLOSE: byDriver[] ahora trae revenue y fsc EXACTOS por driver (facturado =
  *    rate + FSC de cada carga suya) y byTerminal[] trae fsc por arenera — el portal los
  *    usa para el desglose rate + FSC en Roster y Sourcing. Sin cambios de estructura.
@@ -80,7 +84,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.1';
+const API_VERSION='v9.2';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -379,7 +383,7 @@ function getWell(id){
   const L=readTab(ss,reg.sheet_name||CFG.tabs.loads,'Load #');
   const _sheetNames=ss.getSheets().map(function(x){return x.getName();});
   const ix=L?colmap(L.H,['Load #','Load ID','Carrier Name','Truck #','Driver Name','Product','Stage#','At Terminal','In Transit','At Staging','At Dest.','Delivered','Terminal','Mileage','Load Weight']):{};
-  const byDay={},drvByDay={},tonsByDay={},maxStageByDay={},revByDay={},cycDay={},byTerm={},byTermDay={},cycDayT={},byCarrier={},byProd={},byDriver={},driversAll=new Set(),cyc={};
+  const byDay={},drvByDay={},tonsByDay={},maxStageByDay={},revByDay={},cycDay={},byTerm={},byTermDay={},cycDayT={},byCarrier={},byProd={},byDriver={},driversAll=new Set(),cyc={},byHourDay={};
   let aMoves=0,aRev=0,aCost=0; const aByDay={},aRevByDay={},aEvents=[];
   const partDay={}; let gMinNo=9e15,gMaxNo=-9e15;
   const rateMixDay={}; // {fecha: {"17.76":{loads,tons,revenue}, "19.00":{...}}} — qué tarifa cobró cada carga
@@ -472,6 +476,15 @@ function getWell(id){
       {const eol=aS||aD; if(iT&&eol){const m=(eol-iT)/6e4; if(m>0&&m<1200){cd.tr[0]+=m;cd.tr[1]++;ct2.tr[0]+=m;ct2.tr[1]++;}}}
       {let un=0; if(aD&&dv){const m=(dv-aD)/6e4; if(m>0&&m<1200)un+=m;} if(aS&&aD){const sw=(aD-aS)/6e4; if(sw>0&&sw<1200)un+=sw;} if(un>0){cd.of[0]+=un;cd.of[1]++;ct2.of[0]+=un;ct2.of[1]++;}}
       ct2.n++;}
+    // v9.2 SERIE POR HORA (hora del Delivered): loads/drivers/revenue/fsc/tons + ciclo de ESTA carga.
+    if(dDel&&dv){const _hh=dv.getHours();
+      const HD=byHourDay[dDel]=byHourDay[dDel]||{l:Array(24).fill(0),rv:Array(24).fill(0),fs:Array(24).fill(0),tn:Array(24).fill(0),dr:{},te:Array(24).fill(0),ten:Array(24).fill(0),trh:Array(24).fill(0),trn:Array(24).fill(0),de:Array(24).fill(0),den:Array(24).fill(0)};
+      HD.l[_hh]++; HD.rv[_hh]+=revL; HD.fs[_hh]+=fscL; HD.tn[_hh]+=t;
+      if(drv){(HD.dr[_hh]=HD.dr[_hh]||{})[drv]=1;}
+      if(aT&&iT){const m=(iT-aT)/6e4; if(m>0&&m<1200){HD.te[_hh]+=m;HD.ten[_hh]++;}}
+      {const eol=aS||aD; if(iT&&eol){const m=(eol-iT)/6e4; if(m>0&&m<1200){HD.trh[_hh]+=m;HD.trn[_hh]++;}}}
+      {let un=0; if(aD&&dv){const m=(dv-aD)/6e4; if(m>0&&m<1200)un+=m;} if(aS&&aD){const sw=(aD-aS)/6e4; if(sw>0&&sw<1200)un+=sw;} if(un>0){HD.de[_hh]+=un;HD.den[_hh]++;}}
+    }
   }
   // Stages (per-pozo) — etapa por etapa + inventario (cajas/pila)
   const isBelly=String(reg.equipment||'').toLowerCase().indexOf('belly')>=0;
@@ -598,6 +611,13 @@ function getWell(id){
              pad_span:(gMaxNo>gMinNo)?Math.max(gMaxNo-gMinNo,loads):null,
              participation_pct:(gMaxNo>gMinNo&&loads)?+(loads/Math.max(gMaxNo-gMinNo,loads)*100).toFixed(1):null },
     daily,
+    hourly:Object.keys(byHourDay).sort().map(function(d){var H=byHourDay[d];return {date:d,
+      l:H.l, dr:H.l.map(function(_,h){return H.dr[h]?Object.keys(H.dr[h]).length:0;}),
+      rv:H.rv.map(function(v){return Math.round(v);}), fs:H.fs.map(function(v){return Math.round(v);}),
+      tn:H.tn.map(function(v){return Math.round(v*10)/10;}),
+      te:H.te.map(function(v,h){return H.ten[h]?Math.round(v/H.ten[h]*10)/10:0;}),
+      tr:H.trh.map(function(v,h){return H.trn[h]?Math.round(v/H.trn[h]*10)/10:0;}),
+      de:H.de.map(function(v,h){return H.den[h]?Math.round(v/H.den[h]*10)/10:0;})};}),
     stageWaitByTerminal:Object.entries(cyc).map(([k,v])=>({terminal:k,avg_stage_min:v.stage_wait[1]?+(v.stage_wait[0]/v.stage_wait[1]).toFixed(1):0,events:v.stage_wait[1]})).filter(x=>x.avg_stage_min>0).sort((a,b)=>b.avg_stage_min-a.avg_stage_min),
     byTerminal:Object.entries(byTerm).map(([k,v])=>({terminal:k,loads:v.loads,avg_miles:v.loads?+(v.miles/v.loads).toFixed(1):0,revenue:Math.round(v.revenue),fsc:Math.round(v.fsc),tons:Math.round(v.tons)})).sort((a,b)=>b.revenue-a.revenue),
     byTerminalDaily:Object.values(byTermDay).map(v=>({date:v.date,terminal:v.terminal,loads:v.loads,tons:Math.round(v.tons),revenue:Math.round(v.revenue)})).sort((a,b)=>a.date<b.date?-1:1),

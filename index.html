@@ -789,6 +789,7 @@ let WELLS = [
 let DATES_ISO = DAYS.map((_,i)=>{const d=new Date('2026-05-22T12:00');d.setDate(d.getDate()+i);return d.toISOString().slice(0,10);});
 let RATES_DAY = []; // paralelo a DATES_ISO — {tarifa:{loads,tons,revenue}} por día (GAS v8.3+)
 let REV_DAY = [], FSC_DAY = []; // revenue REAL por día y su componente FSC (GAS v9.0+) — paralelos a DATES_ISO
+let HOURLY = []; // series por hora por día (GAS v9.2+) — alimenta el modo hora cuando el rango es 1 día
 let ACTIVE_META = {name:'FASKEN FEE BP 513MS-518WB 6 Well',customer:'FASKEN',status:'Live',equipment:'Double boxes',
   totals:{loads:2285,tons:49818,revenue:876000,cost:744600,margin:131400,rev_per_load:383.4,unique_drivers:64,max_stage:264,downtime_minutes:3413},
   targets:{total_stages:288,total_loads:2300,total_tons:50040,loads_day:80,drivers_day:26,turn_rate_target:3.27,turn_cig:1.90,turn_covia:4.64,weighted_ct:192,rev_per_load:368.98,total_revenue:848528,daily_running_rev:29519,cig_ct_total:379,covia_ct_total:155,duration_days:30,boxes_total:102},
@@ -872,7 +873,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-05.71';
+const VBUILD='2026-10-05.72';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -984,6 +985,7 @@ function applyWell(w){
   RATES_DAY=w.daily.map(d=>(d&&d.rates)||null);
   REV_DAY=w.daily.map(d=>+d.revenue||0);
   FSC_DAY=w.daily.map(d=>+d.revenue_fsc||0);
+  HOURLY=(w.hourly&&w.hourly.length)?w.hourly:[];
   EFFD=w.daily.map(d=>{const e=+d.efficiency||0;return +(e<=3?e*100:e).toFixed(1);});
   if(w.byCarrier&&w.byCarrier.length) CARRIERS=w.byCarrier.map(x=>[x.carrier,+x.loads||0]);
   if(w.byTerminal&&w.byTerminal.length) FACILITY=w.byTerminal.map(x=>[x.terminal,+x.loads||0]);
@@ -1728,6 +1730,22 @@ function buildM(){
   IPT.tgt=IPT.tgtBase?Math.round(IPT.tgtBase+IPT.tgtFsc):0;
   const IPT_D=L.map((_,i)=>Tt[i]>0?Math.round(H[i]/Tt[i]):null);          // $/truck por día (chart)
   const IPT_F=L.map((_,i)=>Tt[i]>0?Math.round((FSCR[i]||0)/Tt[i]):null);  // componente FSC del día
+  /* ── v72 · MODO HORA: rango de EXACTAMENTE 1 día → las gráficas diarias pasan a por-hora (GAS v9.2) ── */
+  let HR=null;
+  try{
+    if(n===1&&typeof HOURLY!=='undefined'&&HOURLY&&HOURLY.length){
+      const hd=HOURLY.find(x=>String(x.date).slice(0,10)===ISO[0]);
+      if(hd&&hd.l&&hd.l.length===24){
+        const A=k=>(hd[k]&&hd[k].length===24)?hd[k].map(v=>+v||0):Array(24).fill(0);
+        HR={lab:Array.from({length:24},(_,h2)=>String(h2).padStart(2,'0')+':00'),
+          L:A('l'),DRH:A('dr'),RV:A('rv'),FS:A('fs'),TNh:A('tn'),TEh:A('te'),TRh:A('tr'),DEh:A('de')};
+        HR.TOT=HR.lab.map((_,i)=>(HR.TEh[i]>0||HR.TRh[i]>0||HR.DEh[i]>0)?Math.round(HR.TRh[i]*2+HR.TEh[i]+HR.DEh[i]):null);
+        let _hcum=0;HR.CUM=HR.L.map(v=>_hcum+=v);
+        HR.IPTh=HR.L.map((_,i)=>HR.DRH[i]>0?Math.round(HR.RV[i]/HR.DRH[i]):null);
+        if(!HR.L.some(v=>v>0))HR=null; /* día sin horas de entrega → quedan las vistas diarias */
+      }
+    }
+  }catch(e){console.warn('[hora]',e);HR=null;}
   const trAll=+(totL/Math.max(1,Tt.reduce((s,v)=>s+v,0))).toFixed(2);
   const runI=runIdx;
   const bestI=runI.length?runI.reduce((b,i)=>L[i]>L[b]?i:b,runI[0]):0;
@@ -1737,7 +1755,7 @@ function buildM(){
     DR,CD:CDl,VMAX:Math.max.apply(null,DR.map(d=>d[2]).concat([1])),
     DTE,dtExcl,openHid,DT_RESP,nptTot,nptLog,SRC,SRC_RANGED,AST,PART,RD,
     STG:STGrows,RMIX:RMIXA,RUN_DL,RUN_DL_STG,SPD,TPD,DAY_TONS,DAY_DUR,tonsStageD,stagesDayD,durStageD,durFracD,durChgD,durTotD,validDays:_validDays,
-    totL,totT,totR,totFsc,fscD,FSCR,fscRD,fscDsnTot,totRevDsnF,dRevDayF,CUMREVPLF,CUMFSC,IPT,IPT_D,IPT_F,trAll,rpl,dTgt,dDrv:+T.drivers_day||20,DTR,techTR:+(DTR*1.2).toFixed(2),dRevDay,
+    totL,totT,totR,totFsc,fscD,FSCR,fscRD,fscDsnTot,totRevDsnF,dRevDayF,CUMREVPLF,CUMFSC,IPT,IPT_D,IPT_F,HR,trAll,rpl,dTgt,dDrv:+T.drivers_day||20,DTR,techTR:+(DTR*1.2).toFixed(2),dRevDay,
     T,X,n,isLive,name:(ACTIVE_META&&ACTIVE_META.name)||CURRENT_ID,f,l};
 }
 
@@ -1993,7 +2011,7 @@ function bDaily(){
   const runEffPct=runL.length?Math.round(runL.reduce((s,v)=>s+v,0)/(runL.length*m.dTgt)*100):0;
   const runRev=m.runIdx.reduce((s,i)=>s+m.H[i],0);
   $('pz-cl-daily').innerHTML=`
-    <div class="st">📈 Daily Performance — ${m.D[0]}–${m.D[m.n-1]} · Target: ${m.dTgt} loads/day</div>
+    <div class="st">📈 Daily Performance — ${m.n>1?m.D[0]+'–'+m.D[m.n-1]:m.D[0]} · Target: ${m.dTgt} loads/day${m.HR?' · <span style="color:#3a7ca5">vista por hora</span>':''}${(!m.HR&&m.n===1&&CONFIG.API_URL)?' <span class="ssub" style="color:#b45309">· la vista por hora se activa pegando GAS v9.2 (Nueva versión)</span>':''}</div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
       ${kchip('Avg Loads/Day',avgRun,'loads/day vs '+m.dTgt+' target',avgRun>=m.dTgt?'kg':'')}
       ${kchip('Best Day',m.L[m.bestI],m.D[m.bestI]+' · TR '+m.TR[m.bestI],'kg')}
@@ -2002,11 +2020,11 @@ function bDaily(){
       ${kchip('NPT Impact',m.nptTot+'h',m.DTE.length+' events · '+m.nptLog+'h logistics',m.nptTot>0?'kr':'kg')}
     </div>
     <div class="grid g2 mb">
-      <div class="card"><div class="card-t">Loads/Day &amp; Drivers vs Target (${m.dTgt} / ${m.dDrv})</div><div class="ch ch-l"><canvas id="chDailyL"></canvas></div></div>
-      <div class="card"><div class="card-t">Turn Rate by Day vs Design ${m.DTR}</div><div class="ch ch-l"><canvas id="chDailyTR"></canvas></div></div>
+      <div class="card"><div class="card-t">${m.HR?'Loads &amp; Drivers Activos por Hora — '+m.D[0]:'Loads/Day &amp; Drivers vs Target ('+m.dTgt+' / '+m.dDrv+')'}</div><div class="ch ch-l"><canvas id="chDailyL"></canvas></div></div>
+      <div class="card"><div class="card-t">${m.HR?'Acumulado del Día por Hora vs Ritmo Target ('+m.dTgt+')':'Turn Rate by Day vs Design '+m.DTR}</div><div class="ch ch-l"><canvas id="chDailyTR"></canvas></div></div>
     </div>
-    ${m.PART.has?`<div class="card mb"><div class="card-t">Participación diaria en el pad${m.PART.tgt!=null?' vs Target ('+m.PART.tgt+'%)':''} — Load # global</div><div class="ch"><canvas id="chPart"></canvas></div></div>`:''}
-    <div class="card mb"><div class="card-t">Cumulative Loads: Actual vs Design ${m.T.total_loads?fmt(m.T.total_loads)+' ':''}Projection</div><div class="ch"><canvas id="chCumPZ"></canvas></div></div>
+    ${(m.PART.has&&!m.HR)?`<div class="card mb"><div class="card-t">Participación diaria en el pad${m.PART.tgt!=null?' vs Target ('+m.PART.tgt+'%)':''} — Load # global</div><div class="ch"><canvas id="chPart"></canvas></div></div>`:''}
+    ${m.HR?'':`<div class="card mb"><div class="card-t">Cumulative Loads: Actual vs Design ${m.T.total_loads?fmt(m.T.total_loads)+' ':''}Projection</div><div class="ch"><canvas id="chCumPZ"></canvas></div></div>`}
     <div class="card" style="padding:0;overflow:hidden">
       <div style="padding:12px 16px;background:linear-gradient(135deg,#1c3d54,#2d5a7b);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
         <span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.8px">Daily Detail — ${m.n} Days</span>
@@ -2021,6 +2039,20 @@ function bDaily(){
       <div style="overflow-x:auto"><table style="width:100%;font-size:11px;min-width:900px">
         <thead><tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0">${['Date','Phase','Loads','Avg Net (lbs)','Tons','Revenue','Drivers','TR','vs Target','Eff'].map((h,i)=>`<th style="padding:9px 12px;font-size:8.5px;text-transform:uppercase;letter-spacing:.7px;color:#94a3b8;font-weight:700;text-align:${i>=2&&i<=6?'right':i>=7?'center':'left'}">${h}</th>`).join('')}</tr></thead>
         <tbody>${m.D.map((d,i)=>dailyRow(i)).join('')}</tbody></table></div></div>`;
+  if(m.HR){const h=m.HR;
+    mkChart('chDailyL',{type:'bar',data:{labels:h.lab,datasets:[
+      {label:'Loads/hora',data:h.L,backgroundColor:h.L.map(v=>v>0?'rgba(106,184,154,.85)':'rgba(203,213,225,.25)'),borderRadius:4,borderSkipped:false,order:2,yAxisID:'y'},
+      {label:'Drivers activos',data:h.DRH.map(v=>v>0?v:null),type:'line',borderColor:PZ.A,pointRadius:3,pointBackgroundColor:PZ.A,tension:.35,order:1,yAxisID:'y1',borderWidth:2.5,pointBorderColor:'#fff',pointBorderWidth:1.5,spanGaps:true}]},
+      options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
+        tooltip:{callbacks:{title:c=>`🕐 ${h.lab[c[0].dataIndex]} — ${m.D[0]}`,label:c=>c.raw==null?null:`${c.dataset.label}: ${c.raw}`,
+          afterBody:it=>{const i=it[0].dataIndex;if(!h.L[i]&&!h.DRH[i])return['Sin entregas en esta hora'];
+            const out=[sep,`Revenue hora: ${fK(h.RV[i])}`+(h.FS[i]>0?` (rate ${fK(h.RV[i]-h.FS[i])} + FSC ${fK(h.FS[i])})`:'')];
+            if(h.DRH[i]>0)out.push(`Loads/driver: ${(h.L[i]/h.DRH[i]).toFixed(2)}`);
+            out.push(`Acumulado del día: ${h.CUM[i]} loads`+(m.dTgt?` (${Math.round(h.CUM[i]/m.dTgt*100)}% del target ${m.dTgt})`:''));
+            return out;}}}},
+        scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:24}},y:{...gO,beginAtZero:true,position:'left',title:{display:true,text:'Loads',font:{size:8}}},
+          y1:{...gO,beginAtZero:true,position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Drivers',font:{size:8}}}}}});
+  }else
   mkChart('chDailyL',{type:'bar',data:{labels:m.D,datasets:[
     {label:'Loads',data:m.L,backgroundColor:m.L.map((v,i)=>phBarColor(v,i,m.dTgt)),borderRadius:4,borderSkipped:false,order:2,yAxisID:'y'},
     {label:'Drivers',data:m.TD,type:'line',borderColor:PZ.A,pointRadius:3,pointBackgroundColor:PZ.A,tension:.4,order:1,yAxisID:'y1',borderWidth:2.5,pointBorderColor:'#fff',pointBorderWidth:1.5},
@@ -2031,6 +2063,16 @@ function bDaily(){
         afterBody:it=>{const i=it[0].dataIndex,gap=m.L[i]-m.dTgt;const out=[sep,`vs Target: ${gap>=0?'+':''}${gap} (${(gap/m.dTgt*100).toFixed(0)}%)`,`TR: ${m.TR[i]} | Loads/Driver: ${(m.L[i]/Math.max(m.TD[i],1)).toFixed(1)}`,`Revenue: ${fK(m.H[i])} | Tons: ${fmt(Math.round(m.TN[i]))}t`];if(m.FSCR&&m.FSCR[i]>0)out.push(`Rate: ${fK(m.H[i]-m.FSCR[i])}  ·  FSC: ${fK(m.FSCR[i])}`);return out;}}}},
       scales:{x:{...gO,ticks:tO},y:{...gO,beginAtZero:true,position:'left',title:{display:true,text:'Loads',font:{size:8}}},
         y1:{...gO,beginAtZero:true,position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Drivers',font:{size:8}},suggestedMax:Math.max(30,m.dDrv+8)}}}});
+  if(m.HR){const h=m.HR;const pace=h.lab.map((_,i)=>+(m.dTgt*(i+1)/24).toFixed(1));
+    mkChart('chDailyTR',{type:'line',data:{labels:h.lab,datasets:[
+      {label:'Acumulado',data:h.CUM,borderColor:PZ.P,backgroundColor:mkGrad('chDailyTR','rgba(58,124,165,.14)','rgba(58,124,165,.01)',240),fill:true,tension:.3,pointRadius:2,pointHoverRadius:7,borderWidth:2.5},
+      {label:'Ritmo target '+m.dTgt,data:pace,borderColor:'rgba(212,114,114,.6)',borderDash:[6,3],pointRadius:0,borderWidth:1.5}]},
+      options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
+        tooltip:{callbacks:{title:c=>`🕐 ${h.lab[c[0].dataIndex]} — Acumulado del día`,label:c=>` ${c.dataset.label}: ${(+c.raw).toFixed(0)} loads`,
+          afterBody:it=>{const i=it[0].dataIndex,gap=h.CUM[i]-pace[i];
+            return[sep,`vs ritmo: ${gap>=0?'+':''}${gap.toFixed(1)} loads`,`Esta hora: ${h.L[i]} loads · ${h.DRH[i]} drivers`].concat(m.dTgt?[`Avance: ${Math.round(h.CUM[i]/m.dTgt*100)}% del target ${m.dTgt}`]:[]);}}}},
+        scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{...gO,min:0}}}});
+  }else
   mkChart('chDailyTR',{type:'bar',data:{labels:m.D,datasets:[
     {label:'Turn Rate',data:m.TR,backgroundColor:m.TR.map(trColor),borderRadius:4,borderSkipped:false},
     {label:'Design TR '+m.DTR,data:Array(m.n).fill(m.DTR),type:'line',borderColor:'rgba(106,184,154,.65)',borderDash:[6,3],pointRadius:0,borderWidth:2}]},
@@ -2112,12 +2154,12 @@ function bFin(){
       ${kpiCard('Cumplimiento',p.tgt?Math.round(p.v/p.tgt*100)+'%':'—',p.tgt?(p.v>=p.tgt?'cg':p.v>=p.tgt*0.9?'co':'cr'):'cb',p.tgt?pctS(p.v,p.tgt)+' vs target':'—','',(p.tgt&&p.v>=p.tgt)?'dn':'dw')}
       ${kpiCard('Base del Cálculo',fmt(p.dd)+' d-días','ca',fK(p.rev)+' facturado ÷ driver-días'+(p.fsc>0?' · FSC '+fK(p.fsc):''),p.excl?'excluye prefill + día en curso':'fechas exactas del filtro','db')}
     </div>
-    <div class="card mb"><div class="card-t">Income per Truck por Día${p.tgt?' vs Target $'+fmt(p.tgt):''} — hover: desglose rate + FSC</div><div class="ch"><canvas id="chIPT"></canvas></div></div>`:''}
+    <div class="card mb"><div class="card-t">${m.HR?'Income per Truck por Hora — '+m.D[0]+(p.tgt?' · target diario $'+fmt(p.tgt):''):'Income per Truck por Día'+(p.tgt?' vs Target $'+fmt(p.tgt):'')+' — hover: desglose rate + FSC'}</div><div class="ch"><canvas id="chIPT"></canvas></div></div>`:''}
     <div class="grid g2 mb">
       <div class="card"><div class="card-t">Design vs Actual Revenue${m.fscD>0?' (incl. FSC)':''}</div><div class="ch ch-s"><canvas id="chFinComp"></canvas></div></div>
-      <div class="card"><div class="card-t">Daily Revenue vs Design (${fK(m.fscD>0?m.dRevDayF:m.dRevDay)}/day${m.fscD>0?' incl. FSC':''})</div><div class="ch"><canvas id="chFinDaily"></canvas></div></div>
+      <div class="card"><div class="card-t">${m.HR?'Revenue por Hora — '+m.D[0]+(m.totFsc>0?' · rate + FSC en hover':''):'Daily Revenue vs Design ('+fK(m.fscD>0?m.dRevDayF:m.dRevDay)+'/day'+(m.fscD>0?' incl. FSC':'')+')'}</div><div class="ch"><canvas id="chFinDaily"></canvas></div></div>
     </div>
-    <div class="card mb"><div class="card-t">Cumulative Revenue: Actual vs Design Projection</div><div class="ch"><canvas id="chFinCum"></canvas></div></div>
+    <div class="card mb"><div class="card-t">${m.HR?'Cumulative Revenue por Hora — '+m.D[0]+' vs ritmo design':'Cumulative Revenue: Actual vs Design Projection'}</div><div class="ch"><canvas id="chFinCum"></canvas></div></div>
     <div class="grid g2 mb">
       <div class="card"><div class="card-t">Revenue — Arena vs Assets (contabilidad separada)</div><div class="ch ch-s"><canvas id="chAstComp"></canvas></div></div>
       <div class="card"><div class="card-t">Asset Moves por día</div><div class="ch ch-s"><canvas id="chAstDaily"></canvas></div></div>
@@ -2142,6 +2184,18 @@ function bFin(){
         ?[sep].concat(m.totFsc>0?[`Rate: ${fK(m.totR-m.totFsc)}  ·  FSC: ${fK(m.totFsc)}`]:[]).concat([`vs Design: ${pctS(m.totR,dsnTotF||m.T.total_revenue)}`,`Rev/Load: $${(m.totL?m.totR/m.totL:0).toFixed(2)}`])
         :[sep].concat(m.fscD>0?[`Rate: ${fK(+m.T.total_revenue||0)}  ·  FSC design: ${fK(m.fscDsnTot)}`]:[]).concat([`${fmt(m.T.total_loads||0)} loads · $${m.T.rev_per_load||m.rpl}/load${m.fscD>0?' + $'+m.fscD.toFixed(2)+'/ton FSC':''}`])}}},
       scales:{x:{...gO,grid:{display:false}},y:{...gO,ticks:{callback:v=>fK(v)}}}}});
+  if(m.HR){const h=m.HR;
+    mkChart('chFinDaily',{type:'bar',data:{labels:h.lab,datasets:[
+      {label:'Revenue/hora',data:h.RV,backgroundColor:h.RV.map(v=>v>0?'rgba(106,184,154,.85)':'rgba(203,213,225,.25)'),borderRadius:4,borderSkipped:false}]},
+      options:{interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},crosshair:{},
+        tooltip:{callbacks:{title:c=>`🕐 ${h.lab[c[0].dataIndex]} — Revenue`,label:c=>` ${fK(c.raw)}`,
+          afterBody:it=>{const i=it[0].dataIndex;if(!h.RV[i])return['Sin facturación en esta hora'];
+            const out=[sep];
+            if(h.FS[i]>0)out.push(`Rate: ${fK(h.RV[i]-h.FS[i])}  ·  FSC: ${fK(h.FS[i])}`);
+            out.push(`Loads: ${h.L[i]}`+(h.L[i]?` · ${fK(h.RV[i]/h.L[i])}/load`:''),`Tons: ${fmt(Math.round(h.TNh[i]))}t`);
+            return out;}}}},
+        scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{...gO,ticks:{callback:v=>fK(v)}}}}});
+  }else
   mkChart('chFinDaily',{type:'bar',data:{labels:m.D,datasets:[
     {label:'Daily Revenue',data:m.H,backgroundColor:m.H.map((v,i)=>phBarColor(v,i,m.dRevDay)),borderRadius:4,borderSkipped:false},
     {label:'Design '+fK(m.fscD>0?m.dRevDayF:m.dRevDay)+'/day'+(m.fscD>0?' incl. FSC':''),data:tgtLine(m.fscD>0?m.dRevDayF:m.dRevDay),type:'line',borderColor:'rgba(212,114,114,.65)',borderDash:[6,3],pointRadius:0,borderWidth:2}]},
@@ -2153,6 +2207,20 @@ function bFin(){
           out.push(`vs Design: ${gap>=0?'+':'-'}${fK(Math.abs(gap))} (${(gap/_dsn*100).toFixed(0)}%)`,`Loads: ${m.L[i]} | Rev/Load: ${fK(m.H[i]/Math.max(m.L[i],1))}`,`Tons: ${fmt(Math.round(m.TN[i]))}t | Rev/Ton: $${(m.H[i]/Math.max(m.TN[i],1)).toFixed(2)}`);
           return out;}}}},
       scales:{x:{...gO,ticks:tO},y:{...gO,ticks:{callback:v=>fK(v)}}}}});
+  if(m.HR){const h=m.HR;let _rc=0;const cumH=h.RV.map(v=>_rc+=v);let _fc=0;const cumHF=h.FS.map(v=>_fc+=v);
+    const dsnDay=m.fscD>0?m.dRevDayF:m.dRevDay;const paceR=h.lab.map((_,i)=>Math.round(dsnDay*(i+1)/24));
+    mkChart('chFinCum',{type:'line',data:{labels:h.lab,datasets:[
+      {label:'Actual Revenue',data:cumH,borderColor:PZ.A,backgroundColor:mkGrad('chFinCum','rgba(212,149,106,.15)','rgba(212,149,106,.01)',260),fill:true,tension:.3,pointRadius:2,pointHoverRadius:7,borderWidth:2.5},
+      {label:'Ritmo design '+fK(dsnDay)+'/día'+(m.fscD>0?' (incl. FSC)':''),data:paceR,borderColor:PZ.G,borderDash:[6,3],pointRadius:0,borderWidth:1.5}]},
+      options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
+        tooltip:{callbacks:{title:c=>`🕐 ${h.lab[c[0].dataIndex]} — Cumulative Revenue`,label:c=>`${c.dataset.label}: ${fK(c.raw)}`,
+          afterBody:it=>{const i=it[0].dataIndex,gap=cumH[i]-paceR[i];
+            const out=[sep];
+            if(cumHF[i]>0)out.push(`Acum: rate ${fK(cumH[i]-cumHF[i])} + FSC ${fK(cumHF[i])}`);
+            out.push(`vs ritmo design: ${gap>=0?'+':'-'}${fK(Math.abs(gap))}`);
+            return out;}}}},
+        scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{...gO,ticks:{callback:v=>fK(v)}}}}});
+  }else
   mkChart('chFinCum',{type:'line',data:{labels:m.D,datasets:[
     {label:'Actual Revenue',data:m.CUMREV,borderColor:PZ.A,backgroundColor:mkGrad('chFinCum','rgba(212,149,106,.15)','rgba(212,149,106,.01)',260),fill:true,tension:.4,pointRadius:3,pointHoverRadius:8,pointBackgroundColor:PZ.A,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5},
     {label:'Design Projection'+(m.fscD>0?' (incl. FSC)':''),data:m.fscD>0?m.CUMREVPLF:m.CUMREVPL,borderColor:PZ.G,borderDash:[6,3],pointRadius:2,pointHoverRadius:6,borderWidth:1.5,pointBackgroundColor:PZ.G}]},
@@ -2168,6 +2236,18 @@ function bFin(){
           return out.filter(Boolean);}}}},
       scales:{x:{...gO,ticks:tO},y:{...gO,ticks:{callback:v=>fK(v)}}}}});
   if(p.dd&&$('chIPT')){
+   if(m.HR){const h=m.HR;
+    mkChart('chIPT',{type:'bar',data:{labels:h.lab,datasets:[
+      {label:'Income/Truck por hora',data:h.IPTh,backgroundColor:h.IPTh.map(v=>v==null?'rgba(203,213,225,.25)':'rgba(106,158,200,.8)'),borderRadius:4,borderSkipped:false}]},
+      options:{interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},crosshair:{},
+        tooltip:{callbacks:{title:c=>`🕐 ${h.lab[c[0].dataIndex]} — Income per Truck`,label:c=>c.raw==null?null:` $${fmt(Math.round(c.raw))}/truck`,
+          afterBody:it=>{const i=it[0].dataIndex;if(h.IPTh[i]==null)return['Sin drivers con entrega esta hora'];
+            const fpt=h.DRH[i]>0?Math.round(h.FS[i]/h.DRH[i]):0;
+            const out=[sep,`Rate: $${fmt(Math.round(h.IPTh[i]-fpt))}  ·  FSC: $${fmt(fpt)}`,`Drivers: ${h.DRH[i]} · Revenue hora: ${fK(h.RV[i])}`];
+            if(p.tgt)out.push(`Target diario: $${fmt(p.tgt)}/truck`);
+            return out;}}}},
+        scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{...gO,ticks:{callback:v=>'$'+fmt(v)}}}}});
+   }else{
     const _tgtL=p.tgt?m.PH.map(ph=>ph==='pre'?null:p.tgt):null; // target solo fuera de prefill
     mkChart('chIPT',{type:'bar',data:{labels:m.D,datasets:[
       {label:'Income/Truck',data:m.IPT_D,backgroundColor:m.IPT_D.map((v,i)=>v==null?'rgba(203,213,225,.35)':(m.PH[i]==='pre'?'rgba(203,213,225,.6)':(p.tgt&&v>=p.tgt?'rgba(106,184,154,.85)':p.tgt&&v>=p.tgt*0.9?'rgba(106,158,200,.8)':p.tgt?'rgba(212,149,106,.8)':'rgba(106,158,200,.8)'))),borderRadius:4,borderSkipped:false}
@@ -2181,6 +2261,7 @@ function bFin(){
             if(m.isLive&&i===m.n-1)out.push('Día en curso — fuera del cálculo del rango Todos');
             return out;}}}},
         scales:{x:{...gO,ticks:tO},y:{...gO,ticks:{callback:v=>'$'+fmt(v)}}}}});
+   }
   }
   mkChart('chAstComp',{type:'bar',data:{labels:['Arena (loads)','Assets (equipo)'],datasets:[{label:'Revenue',data:[m.totR,m.AST.rev],
     backgroundColor:['rgba(58,124,165,.8)','rgba(212,149,106,.85)'],borderRadius:12,borderSkipped:false}]},
@@ -2317,8 +2398,8 @@ function bCycle(){
     </div>
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-        <div class="card-t" style="margin:0">Daily Cycle Breakdown — Stacked Components</div>
-        <div class="seg-ctrl"><button id="cvAll" class="seg-btn seg-on" onclick="cycView('all')">All Days</button><button id="cvRun" class="seg-btn" onclick="cycView('run')">Running Only</button></div></div>
+        <div class="card-t" style="margin:0">${m.HR?'Hourly Cycle Breakdown — '+m.D[0]+' · por hora del Delivered':'Daily Cycle Breakdown — Stacked Components'}</div>
+        ${m.HR?'':`<div class="seg-ctrl"><button id="cvAll" class="seg-btn seg-on" onclick="cycView('all')">All Days</button><button id="cvRun" class="seg-btn" onclick="cycView('run')">Running Only</button></div>`}</div>
       <div class="ch ch-l"><canvas id="cCycStack"></canvas></div></div>
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
@@ -2327,11 +2408,12 @@ function bCycle(){
       <div class="ch"><canvas id="cCycLine"></canvas></div></div>
     <div class="grid g2 mb">
       <div class="card"><div class="card-t">Cycle vs Daily Loads — correlación</div><div class="ch ch-s"><canvas id="cCycScat"></canvas></div></div>
-      <div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 16px"><div class="card-t" style="margin:0">Daily Cycle Detail</div></div>
+      <div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 16px"><div class="card-t" style="margin:0">${m.HR?'Hourly Cycle Detail — '+m.D[0]:'Daily Cycle Detail'}</div></div>
         <div style="overflow:auto;max-height:300px"><table style="width:100%;font-size:10.5px">
           <thead><tr>${['Date','Transit','Terminal','Offload','Total','vs Design'].map(h=>`<th style="position:sticky;top:0;background:#f8fafc">${h}</th>`).join('')}</tr></thead>
-          <tbody>${m.D.map((d,i)=>{const gap=m.CTOT[i]-m.dCTbuf;const cl=gap<=0?'#16a34a':gap<=m.dCTbuf*0.3?'#d97706':'#dc2626';
-            return `<tr style="${m.PH[i]!=='run'?'opacity:.55':''}"><td style="font-weight:600">${d}</td><td class="mono">${m.CTR[i]}m</td><td class="mono">${m.CTE[i]}m</td><td class="mono" style="color:${m.CDE[i]>m.DSN.dest*1.5?'#dc2626':'#475569'}">${m.CDE[i]}m</td><td class="mono" style="font-weight:700">${m.CTOT[i]}m</td><td class="mono" style="color:${cl};font-weight:700">${gap>=0?'+':''}${gap}m</td></tr>`;}).join('')}</tbody></table></div></div>
+          <tbody>${(m.HR?m.HR.lab.map((d,i)=>({d,i})).filter(x=>m.HR.L[x.i]>0).map(x=>{const i=x.i,tot=m.HR.TOT[i];const gap=tot!=null?tot-m.dCTbuf:null;const cl=gap==null?'#94a3b8':gap<=0?'#16a34a':gap<=m.dCTbuf*0.3?'#d97706':'#dc2626';
+            return `<tr><td style="font-weight:600">${x.d} · ${m.HR.L[i]} lds</td><td class="mono">${m.HR.TRh[i]||'—'}m</td><td class="mono">${m.HR.TEh[i]||'—'}m</td><td class="mono" style="color:${m.HR.DEh[i]>m.DSN.dest*1.5?'#dc2626':'#475569'}">${m.HR.DEh[i]||'—'}m</td><td class="mono" style="font-weight:700">${tot!=null?tot+'m':'—'}</td><td class="mono" style="color:${cl};font-weight:700">${gap!=null?(gap>=0?'+':'')+gap+'m':'—'}</td></tr>`;}):m.D.map((d,i)=>{const gap=m.CTOT[i]-m.dCTbuf;const cl=gap<=0?'#16a34a':gap<=m.dCTbuf*0.3?'#d97706':'#dc2626';
+            return `<tr style="${m.PH[i]!=='run'?'opacity:.55':''}"><td style="font-weight:600">${d}</td><td class="mono">${m.CTR[i]}m</td><td class="mono">${m.CTE[i]}m</td><td class="mono" style="color:${m.CDE[i]>m.DSN.dest*1.5?'#dc2626':'#475569'}">${m.CDE[i]}m</td><td class="mono" style="font-weight:700">${m.CTOT[i]}m</td><td class="mono" style="color:${cl};font-weight:700">${gap>=0?'+':''}${gap}m</td></tr>`;})).join('')}</tbody></table></div></div>
     </div>`;
   mkChart('cCycDough',{type:'doughnut',data:{labels:[`Transit ${m.AVG.trans}m`,`Terminal ${m.AVG.term}m`,`Offload ${m.AVG.dest}m`],
     datasets:[{data:[m.AVG.trans,m.AVG.term,m.AVG.dest],backgroundColor:['rgba(58,124,165,.85)','rgba(155,142,196,.85)','rgba(212,114,114,.85)'],borderWidth:4,borderColor:'#fff',hoverOffset:14}]},
@@ -2340,6 +2422,7 @@ function bCycle(){
   buildCycStack();buildCycLine();buildCycScat();
 }
 function buildCycStack(){
+  if(M.HR)return buildCycStackH(); /* v72: 1 día → por hora */
   const m=M,idx=getCycIdx(),labels=idx.map(i=>m.D[i]);
   const THR={trans:m.DSN.trans*1.5,term:m.DSN.term*1.5,dest:m.DSN.dest*1.5};
   mkChart('cCycStack',{type:'bar',data:{labels,datasets:[
@@ -2356,6 +2439,7 @@ function buildCycStack(){
       scales:{x:{stacked:true,...gO,ticks:{font:{size:9},maxRotation:0,maxTicksLimit:14}},y:{stacked:true,...gO,title:{display:true,text:'Minutes',font:{size:8}},ticks:{callback:v=>v+'m'}}}}});
 }
 function buildCycLine(){
+  if(M.HR)return buildCycLineH(); /* v72: 1 día → por hora */
   const m=M,idx=getCycIdx(),labels=idx.map(i=>m.D[i]);
   const cm={total:{data:m.CTOT,dsn:m.dCTbuf,col:'rgba(212,114,114,.8)',fillA:'rgba(212,114,114,.18)',fillB:'rgba(212,114,114,.02)',lbl:'Total Cycle'},
     transit:{data:m.CTR,dsn:m.DSN.trans,col:'rgba(58,124,165,.8)',fillA:'rgba(58,124,165,.18)',fillB:'rgba(58,124,165,.02)',lbl:'Transit OW'},
@@ -2376,6 +2460,7 @@ function buildCycLine(){
       scales:{x:{...gO,ticks:{font:{size:9},maxRotation:0,maxTicksLimit:14}},y:{...gO,min:0,ticks:{callback:v=>v+'m'}}}}});
 }
 function buildCycScat(){
+  if(M.HR)return buildCycScatH(); /* v72: 1 día → por hora */
   const m=M,idx=getCycIdx();
   const pts=idx.map(i=>({x:m.L[i],y:m.CTOT[i],day:m.D[i],tr:m.TR[i],ph:m.PH[i]}));
   const col=pts.map(p=>p.ph==='run'?'rgba(58,124,165,.7)':'rgba(148,163,184,.5)');
@@ -2387,6 +2472,46 @@ function buildCycScat(){
         y:{...gO,title:{display:true,text:'Cycle Time (min)',font:{size:9,weight:'600'}},min:0,ticks:{callback:v=>v+'m'}}}}});
 }
 
+/* ── v72 · charts de ciclo POR HORA (rango de 1 día + GAS v9.2 hourly) ── */
+function buildCycStackH(){const m=M,h=m.HR;
+  mkChart('cCycStack',{type:'bar',data:{labels:h.lab,datasets:[
+    {label:'Transit OW',data:h.TRh.map(v=>v>0?v:null),backgroundColor:'rgba(58,124,165,.75)',stack:'s',borderSkipped:false},
+    {label:'Terminal',data:h.TEh.map(v=>v>0?v:null),backgroundColor:'rgba(155,142,196,.75)',stack:'s',borderSkipped:false},
+    {label:'Offload',data:h.DEh.map(v=>v>0?v:null),backgroundColor:'rgba(212,114,114,.75)',stack:'s',borderSkipped:true,borderRadius:4}]},
+    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
+      tooltip:{callbacks:{title:c=>`🕐 ${h.lab[c[0].dataIndex]} — Cycle por hora`,label:c=>c.raw==null?null:`${c.dataset.label}: ${c.raw}m`,
+        afterBody:it=>{const i=it[0].dataIndex;if(!h.L[i])return['Sin entregas en esta hora'];const tot=h.TOT[i];
+          const out=[sep,`${h.L[i]} load${h.L[i]===1?'':'s'} · ${h.DRH[i]} driver${h.DRH[i]===1?'':'s'}`];
+          if(tot!=null){const gap=tot-m.dCTbuf;out.push(`Ciclo promedio: ${tot}m`,`vs Design ${m.dCTbuf}: ${gap>=0?'+':''}${gap}m (${(gap/m.dCTbuf*100).toFixed(0)}%)`);}
+          return out;}}}},
+      scales:{x:{stacked:true,...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{stacked:true,...gO,title:{display:true,text:'Minutes',font:{size:8}},ticks:{callback:v=>v+'m'}}}}});
+}
+function buildCycLineH(){const m=M,h=m.HR;
+  const cm={total:{data:h.TOT,dsn:m.dCTbuf,col:'rgba(212,114,114,.8)',fillA:'rgba(212,114,114,.18)',fillB:'rgba(212,114,114,.02)',lbl:'Total Cycle'},
+    transit:{data:h.TRh.map(v=>v>0?v:null),dsn:m.DSN.trans,col:'rgba(58,124,165,.8)',fillA:'rgba(58,124,165,.18)',fillB:'rgba(58,124,165,.02)',lbl:'Transit OW'},
+    terminal:{data:h.TEh.map(v=>v>0?v:null),dsn:m.DSN.term,col:'rgba(155,142,196,.8)',fillA:'rgba(155,142,196,.18)',fillB:'rgba(155,142,196,.02)',lbl:'Terminal'},
+    offload:{data:h.DEh.map(v=>v>0?v:null),dsn:m.DSN.dest,col:'rgba(212,149,106,.8)',fillA:'rgba(212,149,106,.18)',fillB:'rgba(212,149,106,.02)',lbl:'Offload'}}[_cycComp];
+  const ptColor=cm.data.map(v=>v==null?'rgba(0,0,0,0)':v<=cm.dsn*1.05?'rgba(106,184,154,.9)':v<=cm.dsn*1.5?'rgba(212,160,90,.9)':'rgba(212,114,114,.9)');
+  mkChart('cCycLine',{type:'line',data:{labels:h.lab,datasets:[
+    {label:cm.lbl+' (hora)',data:cm.data,borderColor:cm.col,backgroundColor:mkGrad('cCycLine',cm.fillA,cm.fillB,220),fill:true,tension:.35,pointRadius:5,pointHoverRadius:10,pointBackgroundColor:ptColor,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5,spanGaps:true},
+    {label:`Design ${cm.dsn}m`,data:Array(24).fill(cm.dsn),borderColor:'rgba(106,184,154,.6)',borderDash:[6,3],pointRadius:0,borderWidth:1.5},
+    {label:`Threshold ${Math.round(cm.dsn*1.5)}m`,data:Array(24).fill(Math.round(cm.dsn*1.5)),borderColor:'rgba(212,114,114,.4)',borderDash:[3,3],pointRadius:0,borderWidth:1}]},
+    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
+      tooltip:{callbacks:{title:c=>`🕐 ${h.lab[c[0].dataIndex]} — ${cm.lbl}`,label:c=>c.raw==null?null:`${c.dataset.label}: ${c.raw}m`,
+        afterBody:it=>{const i=it[0].dataIndex,v=cm.data[i];if(v==null)return['Sin ciclo medible esta hora'];
+          const gap=v-cm.dsn;return[sep,`vs Design: ${gap>=0?'+':''}${gap.toFixed(1)}m (${(gap/cm.dsn*100).toFixed(0)}%)`,`Loads de la hora: ${h.L[i]}`];}}}},
+      scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{...gO,min:0,ticks:{callback:v=>v+'m'}}}}});
+}
+function buildCycScatH(){const m=M,h=m.HR;
+  const pts=h.lab.map((lb,i)=>({x:h.L[i],y:h.TOT[i],hh:lb,dr:h.DRH[i]})).filter(p=>p.x>0&&p.y!=null);
+  mkChart('cCycScat',{type:'scatter',data:{datasets:[{label:'Cycle vs Loads (hora)',data:pts.map(p=>({x:p.x,y:p.y})),
+    backgroundColor:pts.map(p=>p.y<=m.dCTbuf?'rgba(106,184,154,.75)':'rgba(212,114,114,.7)'),pointRadius:7,pointHoverRadius:11,borderColor:'#fff',borderWidth:1.5}]},
+    options:{interaction:{mode:'nearest',intersect:false},plugins:{legend:{display:false},
+      tooltip:{callbacks:{title:c=>`🕐 ${pts[c[0].dataIndex].hh}`,label:c=>{const p=pts[c.dataIndex];return[`Cycle: ${p.y} min`,`Loads: ${p.x}`,`Drivers: ${p.dr}`];},
+        afterBody:c=>{const p=pts[c[0].dataIndex],gap=p.y-M.dCTbuf;return[sep,`vs Design: ${gap>=0?'+':''}${gap}m`];}}}},
+      scales:{x:{...gO,title:{display:true,text:'Loads por hora',font:{size:9,weight:'600'}},min:0,ticks:{stepSize:1}},
+        y:{...gO,title:{display:true,text:'Cycle Time (min)',font:{size:9,weight:'600'}},min:0,ticks:{callback:v=>v+'m'}}}}});
+}
 /* ═══════ STAGE ANALYSIS ═══════ */
 function stgColor(t){const m=M;const p=Math.abs(t-m.tonsStageD)/m.tonsStageD*100;if(t<m.tonsStageD*0.68)return 'rgba(212,114,114,.75)';if(p<=5)return 'rgba(106,184,154,.75)';if(p<=15)return 'rgba(212,160,90,.75)';return 'rgba(212,114,114,.75)';}
 function durColor(d){const m=M;if(d>m.durStageD*1.5)return 'rgba(212,114,114,.9)';if(d<=m.durStageD)return 'rgba(106,184,154,.85)';if(d<=m.durStageD*1.15)return 'rgba(212,160,90,.85)';return 'rgba(106,158,200,.8)';}
