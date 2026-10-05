@@ -1,4 +1,7 @@
-/** MEDS · PropX Live API — Code.gs v9.0. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.1. PEGAR TAL CUAL → Nueva versión.
+ *  v9.1 DESGLOSE: byDriver[] ahora trae revenue y fsc EXACTOS por driver (facturado =
+ *    rate + FSC de cada carga suya) y byTerminal[] trae fsc por arenera — el portal los
+ *    usa para el desglose rate + FSC en Roster y Sourcing. Sin cambios de estructura.
  *  v9.0 FSC (Fuel Surcharge): la hoja Rates acepta columna opcional `fsc` ($/ton por bracket
  *    y vigencia — hoy solo BW 21-30 nuevo a $1.18). Cada carga factura rate + FSC: el revenue
  *    reportado ES la suma, con desglose en totals.revenue_base / totals.revenue_fsc y
@@ -77,7 +80,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.0';
+const API_VERSION='v9.1';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -429,13 +432,13 @@ function getWell(id){
       const f=FOREIGN_T[term]=FOREIGN_T[term]||{loads:0,tons:0}; f.loads++; f.tons+=t;
       if(_STRICT){ loads--; tons-=t; miles-=mi; revenue-=revL; cost-=payL; continue; }
     }
-    byTerm[term]=byTerm[term]||{loads:0,miles:0,revenue:0,tons:0}; byTerm[term].loads++; byTerm[term].miles+=mi; byTerm[term].revenue+=revL; byTerm[term].tons+=t;
+    byTerm[term]=byTerm[term]||{loads:0,miles:0,revenue:0,tons:0,fsc:0}; byTerm[term].loads++; byTerm[term].miles+=mi; byTerm[term].revenue+=revL; byTerm[term].tons+=t; byTerm[term].fsc+=fscL;
     const code=(String(row[ix['Truck #']]||'').match(/^[A-Za-z]+/)||['—'])[0].toUpperCase(); byCarrier[code]=(byCarrier[code]||0)+1;
     const _dk=driverKey(row[ix['Driver Name']]);
     const drv=_dk.key; // clave unificada: mismo humano aunque cambie el sufijo de carrier
     if(drv){ driversAll.add(drv);
-      const D=byDriver[drv]=byDriver[drv]||{name:_dk.name,loads:0,dates:{},carriers:{},sufs:{}};
-      D.loads++;
+      const D=byDriver[drv]=byDriver[drv]||{name:_dk.name,loads:0,revenue:0,fsc:0,dates:{},carriers:{},sufs:{}};
+      D.loads++; D.revenue+=revL; D.fsc+=fscL; /* v9.1: facturado exacto por driver (rate+FSC) */
       if(code&&code!=='—')D.carriers[code]=(D.carriers[code]||0)+1;
       if(_dk.suf)D.sufs[_dk.suf]=(D.sufs[_dk.suf]||0)+1; }
     byProd[prodS]=(byProd[prodS]||0)+1;
@@ -596,7 +599,7 @@ function getWell(id){
              participation_pct:(gMaxNo>gMinNo&&loads)?+(loads/Math.max(gMaxNo-gMinNo,loads)*100).toFixed(1):null },
     daily,
     stageWaitByTerminal:Object.entries(cyc).map(([k,v])=>({terminal:k,avg_stage_min:v.stage_wait[1]?+(v.stage_wait[0]/v.stage_wait[1]).toFixed(1):0,events:v.stage_wait[1]})).filter(x=>x.avg_stage_min>0).sort((a,b)=>b.avg_stage_min-a.avg_stage_min),
-    byTerminal:Object.entries(byTerm).map(([k,v])=>({terminal:k,loads:v.loads,avg_miles:v.loads?+(v.miles/v.loads).toFixed(1):0,revenue:Math.round(v.revenue),tons:Math.round(v.tons)})).sort((a,b)=>b.revenue-a.revenue),
+    byTerminal:Object.entries(byTerm).map(([k,v])=>({terminal:k,loads:v.loads,avg_miles:v.loads?+(v.miles/v.loads).toFixed(1):0,revenue:Math.round(v.revenue),fsc:Math.round(v.fsc),tons:Math.round(v.tons)})).sort((a,b)=>b.revenue-a.revenue),
     byTerminalDaily:Object.values(byTermDay).map(v=>({date:v.date,terminal:v.terminal,loads:v.loads,tons:Math.round(v.tons),revenue:Math.round(v.revenue)})).sort((a,b)=>a.date<b.date?-1:1),
     byCarrier:Object.entries(byCarrier).map(([k,v])=>({carrier:k,loads:v})).sort((a,b)=>b.loads-a.loads),
     byProduct:Object.entries(byProd).map(([k,v])=>({product:k,loads:v})).sort((a,b)=>b.loads-a.loads),
@@ -605,7 +608,7 @@ function getWell(id){
       const sufs=Object.keys(v.sufs).sort(function(a,b){return v.sufs[b]-v.sufs[a];});
       const hist=cars.length?cars:sufs;
       return {driver:v.name,carrier:hist[0]||'',carriers:hist,switched:hist.length>1,
-        loads:v.loads,days:Object.keys(v.dates).length,dates:v.dates};
+        loads:v.loads,revenue:Math.round(v.revenue),fsc:Math.round(v.fsc),days:Object.keys(v.dates).length,dates:v.dates};
     }).sort((a,b)=>b.loads-a.loads),
     downtimes:Object.entries(dCat).map(([k,v])=>({category:k,minutes:+v.toFixed(1)})).sort((a,b)=>b.minutes-a.minutes),
     cycleTimes:Object.entries(cyc).map(([k,v])=>({terminal:k,load:avg2(v.load),transit:avg2(v.transit),unload:avg2(v.unload),full:avg2(v.full)})),

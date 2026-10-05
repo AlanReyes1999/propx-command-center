@@ -872,7 +872,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-05.70';
+const VBUILD='2026-10-05.71';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -1158,6 +1158,7 @@ function rsAgg(){
     if(x&&x.efficiency!=null){const e=+x.efficiency;s+=(e<=3?e*100:e);n++;}});return n?+(s/n).toFixed(1):null;});
   M.cum=[];let c=0;M.stg.forEach(v=>{c+=v;M.cum.push(c);});
   M.rcum=[];let rc=0;M.rev.forEach(v=>{rc+=v;M.rcum.push(rc);});
+  M.fcum=[];let fc2=0;M.fsc.forEach(v=>{fc2+=v;M.fcum.push(fc2);});
   /* NPT por día + categorías */
   const rsFull=(!RS.d0||RS.d0<=rawMin)&&(!RS.d1||RS.d1>=rawMax);
   const nptD={},nptC={};let nptExcl=0;
@@ -1188,7 +1189,7 @@ function rsAgg(){
   const wt=M.wsum.filter(x=>x.trTgt&&x.loads);
   M.trTgt=wt.length===1?wt[0].trTgt:(wt.length?+(wt.reduce((s,x)=>s+x.trTgt*x.loads,0)/wt.reduce((s,x)=>s+x.loads,0)).toFixed(2):null);
   M.trTgtMode=wt.length===1?'pozo':'avg';
-  M.totL=M.loads.reduce((a,b)=>a+b,0);M.totT=M.tons.reduce((a,b)=>a+b,0);M.totR=M.rev.reduce((a,b)=>a+b,0);
+  M.totL=M.loads.reduce((a,b)=>a+b,0);M.totT=M.tons.reduce((a,b)=>a+b,0);M.totR=M.rev.reduce((a,b)=>a+b,0);M.totFsc=M.fsc.reduce((a,b)=>a+b,0);
   M.totAstM=M.wsum.reduce((s,x)=>s+x.astM,0);M.totAstR=M.wsum.reduce((s,x)=>s+x.astR,0);
   M.uniq=M.wsum.reduce((s,x)=>s+(x.uniq||0),0);
   M.trAvg=(function(){const v=M.tr.filter(x=>x>0);return v.length?+(v.reduce((a,b)=>a+b,0)/v.length).toFixed(2):null;})();
@@ -1201,7 +1202,7 @@ function rsSumWell(w){
   const dd=R.w.daily.filter(x=>{const d=String(x.date).slice(0,10);return (!RS.d0||d>=RS.d0)&&(!RS.d1||d<=RS.d1);});
   const tg=R.w.targets||{},t=R.w.totals||{};
   const L2=dd.reduce((s,x)=>s+(+x.loads||0),0),Dv=dd.reduce((s,x)=>s+(+x.drivers||0),0);
-  return {id:w.id,loads:L2,tons:dd.reduce((s,x)=>s+(+x.tons||0),0),rev:dd.reduce((s,x)=>s+(+x.revenue||0),0),
+  return {id:w.id,loads:L2,tons:dd.reduce((s,x)=>s+(+x.tons||0),0),rev:dd.reduce((s,x)=>s+(+x.revenue||0),0),fsc:dd.reduce((s,x)=>s+(+x.revenue_fsc||0),0),
     tr:Dv?+(L2/Dv).toFixed(2):null,trTgt:+tg.turn_rate_target||null,
     stage:t.max_stage||dd.reduce((m2,x)=>Math.max(m2,+x.stage_cum||0),0),stages_total:+tg.total_stages||null,
     loadsTgt:+tg.total_loads||null};}
@@ -1224,13 +1225,13 @@ function renderResumen(){
   const m=rsAgg();
   /* KPIs */
   const act=(STATUS&&Array.isArray(STATUS.pads))?STATUS.pads.reduce((s,p)=>s+(p.live&&p.a&&p.a.length?(+p.a[p.a.length-1]||0):0),0):0;
-  const kc=(t,v,cl,lb)=>`<div class="card kpi"><div class="card-t">${t}</div><div class="v ${cl}">${v}</div><div class="lb">${lb}</div></div>`;
+  const kc=(t,v,cl,lb,tip)=>`<div class="card kpi"${tip?' title="'+String(tip).replace(/"/g,'&quot;')+'"':''}><div class="card-t">${t}</div><div class="v ${cl}">${v}</div><div class="lb">${lb}</div></div>`;
   const trOK=m.trTgt!=null&&m.trAvg!=null;
   $('rs-kpis').innerHTML=
     kc('Pozos en Portafolio',ws.length,'', live+' live · '+(ws.length-live)+' closed')+
     kc('Total Loads',m.totL?fmt(m.totL):'—','cb',m.loadsTgt?pctS(m.totL,m.loadsTgt)+' del design ('+fmt(m.loadsTgt)+')':'rango filtrado')+
     kc('Tons Entregadas',m.totT?fmt(Math.round(m.totT)):'—','ca','rango filtrado')+
-    kc('Revenue',m.totR?fK(m.totR):'—','cg',m.totAstR?'+'+fK(m.totAstR)+' assets (aparte)':'arena · rango')+
+    kc('Revenue',m.totR?fK(m.totR):'—','cg',(m.totFsc>0?'rate '+fK(m.totR-m.totFsc)+' + FSC '+fK(m.totFsc):'arena · rango')+(m.totAstR?' · +'+fK(m.totAstR)+' assets':''),m.totFsc>0?('Rate $'+fmt(m.totR-m.totFsc)+' + FSC $'+fmt(m.totFsc)+' = $'+fmt(m.totR)+' facturado'):'')+
     kc('Turn Rate Prom.',m.trAvg!=null?m.trAvg.toFixed(2):'—',trOK?(m.trAvg>=m.trTgt?'cg':'cr'):'cg',
       m.trTgt!=null?(semaTR2(m.trAvg,m.trTgt))+' meta '+(m.trTgtMode==='pozo'?'del pozo':'AVG jobs')+' '+m.trTgt.toFixed(2):'sin target')+
     kc('Drivers Únicos',m.uniq?fmt(m.uniq):'—','cpu','suma por pozo')+
@@ -1261,7 +1262,7 @@ function renderResumen(){
           <div class="wmet"><div class="v" style="color:#1c3d54">${fmt(sm.loads)}</div><div class="l">LOADS${sm.loadsTgt?' · '+pctS(sm.loads,sm.loadsTgt)+' DSGN':''}</div></div>
           <div class="wmet"><div class="v" style="color:${trC}">${sm.tr!=null?sm.tr.toFixed(2):'—'} ${semaTR2(sm.tr,sm.trTgt)}</div><div class="l">TURN${sm.trTgt?' VS '+sm.trTgt.toFixed(2):''}</div></div>
           <div class="wmet"><div class="v" style="color:#7a5a9e">${sm.stage||'—'}${sm.stages_total?'<span style="font-size:10px;color:#b9a8d6">/'+sm.stages_total+'</span>':''}</div><div class="l">ETAPA</div></div>
-          <div class="wmet"><div class="v" style="color:#1f7a56">${fK(sm.rev)}</div><div class="l">REVENUE</div></div></div>
+          <div class="wmet"${sm.fsc>0?' title="rate '+fK(sm.rev-sm.fsc)+' + FSC '+fK(sm.fsc)+'"':''}><div class="v" style="color:#1f7a56">${fK(sm.rev)}</div><div class="l">REVENUE${sm.fsc>0?' <span style="color:#b8a37e">+FSC</span>':''}</div></div></div>
         <div style="width:128px;flex-shrink:0;display:flex;flex-direction:column;justify-content:flex-end">
           <div style="font-size:7px;font-weight:800;color:#b7c2cf;letter-spacing:.5px;margin-bottom:2px;text-align:right">LOADS · ÚLTIMOS 14D</div>
           <div style="height:52px"><canvas id="wcSpark_${i}"></canvas></div></div></div>
@@ -1353,7 +1354,9 @@ function drawResCharts(m){
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
       tooltip:{callbacks:{title:c=>''+lbs[c[0].dataIndex],label:c=>` ${c.dataset.label}: ${fK(c.raw)}`,
         afterBody:it=>{const i=it[0].dataIndex;const out=[sep,fK(m.rev[i]/(m.loads[i]||1))+'/load'];
-          if(m.fsc&&m.fsc[i]>0)out.push('FSC: '+fK(m.fsc[i])+' (incluido)');return out;}}}},
+          if(m.fsc&&m.fsc[i]>0)out.push('Rate: '+fK(m.rev[i]-m.fsc[i])+'  ·  FSC: '+fK(m.fsc[i]));
+          if(m.fcum&&m.fcum[i]>0)out.push('Acum: rate '+fK(m.rcum[i]-m.fcum[i])+' + FSC '+fK(m.fcum[i]));
+          return out;}}}},
       scales:{x:{...gO,ticks:tO},y:{...gO,ticks:{callback:v=>fK(v)}},y2:{...gO,position:'right',grid:{display:false},ticks:{callback:v=>fK(v)}}}}});
   /* Sourcing */
   const tl2=m.term.reduce((s,x)=>s+x[1].loads,0);
@@ -1572,7 +1575,9 @@ function buildM(){
   let DR;
   if(typeof DRIVER_DAYS!=='undefined'&&DRIVER_DAYS&&DRIVER_DAYS.length){
     DR=DRIVER_DAYS.map(d=>{const daily=ISO.map(x=>+(d.dates&&d.dates[x])||0);const tot=daily.reduce((s,v)=>s+v,0);const days=daily.filter(v=>v>0).length;
-      return [d.driver,(d.carrier||'—').toUpperCase(),tot,days,days?+(tot/days).toFixed(1):0].concat(daily);}).filter(d=>d[2]>0);
+      const row=[d.driver,(d.carrier||'—').toUpperCase(),tot,days,days?+(tot/days).toFixed(1):0].concat(daily);
+      row._rev=+d.revenue||0;row._fsc=+d.fsc||0; // GAS v9.1: facturado exacto por driver (pozo completo)
+      return row;}).filter(d=>d[2]>0);
   }else{
     DR=DRV.map((d,di)=>{const[name,ca,tot,tr]=d;const days=d[4]||Math.max(2,Math.round(tot/Math.max(tr,1)));
       const r=mul32(100+di);const span=Math.min(n,Math.max(days,Math.round(days*1.15)));
@@ -1633,7 +1638,7 @@ function buildM(){
   const SRC=btAll.map(b=>{const key=termKeyFor(b.terminal,T);
     const dPct=key&&(+T[key+'_mix_pct'])?+T[key+'_mix_pct']:(key&&mixD[key]!=null?mixD[key]:0);
     const an=b.tons&&b.loads?Math.round(b.tons*2000/b.loads):43500;
-    return {t:b.terminal,dPct,aPct:+((+b.loads||0)/totLd*100).toFixed(1),loads:+b.loads||0,an,lbs:Math.round((+b.tons||0)*2000),rev:Math.round(+b.revenue||0)};});
+    return {t:b.terminal,dPct,aPct:+((+b.loads||0)/totLd*100).toFixed(1),loads:+b.loads||0,an,lbs:Math.round((+b.tons||0)*2000),rev:Math.round(+b.revenue||0),fsc:Math.round(+b.fsc||0)};});
   /* participación en pad compartido */
   const pTgt=(T.participation_target!=null&&T.participation_target!=='')?+T.participation_target:null;
   let PD,PS;
@@ -1701,6 +1706,28 @@ function buildM(){
   const totL=CUMACT[n-1]||0, totT=Math.round(TN.reduce((s,v)=>s+v,0)), totR=CUMREV[n-1]||0;
   const totFsc=Math.round(FSCR.reduce((s,v)=>s+v,0)); // FSC del rango (0 si el pozo no maneja FSC)
   const fscD=+T.fsc_per_ton||0;                       // target FSC de la plantilla Targets
+  /* ── v71 · FSC EN EL DISEÑO: el design facturable = base + FSC target, siempre con desglose ── */
+  const fscDayD=fscD>0?fscD*_pdT:0;                                   // FSC design por día ($/ton × tons/día design)
+  const fscRD=(fscD>0&&RD.tons)?Math.round(fscD*RD.tons):0;           // FSC design del rango (prorrateado como RD)
+  const fscDsnTot=fscD>0?Math.round(fscD*(+T.total_tons||0)):0;       // FSC design del pozo completo
+  RD.fsc=fscRD; RD.revF=(RD.rev!=null)?RD.rev+fscRD:null;             // design facturable del rango
+  const totRevDsnF=(+T.total_revenue||0)?Math.round(+T.total_revenue+fscDsnTot):0; // design total facturable
+  const dRevDayF=dRevDay+Math.round(fscDayD);                         // design diario facturable
+  let _cpf=0;const CUMREVPLF=fscD>0?PH.map(ph=>_cpf+=(ph==='pre'?Math.round(dRevDayF*.6):ph==='eoj'?Math.round(dRevDayF*.35):dRevDayF)):CUMREVPL;
+  let _cf=0;const CUMFSC=FSCR.length===n?FSCR.map(v=>_cf+=v):L.map(()=>0);
+  /* ── v71 · DAILY INCOME PER TRUCK: revenue facturado (rate+FSC) ÷ driver-días.
+     Rango «Todos»: excluye prefill Y el último día (día corriendo/parcial).
+     Día o fechas específicas: usa EXACTAMENTE esas fechas. */
+  const _iptIdx=[];for(let i=0;i<n;i++){if(!(Tt[i]>0))continue;if(isFull&&(PH[i]==='pre'||i===n-1))continue;_iptIdx.push(i);}
+  const _iptDD=_iptIdx.reduce((s,i)=>s+Tt[i],0);
+  const _iptRv=_iptIdx.reduce((s,i)=>s+H[i],0);
+  const _iptFs=_iptIdx.reduce((s,i)=>s+(FSCR[i]||0),0);
+  const IPT={dd:_iptDD,days:_iptIdx.length,rev:_iptRv,fsc:_iptFs,excl:isFull,
+    v:_iptDD?_iptRv/_iptDD:0,base:_iptDD?(_iptRv-_iptFs)/_iptDD:0,f:_iptDD?_iptFs/_iptDD:0,
+    tgtBase:+T.gross_driver_bar||0,tgtFsc:(fscD>0&&(+T.drivers_day||0)>0)?fscD*_pdT/(+T.drivers_day):0};
+  IPT.tgt=IPT.tgtBase?Math.round(IPT.tgtBase+IPT.tgtFsc):0;
+  const IPT_D=L.map((_,i)=>Tt[i]>0?Math.round(H[i]/Tt[i]):null);          // $/truck por día (chart)
+  const IPT_F=L.map((_,i)=>Tt[i]>0?Math.round((FSCR[i]||0)/Tt[i]):null);  // componente FSC del día
   const trAll=+(totL/Math.max(1,Tt.reduce((s,v)=>s+v,0))).toFixed(2);
   const runI=runIdx;
   const bestI=runI.length?runI.reduce((b,i)=>L[i]>L[b]?i:b,runI[0]):0;
@@ -1710,12 +1737,12 @@ function buildM(){
     DR,CD:CDl,VMAX:Math.max.apply(null,DR.map(d=>d[2]).concat([1])),
     DTE,dtExcl,openHid,DT_RESP,nptTot,nptLog,SRC,SRC_RANGED,AST,PART,RD,
     STG:STGrows,RMIX:RMIXA,RUN_DL,RUN_DL_STG,SPD,TPD,DAY_TONS,DAY_DUR,tonsStageD,stagesDayD,durStageD,durFracD,durChgD,durTotD,validDays:_validDays,
-    totL,totT,totR,totFsc,fscD,FSCR,trAll,rpl,dTgt,dDrv:+T.drivers_day||20,DTR,techTR:+(DTR*1.2).toFixed(2),dRevDay,
+    totL,totT,totR,totFsc,fscD,FSCR,fscRD,fscDsnTot,totRevDsnF,dRevDayF,CUMREVPLF,CUMFSC,IPT,IPT_D,IPT_F,trAll,rpl,dTgt,dDrv:+T.drivers_day||20,DTR,techTR:+(DTR*1.2).toFixed(2),dRevDay,
     T,X,n,isLive,name:(ACTIVE_META&&ACTIVE_META.name)||CURRENT_ID,f,l};
 }
 
 /* helpers de tarjetas/plantillas */
-const kpiCard=(t,v,vc,sb,d,dc)=>`<div class="card kpi"><div class="card-t">${t}</div><div class="v ${vc||''}">${v}</div>${sb?`<div class="sb">${sb}</div>`:''}${d?`<div class="d ${dc||'dn'}">${d}</div>`:''}</div>`;
+const kpiCard=(t,v,vc,sb,d,dc,tip)=>`<div class="card kpi"${tip?' title="'+String(tip).replace(/"/g,'&quot;')+'"':''}><div class="card-t">${t}</div><div class="v ${vc||''}">${v}</div>${sb?`<div class="sb">${sb}</div>`:''}${d?`<div class="d ${dc||'dn'}">${d}</div>`:''}</div>`;
 const kchip=(t,n,s,cls)=>`<div class="kchip ${cls||''}"><div class="t">${t}</div><div class="n">${n}</div><div class="s">${s}</div></div>`;
 const pctS=(a,d)=>{if(!d)return '—';const p=(a-d)/d*100;return (p>=0?'+':'')+p.toFixed(1)+'%';};
 const gapBadge=(a,d,inv)=>{if(!d)return ['b-n','—'];let p=(a-d)/d*100;if(inv)p=-p;return Math.abs(p)<=3?['b-n','Match']:p>0?['b-ok',(inv?'Beat ✓':'Above ✓')]:Math.abs(p)<=15?['b-warn','Near']:['b-bad','Below'];};
@@ -1809,13 +1836,21 @@ function bExec(){
       return '<div class="shr-note" style="grid-column:1/-1"><b>Rango con '+mx.length+' tarifas vigentes</b> — cada carga se facturó con la suya: '+
         mx.map(function(x){return fmt(Math.round(x.tons))+' tons @ <b>$'+x.rate.toFixed(2)+'</b>'+(x.fsc>0?' <span style="color:#9a6b1f">+ FSC $'+fmt(Math.round(x.fsc))+'</span>':'')+' = $'+fmt(Math.round(x.revenue));}).join('  +  ')+
         '  =  <b>$'+fmt(Math.round(tot))+'</b>'+(m.totFsc>0?' (incluye FSC $'+fmt(m.totFsc)+')':'')+'. El $/ton que ves es el promedio ponderado, no una tarifa cobrada.</div>';})()+
-    kpiCard('Revenue',fK(m.totR),'cg',(m.RD.rev?m.RD.tag+': '+fK(m.RD.rev):'estimado')+(m.totFsc>0?' · base '+fK(m.totR-m.totFsc)+' + FSC '+fK(m.totFsc):''),pctS(m.totR,m.RD.rev),m.totR>=(m.RD.rev||0)*(m.RD.isFull&&m.isLive?0:1)?'dn':'dw'),
+    (function(){const dsn=(m.fscD>0&&m.RD.revF!=null)?m.RD.revF:m.RD.rev; // v71: el target de revenue YA incluye FSC design
+      const tip=(m.totFsc>0||m.fscD>0)?('Actual: rate $'+fmt(m.totR-m.totFsc)+' + FSC $'+fmt(m.totFsc)+' = $'+fmt(m.totR)+(dsn?'   ·   Design: rate $'+fmt(Math.round(m.RD.rev||0))+' + FSC $'+fmt(m.RD.fsc||0)+' = $'+fmt(Math.round(dsn)):'')):'';
+      return kpiCard('Revenue',fK(m.totR),'cg',(dsn?m.RD.tag+': '+fK(dsn)+(m.fscD>0?' (incl. FSC)':''):'estimado')+(m.totFsc>0?' · base '+fK(m.totR-m.totFsc)+' + FSC '+fK(m.totFsc):''),pctS(m.totR,dsn),m.totR>=(dsn||0)*(m.RD.isFull&&m.isLive?0:1)?'dn':'dw',tip);})(),
     (function(){ // FUEL SURCHARGE — solo si el pozo lo maneja (actual o target); si no, el header del grupo lo indica
       if(!(m.totFsc>0||m.fscD>0))return '';
       const fscTgtR=m.fscD*(typeof tonsTgtR!=='undefined'?tonsTgtR:0);
       const sub=m.fscD?('$'+m.fscD.toFixed(2)+'/ton target'+(fscTgtR?' · rango ('+m.n+'d): '+fK(fscTgtR):'')):'sin target — agrega fsc_per_ton en Targets';
       const fTon=m.totT?(m.totFsc/m.totT):0;
       return kpiCard('Fuel Surcharge',fK(m.totFsc),'co',sub,(fscTgtR?pctS(m.totFsc,fscTgtR)+' · ':'')+(fTon?'$'+fTon.toFixed(2)+'/ton actual':''),(fscTgtR&&m.totFsc>=fscTgtR)?'dn':'db');})(),
+    (function(){const p=m.IPT;if(!p||!p.dd)return ''; // v71: INCOME PER TRUCK — facturado (rate+FSC) ÷ driver-días
+      const tip='Rate $'+fmt(Math.round(p.base))+' + FSC $'+fmt(Math.round(p.f))+' = $'+fmt(Math.round(p.v))+' por truck·día   ·   '+fmt(p.dd)+' driver-días en '+p.days+' días'+(p.excl?' (sin prefill ni día en curso)':' (fechas seleccionadas)')+(p.tgt&&p.tgtFsc?'   ·   Target: bar $'+fmt(Math.round(p.tgtBase))+' + FSC $'+fmt(Math.round(p.tgtFsc))+' = $'+fmt(p.tgt):'');
+      return kpiCard('Income / Truck · Día','$'+fmt(Math.round(p.v)),'cb',
+        (p.tgt?('target: $'+fmt(p.tgt)+(p.tgtFsc?' (incl. FSC)':'')):'sin gross_driver_bar en Targets')+(p.fsc>0?' · rate $'+fmt(Math.round(p.base))+' + FSC $'+fmt(Math.round(p.f)):''),
+        (p.tgt?pctS(p.v,p.tgt)+' · ':'')+(p.excl?'s/prefill ni día en curso':p.days+' día'+(p.days===1?'':'s')+' seleccionado'+(p.days===1?'':'s')),
+        (p.tgt&&p.v>=p.tgt)?'dn':'dw',tip);})(),
     kpiCard('Revenue/Load',fK(m.totL?m.totR/m.totL:0),'cg',
       (function(){const mx=m.RMIX||[];
         if(mx.length>1){ // MIXTO: el rango cruza un cambio de tarifa → mostrar QUÉ se cobró, no el promedio
@@ -1829,7 +1864,8 @@ function bExec(){
   ].join('');
   const hl=[],gp=[];
   if(!m.T.total_loads||m.totL>=m.T.total_loads*(m.isLive?m.CUMPL[m.n-1]/((m.T.total_loads||1)):1)) hl.push(`<li><strong>Loads ${fmt(m.totL)}</strong> — ritmo ${pctS(m.CUMACT[m.n-1],m.CUMPL[m.n-1])} vs plan acumulado.</li>`); else gp.push(`<li><strong>Loads ${pctS(m.CUMACT[m.n-1],m.CUMPL[m.n-1])} vs plan</strong> acumulado a la fecha.</li>`);
-  hl.push(`<li><strong>Revenue ${fK(m.totR)}</strong>${m.totFsc>0?' (incl. FSC '+fK(m.totFsc)+')':''} — $${(m.totL?m.totR/m.totL:0).toFixed(2)}/load vs $${m.T.rev_per_load||m.rpl} diseño.</li>`);
+  hl.push(`<li><strong>Revenue ${fK(m.totR)}</strong>${m.totFsc>0?' (rate '+fK(m.totR-m.totFsc)+' + FSC '+fK(m.totFsc)+')':''} — $${(m.totL?m.totR/m.totL:0).toFixed(2)}/load vs $${m.T.rev_per_load||m.rpl} diseño${m.fscD>0?' base':''}.</li>`);
+  if(m.IPT&&m.IPT.dd&&m.IPT.tgt)(m.IPT.v>=m.IPT.tgt?hl:gp).push(`<li><strong>Income/Truck $${fmt(Math.round(m.IPT.v))}/día vs $${fmt(m.IPT.tgt)} target (${pctS(m.IPT.v,m.IPT.tgt)})</strong> — rate $${fmt(Math.round(m.IPT.base))} + FSC $${fmt(Math.round(m.IPT.f))}${m.IPT.excl?' · sin prefill ni día en curso':''}.</li>`);
   hl.push(`<li><strong>Peak day ${m.L[m.bestI]} loads</strong> (${m.D[m.bestI]}, TR ${m.TR[m.bestI]}) — techo operativo demostrado.</li>`);
   if(m.nptLog<=0)hl.push('<li><strong>Zero NPT logístico</strong> — todos los eventos atribuidos a Frac/externos.</li>');
   if(m.trAll<m.DTR)gp.push(`<li><strong>TR ${m.trAll} vs ${m.DTR} target (${pctS(m.trAll,m.DTR)})</strong> — offload ${m.AVG.dest}m vs ${m.DSN.dest}m diseño es el driver del ciclo.</li>`);
@@ -1890,7 +1926,7 @@ function bDVA(){
   const strip=[
     stripCard('Stages',`${stg}${T.total_stages?'/'+T.total_stages:''}`,T.total_stages&&stg>=T.total_stages?'✓ Stages Complete':(T.total_stages?Math.round(stg/T.total_stages*100)+'% avance':'en curso'),!T.total_stages||stg>=T.total_stages*0.5),
     stripCard('Loads',`${fmt(m.totL)}${T.total_loads?'/'+fmt(T.total_loads):''}`,pctS(m.totL,T.total_loads)+' vs design',!T.total_loads||m.totL>=m.CUMPL[m.n-1]*0.97),
-    stripCard('Revenue',fK(m.totR),(T.total_revenue?pctS(m.totR,T.total_revenue):'estimado')+(m.totFsc>0?' · incl. FSC '+fK(m.totFsc):''),true),
+    stripCard('Revenue',fK(m.totR),(T.total_revenue?pctS(m.totR,(m.fscD>0&&m.totRevDsnF)?m.totRevDsnF:T.total_revenue)+(m.fscD>0?' vs design+FSC':''):'estimado')+(m.totFsc>0?' · rate '+fK(m.totR-m.totFsc)+' + FSC '+fK(m.totFsc):''),true),
     stripCard('Cycle Avg',m.AVG.tot+'m',pctS(m.AVG.tot,m.dCTbuf)+' vs '+m.dCTbuf+'m design buf',m.AVG.tot<=m.dCTbuf),
     stripCard('Logistics NPT',m.nptLog+'h',m.nptLog<=0?'✓ Perfect record':'revisar',m.nptLog<=0)
   ].join('');
@@ -1899,7 +1935,9 @@ function bDVA(){
   if(m.RD.loads)rows.push(dvaRow('Total Loads'+(m.RD.isFull?'':' (rango)'),m.RD.loads,m.totL,v=>fmt(Math.round(v)),false));
   if(m.RD.tons)rows.push(dvaRow('Total Tons'+(m.RD.isFull?'':' (rango)'),m.RD.tons,m.totT,v=>fmt(Math.round(v))+' t',false));
   if(T.duration_days&&!m.isLive)rows.push(dvaRow('Pad Duration',T.duration_days,m.n,v=>Math.round(v)+' days',true));
-  if(m.RD.rev)rows.push(dvaRow('Revenue'+(m.RD.isFull?'':' (rango)'),m.RD.rev,m.totR,v=>'$'+fmt(Math.round(v)),false));
+  if(m.RD.rev)rows.push(dvaRow('Revenue'+(m.fscD>0?' (incl. FSC)':'')+(m.RD.isFull?'':' (rango)'),(m.fscD>0&&m.RD.revF!=null)?m.RD.revF:m.RD.rev,m.totR,v=>'$'+fmt(Math.round(v)),false));
+  if(m.fscD>0&&m.RD.fsc)rows.push(dvaRow('Fuel Surcharge'+(m.RD.isFull?'':' (rango)'),m.RD.fsc,m.totFsc,v=>'$'+fmt(Math.round(v)),false));
+  if(m.IPT&&m.IPT.tgt&&m.IPT.dd)rows.push(dvaRow('Income / Truck · Día',m.IPT.tgt,Math.round(m.IPT.v),v=>'$'+fmt(Math.round(v)),false));
   rows.push(dvaRow('TR '+(m.isLive?'Running':'Avg'),m.DTR,m.trAll,v=>(+v).toFixed(2),false));
   rows.push(dvaRow('TR Peak ('+m.D[m.runIdx.length?m.runIdx.reduce((b,i)=>m.TR[i]>m.TR[b]?i:b,m.runIdx[0]):0]+')',m.DTR,Math.max.apply(null,m.TR),v=>(+v).toFixed(2),false));
   rows.push(dvaRow('Peak Loads/Day',m.dTgt,m.L[m.bestI],v=>fmt(Math.round(v)),false));
@@ -1913,7 +1951,7 @@ function bDVA(){
   /* radar: % vs diseño */
   const norm=(a,d)=>d?Math.min(140,Math.round(a/d*100)):100;
   const radar=[norm(m.runIdx.reduce((s,i)=>s+m.L[i],0)/Math.max(m.runIdx.length,1),m.dTgt),
-    norm(m.totR,m.isLive?m.CUMREVPL[m.n-1]:T.total_revenue||m.CUMREVPL[m.n-1]),norm(m.trAll,m.DTR),
+    norm(m.totR,m.isLive?(m.fscD>0?m.CUMREVPLF:m.CUMREVPL)[m.n-1]:(m.fscD>0&&m.totRevDsnF?m.totRevDsnF:T.total_revenue)||(m.fscD>0?m.CUMREVPLF:m.CUMREVPL)[m.n-1]),norm(m.trAll,m.DTR),
     norm(m.dCTbuf,m.AVG.tot),norm(m.runIdx.reduce((s,i)=>s+m.TD[i],0)/Math.max(m.runIdx.length,1),m.dDrv),
     norm(stg,m.isLive?Math.max(stg,1):(T.total_stages||stg))];
   const half=Math.floor(m.n/2);
@@ -1941,7 +1979,7 @@ function bDVA(){
   mkChart('chHalvesPZ',{type:'bar',data:{labels:['Loads/Day','TR','Rev/Day ($K)'],datasets:[
     {label:`${m.D[0]}–${m.D[half-1]} (H1)`,data:[avg2f(m.L,0,half),+(avg2f(m.TR,0,half)).toFixed(2),+(avg2f(m.H,0,half)/1000).toFixed(1)],backgroundColor:'rgba(106,158,200,.8)',borderRadius:8,borderSkipped:false},
     {label:`${m.D[half]}–${m.D[m.n-1]} (H2)`,data:[avg2f(m.L,half,m.n),+(avg2f(m.TR,half,m.n)).toFixed(2),+(avg2f(m.H,half,m.n)/1000).toFixed(1)],backgroundColor:'rgba(212,149,106,.8)',borderRadius:8,borderSkipped:false},
-    {label:'Design Target',data:[m.dTgt,m.DTR,+(m.dRevDay/1000).toFixed(1)],backgroundColor:'rgba(0,0,0,.07)',borderRadius:8,borderSkipped:false}]},
+    {label:'Design Target',data:[m.dTgt,m.DTR,+((m.fscD>0?m.dRevDayF:m.dRevDay)/1000).toFixed(1)],backgroundColor:'rgba(0,0,0,.07)',borderRadius:8,borderSkipped:false}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},
       tooltip:{callbacks:{title:c=>`${c[0].label} — Half vs Design`,afterBody:it=>{if(it.length<3)return[];const h1=it[0].raw,h2=it[1].raw,des=it[2].raw;return[sep,`H1 vs Design: ${h1>=des?'+':''}${(h1-des).toFixed(1)} (${((h1-des)/des*100).toFixed(0)}%)`,`H2 vs Design: ${h2>=des?'+':''}${(h2-des).toFixed(1)} (${((h2-des)/des*100).toFixed(0)}%)`];}}}},
       scales:{x:{...gO},y:{...gO,min:0}}}});
@@ -1960,7 +1998,7 @@ function bDaily(){
       ${kchip('Avg Loads/Day',avgRun,'loads/day vs '+m.dTgt+' target',avgRun>=m.dTgt?'kg':'')}
       ${kchip('Best Day',m.L[m.bestI],m.D[m.bestI]+' · TR '+m.TR[m.bestI],'kg')}
       ${kchip('Frac Efficiency',(function(){const avg=m.SPD.length?m.SPD.reduce((a,b)=>a+b,0)/m.SPD.length:0;return m.stagesDayD?Math.round(avg/m.stagesDayD*100):0;})()+'%',(function(){const avg=m.SPD.length?+(m.SPD.reduce((a,b)=>a+b,0)/m.SPD.length).toFixed(1):0;return avg+'/'+m.stagesDayD+' etapas/día';})(),(function(){const avg=m.SPD.length?m.SPD.reduce((a,b)=>a+b,0)/m.SPD.length:0;return(m.stagesDayD&&avg>=m.stagesDayD)?'kg':'';})())}
-      ${kchip('Run Revenue',fK(runRev),m.D[m.runIdx[0]||0]+'–'+m.D[m.runIdx[m.runIdx.length-1]||m.n-1]+' running','')}
+      ${(function(){const rf=m.runIdx.reduce((s,i)=>s+(m.FSCR&&m.FSCR[i]||0),0);return kchip('Run Revenue',fK(runRev),(rf>0?'rate '+fK(runRev-rf)+' + FSC '+fK(rf)+' · ':'')+m.D[m.runIdx[0]||0]+'–'+m.D[m.runIdx[m.runIdx.length-1]||m.n-1]+' running','');})()}
       ${kchip('NPT Impact',m.nptTot+'h',m.DTE.length+' events · '+m.nptLog+'h logistics',m.nptTot>0?'kr':'kg')}
     </div>
     <div class="grid g2 mb">
@@ -1990,7 +2028,7 @@ function bDaily(){
     {label:'Target '+m.dDrv+' drivers',data:Array(m.n).fill(m.dDrv),type:'line',borderColor:'rgba(212,149,106,.35)',borderDash:[3,3],pointRadius:0,borderWidth:1,order:0,yAxisID:'y1'}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
       tooltip:{callbacks:{title:c=>`📅 ${m.D[c[0].dataIndex]} — Daily Performance`,label:c=>`${c.dataset.label}: ${c.raw}`,
-        afterBody:it=>{const i=it[0].dataIndex,gap=m.L[i]-m.dTgt;return[sep,`vs Target: ${gap>=0?'+':''}${gap} (${(gap/m.dTgt*100).toFixed(0)}%)`,`TR: ${m.TR[i]} | Loads/Driver: ${(m.L[i]/Math.max(m.TD[i],1)).toFixed(1)}`,`Revenue: ${fK(m.H[i])} | Tons: ${fmt(Math.round(m.TN[i]))}t`];}}}},
+        afterBody:it=>{const i=it[0].dataIndex,gap=m.L[i]-m.dTgt;const out=[sep,`vs Target: ${gap>=0?'+':''}${gap} (${(gap/m.dTgt*100).toFixed(0)}%)`,`TR: ${m.TR[i]} | Loads/Driver: ${(m.L[i]/Math.max(m.TD[i],1)).toFixed(1)}`,`Revenue: ${fK(m.H[i])} | Tons: ${fmt(Math.round(m.TN[i]))}t`];if(m.FSCR&&m.FSCR[i]>0)out.push(`Rate: ${fK(m.H[i]-m.FSCR[i])}  ·  FSC: ${fK(m.FSCR[i])}`);return out;}}}},
       scales:{x:{...gO,ticks:tO},y:{...gO,beginAtZero:true,position:'left',title:{display:true,text:'Loads',font:{size:8}}},
         y1:{...gO,beginAtZero:true,position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Drivers',font:{size:8}},suggestedMax:Math.max(30,m.dDrv+8)}}}});
   mkChart('chDailyTR',{type:'bar',data:{labels:m.D,datasets:[
@@ -2038,7 +2076,7 @@ function dailyRow(i){
     <td style="padding:9px 12px;font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-weight:700;font-size:13px;color:#1c3d54;text-align:right">${ld}</td>
     <td style="padding:9px 12px;font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:10.5px;color:#64748b;text-align:right">${fmt(m.AN[i])}</td>
     <td style="padding:9px 12px;font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:10.5px;color:#475569;text-align:right">${fmt(Math.round(m.TN[i]))}t</td>
-    <td style="padding:9px 12px;font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:11px;color:#1c3d54;font-weight:600;text-align:right">$${fmt(m.H[i])}</td>
+    <td style="padding:9px 12px;font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:11px;color:#1c3d54;font-weight:600;text-align:right"${m.FSCR&&m.FSCR[i]>0?' title="rate $'+fmt(m.H[i]-m.FSCR[i])+' + FSC $'+fmt(m.FSCR[i])+'"':''}>$${fmt(m.H[i])}${m.FSCR&&m.FSCR[i]>0?'<span style="font-size:7.5px;color:#b8a37e"> +F</span>':''}</td>
     <td style="padding:9px 12px;font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:10.5px;color:#475569;text-align:right">${m.TD[i]}</td>
     <td style="padding:9px 12px;text-align:center"><span style="background:${trBg};color:${trCl};border:1.5px solid ${trCl}33;padding:3px 9px;border-radius:8px;font-size:10px;font-weight:700;font-family:'DM Sans',sans-serif;font-variant-numeric:tabular-nums">${tr}</span></td>
     <td style="padding:9px 12px;text-align:center">${vB}</td>
@@ -2050,17 +2088,34 @@ function bFin(){
   const m=M,T=m.T;
   const revDay=Math.round(m.totR/Math.max(m.n,1));
   const dRevDayAll=T.total_revenue&&T.duration_days?Math.round(T.total_revenue/T.duration_days):m.dRevDay;
+  /* v71: design facturable (base + FSC target) con desglose en hover */
+  const hasF=m.fscD>0||m.totFsc>0;
+  const dsnF=(m.fscD>0&&m.RD.revF!=null)?m.RD.revF:m.RD.rev;             // design del rango incl. FSC
+  const dsnTotF=(m.fscD>0&&m.totRevDsnF)?m.totRevDsnF:(+T.total_revenue||0); // design total incl. FSC
+  const dRevDayAllF=(m.fscD>0&&T.total_revenue&&T.duration_days)?Math.round(dsnTotF/T.duration_days):(m.fscD>0?m.dRevDayF:dRevDayAll);
+  const _tipAct=hasF?('Actual: rate $'+fmt(m.totR-m.totFsc)+' + FSC $'+fmt(m.totFsc)+' = $'+fmt(m.totR)):'';
+  const _tipDsn=(m.fscD>0&&dsnF!=null)?('Design: rate $'+fmt(Math.round(m.RD.rev||0))+' + FSC $'+fmt(m.RD.fsc||0)+' = $'+fmt(Math.round(dsnF))):'';
+  const p=m.IPT||{dd:0};
   $('pz-cl-fin').innerHTML=`
-    <div class="st">💰 Financial ${m.RD.isFull?(m.isLive?'Running':'Closure'):'· Rango '+m.n+'d'} — ${fK(m.totR)} Actual${m.RD.rev?' vs '+fK(m.RD.rev)+(m.RD.isFull?' Design (':' Design prorrateado (')+pctS(m.totR,m.RD.rev)+')':''}</div>
+    <div class="st" ${hasF?'title="'+(_tipAct+(_tipDsn?'   ·   '+_tipDsn:''))+'"':''}>💰 Financial ${m.RD.isFull?(m.isLive?'Running':'Closure'):'· Rango '+m.n+'d'} — ${fK(m.totR)} Actual${m.totFsc>0?' <span style="font-size:10px;font-weight:600;color:#9a6b1f">(rate '+fK(m.totR-m.totFsc)+' + FSC '+fK(m.totFsc)+')</span>':''}${dsnF?' vs '+fK(dsnF)+(m.RD.isFull?' Design':' Design prorrateado')+(m.fscD>0?' incl. FSC':'')+' ('+pctS(m.totR,dsnF)+')':''}</div>
     <div class="grid g4 mb">
-      ${kpiCard(m.RD.isFull?'Design Revenue':'Design del Rango',m.RD.rev?fK(m.RD.rev):'—','cp',m.RD.isFull?(T.total_loads?fmt(T.total_loads)+' loads · $'+(T.rev_per_load||m.rpl)+'/load design rate':''):(fK(+T.daily_running_rev||((+T.total_revenue||0)/(+T.duration_days||30)))+'/día × '+m.n+' días'),'','')}
-      ${kpiCard('Actual Revenue',fK(m.totR),'co',T.total_revenue?pctS(m.totR,T.total_revenue)+' vs design':'linehaul estimado',m.totR>=(T.total_revenue||0)*(m.isLive?0:1)?'Above design':'','du')}
-      ${kpiCard('Actual Revenue/Day',fK(revDay),'ca','Design: '+fK(dRevDayAll)+'/day ('+pctS(revDay,dRevDayAll)+')','','')}
+      ${kpiCard(m.RD.isFull?'Design Revenue':'Design del Rango',dsnF?fK(dsnF):'—','cp',(m.RD.isFull?(T.total_loads?fmt(T.total_loads)+' loads · $'+(T.rev_per_load||m.rpl)+'/load design rate':''):(fK(m.fscD>0?m.dRevDayF:(+T.daily_running_rev||((+T.total_revenue||0)/(+T.duration_days||30))))+'/día × '+m.n+' días'))+(m.fscD>0?' · base '+fK(Math.round(m.RD.rev||0))+' + FSC '+fK(m.RD.fsc||0):''),m.fscD>0?'incl. FSC target':'','db',_tipDsn)}
+      ${kpiCard('Actual Revenue',fK(m.totR),'co',(dsnTotF?pctS(m.totR,dsnTotF)+' vs design'+(m.fscD>0?' (incl. FSC)':''):'linehaul estimado')+(m.totFsc>0?' · base '+fK(m.totR-m.totFsc)+' + FSC '+fK(m.totFsc):''),m.totR>=(dsnTotF||0)*(m.isLive?0:1)?'Above design':'','du',_tipAct)}
+      ${kpiCard('Actual Revenue/Day',fK(revDay),'ca','Design: '+fK(dRevDayAllF)+'/day ('+pctS(revDay,dRevDayAllF)+')'+(m.totFsc>0?' · FSC '+fK(Math.round(m.totFsc/Math.max(m.n,1)))+'/day':''),'','',hasF?('Actual/día: rate $'+fmt(Math.round((m.totR-m.totFsc)/Math.max(m.n,1)))+' + FSC $'+fmt(Math.round(m.totFsc/Math.max(m.n,1)))+' = $'+fmt(revDay)):'')}
       ${kpiCard('Assets — Moves',m.AST.moves,'cb',fK(m.AST.rev)+' · contabilizado aparte',m.AST.moves?'equipo on request':'sin movimientos en rango','db')}
     </div>
+    ${p.dd?`
+    <div class="st" style="font-size:12px;margin-top:4px" title="Revenue facturado (rate + FSC) ÷ driver-días. ${p.excl?'Rango Todos: excluye prefill y el día en curso (parcial).':'Fechas seleccionadas: se calculan tal cual.'}">🚚 Daily Income per Truck — $${fmt(Math.round(p.v))}/truck·día${p.tgt?' vs $'+fmt(p.tgt)+' target ('+pctS(p.v,p.tgt)+')':''}</div>
+    <div class="grid g4 mb">
+      ${kpiCard('Income / Truck · Día','$'+fmt(Math.round(p.v)),'cb',(p.fsc>0?'rate $'+fmt(Math.round(p.base))+' + FSC $'+fmt(Math.round(p.f)):'sin FSC en el rango')+' · '+fmt(p.dd)+' driver-días',p.excl?'s/prefill ni día en curso':p.days+' día'+(p.days===1?'':'s')+' del filtro',(p.tgt&&p.v>=p.tgt)?'dn':'db','Rate $'+fmt(Math.round(p.base))+' + FSC $'+fmt(Math.round(p.f))+' = $'+fmt(Math.round(p.v))+'/truck·día')}
+      ${kpiCard('Target / Truck · Día',p.tgt?'$'+fmt(p.tgt):'—','cp',p.tgt?('gross bar $'+fmt(Math.round(p.tgtBase))+(p.tgtFsc?' + FSC design $'+fmt(Math.round(p.tgtFsc)):'')):'agrega gross_driver_bar en Targets','',p.tgt?'db':'dw',p.tgt?('Gross driver bar $'+fmt(Math.round(p.tgtBase))+(p.tgtFsc?' + FSC design $'+fmt(Math.round(p.tgtFsc))+' ('+m.fscD.toFixed(2)+'/ton × tons/día ÷ drivers)':'')+' = $'+fmt(p.tgt)):'')}
+      ${kpiCard('Cumplimiento',p.tgt?Math.round(p.v/p.tgt*100)+'%':'—',p.tgt?(p.v>=p.tgt?'cg':p.v>=p.tgt*0.9?'co':'cr'):'cb',p.tgt?pctS(p.v,p.tgt)+' vs target':'—','',(p.tgt&&p.v>=p.tgt)?'dn':'dw')}
+      ${kpiCard('Base del Cálculo',fmt(p.dd)+' d-días','ca',fK(p.rev)+' facturado ÷ driver-días'+(p.fsc>0?' · FSC '+fK(p.fsc):''),p.excl?'excluye prefill + día en curso':'fechas exactas del filtro','db')}
+    </div>
+    <div class="card mb"><div class="card-t">Income per Truck por Día${p.tgt?' vs Target $'+fmt(p.tgt):''} — hover: desglose rate + FSC</div><div class="ch"><canvas id="chIPT"></canvas></div></div>`:''}
     <div class="grid g2 mb">
-      <div class="card"><div class="card-t">Design vs Actual Revenue</div><div class="ch ch-s"><canvas id="chFinComp"></canvas></div></div>
-      <div class="card"><div class="card-t">Daily Revenue vs Design (${fK(m.dRevDay)}/day)</div><div class="ch"><canvas id="chFinDaily"></canvas></div></div>
+      <div class="card"><div class="card-t">Design vs Actual Revenue${m.fscD>0?' (incl. FSC)':''}</div><div class="ch ch-s"><canvas id="chFinComp"></canvas></div></div>
+      <div class="card"><div class="card-t">Daily Revenue vs Design (${fK(m.fscD>0?m.dRevDayF:m.dRevDay)}/day${m.fscD>0?' incl. FSC':''})</div><div class="ch"><canvas id="chFinDaily"></canvas></div></div>
     </div>
     <div class="card mb"><div class="card-t">Cumulative Revenue: Actual vs Design Projection</div><div class="ch"><canvas id="chFinCum"></canvas></div></div>
     <div class="grid g2 mb">
@@ -2076,27 +2131,57 @@ function bFin(){
     <div class="ins ins-g"><h3><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#58a05f"/><path d="M8 12.5l2.6 2.6L16 9.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Revenue — ${fK(m.totR)}${T.total_revenue?' vs '+fK(T.total_revenue)+' design':''}</h3><ul>
       <li><strong>Revenue/Load $${(m.totL?m.totR/m.totL:0).toFixed(2)}</strong>${T.rev_per_load?' vs $'+T.rev_per_load+' design ('+pctS(m.totL?m.totR/m.totL:0,T.rev_per_load)+')':''}.</li>
       <li>Mix por terminal: ${m.SRC.map(s=>`${s.t} ${s.aPct}%${s.rev?' → '+fK(s.rev):''}`).join(' · ')}.</li>
-      <li>Ritmo actual ${fK(revDay)}/día vs ${fK(dRevDayAll)} plan (${pctS(revDay,dRevDayAll)}).</li>
+      <li>Ritmo actual ${fK(revDay)}/día vs ${fK(dRevDayAllF)} plan (${pctS(revDay,dRevDayAllF)}).</li>
+      ${m.totFsc>0?`<li><strong>FSC ${fK(m.totFsc)}</strong> dentro del revenue (rate ${fK(m.totR-m.totFsc)} + FSC)${m.fscRD?' vs '+fK(m.fscRD)+' FSC design del rango ('+pctS(m.totFsc,m.fscRD)+')':''}.</li>`:(m.fscD>0?'<li>Sin FSC facturado aún en el rango (target $'+m.fscD.toFixed(2)+'/ton).</li>':'')}
+      ${p.dd&&p.tgt?`<li><strong>Income/Truck $${fmt(Math.round(p.v))}/día vs $${fmt(p.tgt)} target (${pctS(p.v,p.tgt)})</strong> — rate $${fmt(Math.round(p.base))} + FSC $${fmt(Math.round(p.f))}.</li>`:''}
       ${m.AST.moves?`<li><strong>Assets: ${m.AST.moves} movimientos · ${fK(m.AST.rev)}</strong> — contabilizados aparte; no suman a loads, TR ni revenue de arena.</li>`:''}</ul></div>`;
-  mkChart('chFinComp',{type:'bar',data:{labels:['Design','Actual'],datasets:[{label:'Revenue',data:[+m.T.total_revenue||0,m.totR],
+  mkChart('chFinComp',{type:'bar',data:{labels:['Design','Actual'],datasets:[{label:'Revenue',data:[dsnTotF||(+m.T.total_revenue||0),m.totR],
     backgroundColor:['rgba(106,158,200,.75)','rgba(106,184,154,.85)'],borderRadius:12,borderSkipped:false,hoverBackgroundColor:['rgba(106,158,200,.95)','rgba(106,184,154,.95)']}]},
-    options:{plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`${c[0].label} Revenue`,label:c=>fK(c.raw),
-      afterBody:it=>it[0].label==='Actual'?[sep,`vs Design: ${pctS(m.totR,m.T.total_revenue)}`,`Rev/Load: $${(m.totL?m.totR/m.totL:0).toFixed(2)}`]:[sep,`${fmt(m.T.total_loads||0)} loads · $${m.T.rev_per_load||m.rpl}/load`]}}},
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`${c[0].label} Revenue${m.fscD>0?' (incl. FSC)':''}`,label:c=>fK(c.raw),
+      afterBody:it=>it[0].label==='Actual'
+        ?[sep].concat(m.totFsc>0?[`Rate: ${fK(m.totR-m.totFsc)}  ·  FSC: ${fK(m.totFsc)}`]:[]).concat([`vs Design: ${pctS(m.totR,dsnTotF||m.T.total_revenue)}`,`Rev/Load: $${(m.totL?m.totR/m.totL:0).toFixed(2)}`])
+        :[sep].concat(m.fscD>0?[`Rate: ${fK(+m.T.total_revenue||0)}  ·  FSC design: ${fK(m.fscDsnTot)}`]:[]).concat([`${fmt(m.T.total_loads||0)} loads · $${m.T.rev_per_load||m.rpl}/load${m.fscD>0?' + $'+m.fscD.toFixed(2)+'/ton FSC':''}`])}}},
       scales:{x:{...gO,grid:{display:false}},y:{...gO,ticks:{callback:v=>fK(v)}}}}});
   mkChart('chFinDaily',{type:'bar',data:{labels:m.D,datasets:[
     {label:'Daily Revenue',data:m.H,backgroundColor:m.H.map((v,i)=>phBarColor(v,i,m.dRevDay)),borderRadius:4,borderSkipped:false},
-    {label:'Design '+fK(m.dRevDay)+'/day',data:tgtLine(m.dRevDay),type:'line',borderColor:'rgba(212,114,114,.65)',borderDash:[6,3],pointRadius:0,borderWidth:2}]},
+    {label:'Design '+fK(m.fscD>0?m.dRevDayF:m.dRevDay)+'/day'+(m.fscD>0?' incl. FSC':''),data:tgtLine(m.fscD>0?m.dRevDayF:m.dRevDay),type:'line',borderColor:'rgba(212,114,114,.65)',borderDash:[6,3],pointRadius:0,borderWidth:2}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
       tooltip:{callbacks:{title:c=>`📅 ${m.D[c[0].dataIndex]} — Revenue`,label:c=>`${c.dataset.label}: ${fK(c.raw)}`,
-        afterBody:it=>{const i=it[0].dataIndex,gap=m.H[i]-m.dRevDay;return[sep,`vs Design: ${gap>=0?'+':'-'}${fK(Math.abs(gap))} (${(gap/m.dRevDay*100).toFixed(0)}%)`,`Loads: ${m.L[i]} | Rev/Load: ${fK(m.H[i]/Math.max(m.L[i],1))}`,`Tons: ${fmt(Math.round(m.TN[i]))}t | Rev/Ton: $${(m.H[i]/Math.max(m.TN[i],1)).toFixed(2)}`];}}}},
+        afterBody:it=>{const i=it[0].dataIndex,_dsn=m.fscD>0?m.dRevDayF:m.dRevDay,gap=m.H[i]-_dsn;
+          const out=[sep];
+          if(m.FSCR&&m.FSCR[i]>0)out.push(`Rate: ${fK(m.H[i]-m.FSCR[i])}  ·  FSC: ${fK(m.FSCR[i])}`);
+          out.push(`vs Design: ${gap>=0?'+':'-'}${fK(Math.abs(gap))} (${(gap/_dsn*100).toFixed(0)}%)`,`Loads: ${m.L[i]} | Rev/Load: ${fK(m.H[i]/Math.max(m.L[i],1))}`,`Tons: ${fmt(Math.round(m.TN[i]))}t | Rev/Ton: $${(m.H[i]/Math.max(m.TN[i],1)).toFixed(2)}`);
+          return out;}}}},
       scales:{x:{...gO,ticks:tO},y:{...gO,ticks:{callback:v=>fK(v)}}}}});
   mkChart('chFinCum',{type:'line',data:{labels:m.D,datasets:[
     {label:'Actual Revenue',data:m.CUMREV,borderColor:PZ.A,backgroundColor:mkGrad('chFinCum','rgba(212,149,106,.15)','rgba(212,149,106,.01)',260),fill:true,tension:.4,pointRadius:3,pointHoverRadius:8,pointBackgroundColor:PZ.A,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5},
-    {label:'Design Projection',data:m.CUMREVPL,borderColor:PZ.G,borderDash:[6,3],pointRadius:2,pointHoverRadius:6,borderWidth:1.5,pointBackgroundColor:PZ.G}]},
+    {label:'Design Projection'+(m.fscD>0?' (incl. FSC)':''),data:m.fscD>0?m.CUMREVPLF:m.CUMREVPL,borderColor:PZ.G,borderDash:[6,3],pointRadius:2,pointHoverRadius:6,borderWidth:1.5,pointBackgroundColor:PZ.G}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
       tooltip:{callbacks:{title:c=>`📅 ${m.D[c[0].dataIndex]} — Cumulative Revenue`,label:c=>`${c.dataset.label}: ${fK(c.raw)}`,
-        afterBody:it=>{const i=it[0].dataIndex,gap=m.CUMREV[i]-m.CUMREVPL[i];return[sep,`Gap vs Plan: ${gap>=0?'+':'-'}${fK(Math.abs(gap))}`,m.T.total_revenue?`Completion: ${(m.CUMREV[i]/m.T.total_revenue*100).toFixed(1)}% of design`:''].filter(Boolean);}}}},
+        afterBody:it=>{const i=it[0].dataIndex,_pl=m.fscD>0?m.CUMREVPLF:m.CUMREVPL,gap=m.CUMREV[i]-_pl[i];
+          const out=[sep];
+          if(m.CUMFSC&&m.CUMFSC[i]>0)out.push(`Actual: rate ${fK(m.CUMREV[i]-m.CUMFSC[i])} + FSC ${fK(m.CUMFSC[i])}`);
+          if(m.fscD>0)out.push(`Design: rate ${fK(m.CUMREVPL[i])} + FSC ${fK(m.CUMREVPLF[i]-m.CUMREVPL[i])}`);
+          out.push(`Gap vs Plan: ${gap>=0?'+':'-'}${fK(Math.abs(gap))}`);
+          const _dt=m.fscD>0?m.totRevDsnF:(+m.T.total_revenue||0);
+          if(_dt)out.push(`Completion: ${(m.CUMREV[i]/_dt*100).toFixed(1)}% of design${m.fscD>0?' (incl. FSC)':''}`);
+          return out.filter(Boolean);}}}},
       scales:{x:{...gO,ticks:tO},y:{...gO,ticks:{callback:v=>fK(v)}}}}});
+  if(p.dd&&$('chIPT')){
+    const _tgtL=p.tgt?m.PH.map(ph=>ph==='pre'?null:p.tgt):null; // target solo fuera de prefill
+    mkChart('chIPT',{type:'bar',data:{labels:m.D,datasets:[
+      {label:'Income/Truck',data:m.IPT_D,backgroundColor:m.IPT_D.map((v,i)=>v==null?'rgba(203,213,225,.35)':(m.PH[i]==='pre'?'rgba(203,213,225,.6)':(p.tgt&&v>=p.tgt?'rgba(106,184,154,.85)':p.tgt&&v>=p.tgt*0.9?'rgba(106,158,200,.8)':p.tgt?'rgba(212,149,106,.8)':'rgba(106,158,200,.8)'))),borderRadius:4,borderSkipped:false}
+      ].concat(_tgtL?[{label:'Target $'+fmt(p.tgt)+(p.tgtFsc?' (incl. FSC)':''),data:_tgtL,type:'line',borderColor:'rgba(212,114,114,.65)',borderDash:[6,3],pointRadius:0,borderWidth:2,spanGaps:true}]:[])},
+      options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
+        tooltip:{callbacks:{title:c=>`📅 ${m.D[c[0].dataIndex]} — Income per Truck`,label:c=>c.raw==null?null:`${c.dataset.label}: $${fmt(Math.round(c.raw))}`,
+          afterBody:it=>{const i=it[0].dataIndex;if(m.IPT_D[i]==null)return['Sin drivers reportados'];
+            const out=[sep,`Rate: $${fmt(Math.round(m.IPT_D[i]-(m.IPT_F[i]||0)))}  ·  FSC: $${fmt(m.IPT_F[i]||0)}`,`Drivers: ${m.TD[i]} · Revenue día: ${fK(m.H[i])}`];
+            if(p.tgt&&m.PH[i]!=='pre'){const g2=m.IPT_D[i]-p.tgt;out.push(`vs Target: ${g2>=0?'+':'-'}$${fmt(Math.abs(Math.round(g2)))} (${(g2/p.tgt*100).toFixed(0)}%)`);}
+            if(m.PH[i]==='pre')out.push('Prefill — fuera del cálculo del rango Todos');
+            if(m.isLive&&i===m.n-1)out.push('Día en curso — fuera del cálculo del rango Todos');
+            return out;}}}},
+        scales:{x:{...gO,ticks:tO},y:{...gO,ticks:{callback:v=>'$'+fmt(v)}}}}});
+  }
   mkChart('chAstComp',{type:'bar',data:{labels:['Arena (loads)','Assets (equipo)'],datasets:[{label:'Revenue',data:[m.totR,m.AST.rev],
     backgroundColor:['rgba(58,124,165,.8)','rgba(212,149,106,.85)'],borderRadius:12,borderSkipped:false}]},
     options:{plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`${c[0].label}`,label:c=>fK(c.raw),
@@ -2549,6 +2634,7 @@ window.buildGrid=function(){
     const srOk=!search||d[0].toLowerCase().includes(search)||d[1].toLowerCase().includes(search);
     return bandOk&&carrOk&&srOk;});
   const ARVL=m.totL?m.totR/m.totL:m.rpl;
+  const ARVF=(m.totL&&m.totFsc)?m.totFsc/m.totL:0; // $/load de FSC promedio del rango (para desglose estimado)
   const sF={score:(a,b)=>gSD*(dSc(b)-dSc(a)),loads:(a,b)=>gSD*(b[2]-a[2]),tr:(a,b)=>gSD*(b[4]-a[4]),rev:(a,b)=>gSD*(b[2]-a[2]),days:(a,b)=>gSD*(b[3]-a[3]),name:(a,b)=>gSD*a[0].localeCompare(b[0])};
   rows.sort(sF[gSK]||sF.score);
   const si=c=>gSK===c?(gSD<0?' ↓':' ↑'):'<span style="color:#e2e8f0"> ⇵</span>';
@@ -2565,25 +2651,29 @@ window.buildGrid=function(){
   const medals=['🥇 ','🥈 ','🥉 '];
   $('perfBody').innerHTML=rows.map((d,i)=>{
     const[name,carrier,tot,days,tr]=d;const daily=d.slice(5);
-    const sc=dSc(d),band=dBd(tr),rv=Math.round(tot*ARVL),revd=Math.round(rv/Math.max(days,1));
+    const sc=dSc(d),band=dBd(tr);
+    const exact=m.RD.isFull&&d._rev>0;                       // GAS v9.1 + rango Todos → facturado exacto
+    const rv=exact?Math.round(d._rev):Math.round(tot*ARVL);
+    const rvF=exact?Math.round(d._fsc||0):Math.round(tot*ARVF);
+    const rvB=rv-rvF,revd=Math.round(rv/Math.max(days,1));
     const pct=totF>0?(tot/totF*100).toFixed(0):0;
     const trBg=tr>=m.DTR?'#dcfce7':tr>=m.DTR*0.85?'#dbeafe':'#fee2e2';
     const trCl=tr>=m.DTR?'#166534':tr>=m.DTR*0.85?'#1e40af':'#991b1b';
     const medal=i<3&&gF==='all'&&gC==='all'&&!search?medals[i]:'';
-    const dayCells=daily.map((v,idx)=>{const tip=`${m.D[idx]}: ${v} loads · ${fR(v*ARVL)}`;
+    const dayCells=daily.map((v,idx)=>{const tip=`${m.D[idx]}: ${v} loads · ${fR(v*ARVL)}`+(ARVF>0?` (rate ${fR(v*(ARVL-ARVF))} + FSC ${fR(v*ARVF)})`:'');
       return `<td class="dcell ${v>0?cCls(v):'c0'} ph-${m.PH[idx]}" style="${idx===m.f?'border-left:2px solid rgba(58,124,165,.3)':''}" title="${tip}">${v>0?(gV==='loads'?v:'$'+(v*ARVL/1000).toFixed(1)+'K'):''}</td>`;}).join('');
     const vsDes=((tr-m.DTR)/m.DTR*100).toFixed(0);
     const bW=Math.min(sc,120),bC=sc>=90?'#6ab89a':sc>=70?'#6a9ec8':sc>=50?'#d4a05a':'#d47272';
     const rightCol=gV==='rev'
-      ?`<td style="text-align:right;padding-right:12px"><div style="font-weight:700;color:#1c3d54">${fR(rv)}</div><div style="font-size:8.5px;color:#94a3b8">${fR(revd)}/day · ${pct}%</div></td>`
+      ?`<td style="text-align:right;padding-right:12px" title="rate $${fmt(rvB)} + FSC $${fmt(rvF)} = $${fmt(rv)}${exact?'':' (estimado del rango)'}"><div style="font-weight:700;color:#1c3d54">${fR(rv)}</div><div style="font-size:8.5px;color:#94a3b8">${fR(revd)}/day · ${pct}%${rvF>0?'<br>rate '+fR(rvB)+' + FSC '+fR(rvF)+(exact?'':' ≈'):''}</div></td>`
       :`<td style="text-align:right;padding-right:12px"><div style="display:flex;align-items:center;justify-content:flex-end;gap:5px"><div class="sbar"><div class="sfill" style="width:${bW}%;background:${bC}"></div></div><span style="font-weight:700;font-size:12px;color:#1c3d54;min-width:26px;text-align:right">${sc}</span></div><div style="font-size:8px;color:${tr>=m.DTR?'#16a34a':'#dc2626'};text-align:right;margin-top:1px">TR ${(+vsDes>=0?'+':'')+vsDes}% design</div></td>`;
     const status=band==='star'?'<span class="bs-star">★ Star</span>':band==='good'?'<span class="bs-good">✓ Good</span>':'<span class="bs-rev">⚠ Review</span>';
     const rowBg=band==='star'?'rgba(240,253,244,.5)':band==='review'?'rgba(254,242,242,.4)':'';
-    return `<tr style="background:${rowBg};cursor:pointer" onclick='rowExpand(this,${JSON.stringify({n:name,ca:carrier,tr,days,rev:rv,revd,dl:daily}).replace(/'/g,"&#39;")})'>
+    return `<tr style="background:${rowBg};cursor:pointer" onclick='rowExpand(this,${JSON.stringify({n:name,ca:carrier,tr,days,rev:rv,revd,rvB,rvF,ex:exact?1:0,dl:daily}).replace(/'/g,"&#39;")})'>
       <td style="text-align:center;color:#94a3b8;font-size:9px;font-weight:600">${i+1}</td>
       <td style="font-weight:700;color:#1e293b;white-space:nowrap">${medal}${name}</td>
       <td style="color:#64748b;font-size:10px;font-weight:600">${carrier}</td>
-      <td style="text-align:right;font-weight:700;font-size:12px;color:#1c3d54">${gV==='rev'?fR(rv):tot}</td>
+      <td style="text-align:right;font-weight:700;font-size:12px;color:#1c3d54"${rvF>0?' title="rate $'+fmt(rvB)+' + FSC $'+fmt(rvF)+(exact?'':' (estimado del rango)')+'"':''}>${gV==='rev'?fR(rv):tot}</td>
       <td style="text-align:right;color:#64748b">${days}</td>
       <td style="text-align:right"><span style="background:${trBg};color:${trCl};padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700">${tr}</span></td>
       ${dayCells}${rightCol}<td style="text-align:center">${status}</td></tr>`;}).join('');
@@ -2611,7 +2701,8 @@ window.rowExpand=function(tr,data){
       <span style="font-weight:700;font-size:10px;color:#1e293b">${data.n}</span>
       <span style="font-size:8.5px;background:#f1f5f9;color:#475569;padding:2px 8px;border-radius:6px;font-weight:600">${data.ca} · ${data.days}d</span>
       <span style="font-size:8.5px;background:${trBg};color:${trCl};padding:2px 8px;border-radius:6px;font-weight:700">TR ${data.tr} (${(gap>=0?'+':'')+gap}% design)</span>
-      <span style="font-size:8.5px;background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:6px;font-weight:600">Rev $${Math.round(data.rev).toLocaleString('en-US')}</span>
+      <span style="font-size:8.5px;background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:6px;font-weight:600" title="${data.rvF>0?('rate $'+Math.round(data.rvB).toLocaleString('en-US')+' + FSC $'+Math.round(data.rvF).toLocaleString('en-US')+(data.ex?'':' (estimado)')):''}">Rev $${Math.round(data.rev).toLocaleString('en-US')}</span>
+      ${data.rvF>0?`<span style="font-size:8.5px;background:#fef9ee;color:#9a6b1f;padding:2px 8px;border-radius:6px;font-weight:600">rate $${Math.round(data.rvB).toLocaleString('en-US')} + FSC $${Math.round(data.rvF).toLocaleString('en-US')}${data.ex?'':' ≈'}</span>`:''}
       <span style="font-size:8.5px;background:#f8fafc;color:#475569;padding:2px 8px;border-radius:6px">$${Math.round(data.revd).toLocaleString('en-US')}/day</span>
       <span style="font-size:8px;color:#94a3b8;margin-left:auto">▼ click again to collapse</span></div></td>
     <td colspan="${daily.length+2}" style="padding:6px 4px 6px 0;border-top:1.5px dashed #bfdbfe;vertical-align:middle"><table style="border-collapse:collapse;width:100%"><tr>${bars}</tr></table></td>`;
