@@ -163,6 +163,22 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fc-grp{font:800 9.5px/1 'Plus Jakarta Sans';letter-spacing:.12em;color:#5d6b7a;text-transform:uppercase;margin:4px 0 8px;display:flex;align-items:center;gap:7px}
 .fc-grp::after{content:'';flex:1;height:1px;background:#e8edf2}
 #fc-sync.busy .ico{animation:rspin .9s linear infinite}
+.fc-gwrap{display:grid;grid-template-columns:270px 1fr;gap:14px;align-items:stretch}
+@media(max-width:860px){.fc-gwrap{grid-template-columns:1fr}}
+.fc-gauge{background:#fff;border:1px solid var(--border);border-radius:16px;padding:16px 14px 12px;display:flex;flex-direction:column;align-items:center;box-shadow:var(--sh-card)}
+.fc-gpct{font:800 30px/1 'Plus Jakarta Sans';letter-spacing:-.02em;color:#12263A;font-variant-numeric:tabular-nums}
+.fc-gsub{font:700 9px/1.3 'Plus Jakarta Sans';letter-spacing:.1em;color:#8a97a6;text-transform:uppercase;margin:4px 0 10px;text-align:center}
+.fc-gsvg{filter:drop-shadow(0 6px 14px rgba(18,38,58,.10))}
+.fc-gfill{transition:y .7s cubic-bezier(.3,.8,.3,1),height .7s cubic-bezier(.3,.8,.3,1)}
+.fc-gauge.g-ok .fc-gsvg{filter:drop-shadow(0 0 14px rgba(76,168,130,.35))}
+.fc-gauge.g-mid .fc-gsvg{filter:drop-shadow(0 0 14px rgba(224,166,62,.35))}
+.fc-gauge.g-bad .fc-gsvg{filter:drop-shadow(0 0 16px rgba(212,114,114,.45))}
+.fc-gauge.g-bad .fc-gpct{color:#c24545}
+.fc-gchips{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin-top:10px}
+.fc-gc{font:700 9.5px/1 'Plus Jakarta Sans';padding:6px 10px;border-radius:999px;background:#f1f5f9;color:#475569}
+.fc-gc.on{background:#E7F3EC;color:#2F7A45}.fc-gc.bad{background:#fdecec;color:#b23b3b}
+@keyframes grainUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.fc-gsvg .grain{animation:grainUp .6s ease backwards}
 .fck .v{font-size:21px}
 .fck.bad{background:#fdf2f2;border-color:#f3c9c9}
 .fck.bad .v{color:#c24545}
@@ -1055,7 +1071,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-11.78';
+const VBUILD='2026-10-11.79';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3710,35 +3726,58 @@ function stsPresetInit(S){const lD=keyDate(S.latest);SF.d0=keyDate(keyShift(S.la
    · burn = stages/día × tons/stage (prefill del ritmo real reciente)
    Todo editable; la simulación corre 100% en el navegador.
    ════════════════════════════════════════════════════════════ */
-let FC={id:null};
+let FC={id:null,hz:48};
 function _fcN(v,d){v=parseFloat(v);return isFinite(v)?v:d;}
+/* ── Reglas por cliente ──
+   BELLYDUMP: equipment con 'belly' o cliente BAYSWATER/BW (regla operativa).
+   TURNOS: hora local de cambio por cliente; el nivel nuevo ENTRA +1 h (ramp). */
+const FC_SHIFTS={BAYSWATER:[6,18],BW:[6,18],FASKEN:[0,12]};
+function fcIsBelly(reg){return /belly/i.test(String(reg&&reg.equipment||''))
+  ||/^(BW\b|BAYSWATER)/i.test(String(reg&&reg.customer||''))
+  ||/BAYSWATER/i.test(String(reg&&reg.name||''));}
+function fcShiftHours(reg){const s=(String(reg&&reg.customer||'')+' '+String(reg&&reg.name||'')).toUpperCase();
+  if(/FASKEN/.test(s))return FC_SHIFTS.FASKEN;
+  if(/BAYSWATER|\bBW\b/.test(s))return FC_SHIFTS.BAYSWATER;
+  return [6,18];}
+/* próximos cambios de turno (horas desde ahora, ya con +rampH) dentro del horizonte */
+function fcShiftTimes(pair,H,rampH){const n=new Date();const cur=n.getHours()+n.getMinutes()/60;
+  const hs=pair.slice().sort((a,b)=>a-b);const out=[];
+  for(let d=0;d<Math.ceil(H/24)+2&&out.length<8;d++)
+    for(const sh of hs){const t=sh+d*24-cur+(rampH==null?1:rampH);
+      if(t>0&&t<=H)out.push(+t.toFixed(2));}
+  return out.sort((a,b)=>a-b);}
+/* ── MOTOR v2: niveles de crew por turno (no deltas) ──
+   drivers(t): nivel actual → nivel "next" tras el 1er cambio → "following" tras el 2º,
+   y de ahí ALTERNA next/following (patrón día-noche). */
 function fcSim(p){
   const H=Math.max(6,Math.round(p.H||48));
-  const perDrvH=(Math.max(0,p.tr)/24)*Math.max(0,p.avgLoad);   // lbs/h que aporta 1 driver
+  const perDrvH=(Math.max(0,p.tr)/24)*Math.max(0,p.avgLoad);
   const burn=Math.max(0,p.burnLbsH);
-  const bumpSpan=Math.max(1,Math.round(p.cycH||2));            // h en que aterriza lo que ya viene en camino
+  const bumpSpan=Math.max(1,Math.round(p.cycH||2));
+  const st=(p.shiftT||[]).filter(t=>t>0&&t<=H);
+  const lvls=[Math.max(0,p.dNow)];
+  const nx=Math.max(0,p.dNext), fo=(p.dFollow==null||p.dFollow==='')?nx:Math.max(0,p.dFollow);
+  for(let i=0;i<st.length;i++)lvls.push(i%2===0?nx:fo);
+  const drvAt=t=>{let li=0;for(let i=0;i<st.length;i++){if(t>=st[i])li=i+1;else break;}return lvls[Math.min(li,lvls.length-1)];};
   const solid=[],dry=[],red=[],sup=[],drvA=[];
   let inv=Math.max(0,p.inv0),invD=Math.max(0,p.inv0),runS=null,runD=null;
   for(let t=0;t<=H;t++){
     solid.push(Math.round(inv));dry.push(Math.round(invD));
-    const drv=Math.max(0,p.dNow)+(t>=p.sh1H?Math.max(0,p.dNext):0)+(t>=p.sh2H?Math.max(0,p.d2):0);
+    const drv=drvAt(t);
     const s=drv*perDrvH+((t<bumpSpan)?(Math.max(0,p.bumpLoads)*p.avgLoad)/bumpSpan:0);
     sup.push(Math.round(s));drvA.push(drv);
     const next=inv+s-burn;
-    if(runS==null&&next<=0)runS=t+ (burn-s>0? Math.min(1,inv/Math.max(burn-s,1)) :1);
-    if(runD==null&&invD-burn<=0&&runD==null)runD=t+Math.min(1,invD/Math.max(burn,1));
+    if(runS==null&&next<=0)runS=t+(burn-s>0?Math.min(1,inv/Math.max(burn-s,1)):1);
+    if(runD==null&&invD-burn<=0)runD=t+Math.min(1,invD/Math.max(burn,1));
     red.push(next<=0&&s<burn);
     inv=Math.max(0,next);invD=Math.max(0,invD-burn);
   }
   const at=i=>solid[Math.min(i,solid.length-1)];
-  return {H,solid,dry,red,sup,drvA,runS:(runS!=null&&runS<=H)?runS:null,runD:(runD!=null&&runD<=H)?runD:null,
-    inv24:at(24),inv48:at(48),
-    covH:burn>0?p.inv0/burn:null,
-    reqDrv:perDrvH>0?burn/perDrvH:0,
-    perDrvH,burnH:Math.round(burn)};
+  return {H,solid,dry,red,sup,drvA,lvls,shiftT:st,
+    runS:(runS!=null&&runS<=H)?runS:null,runD:(runD!=null&&runD<=H)?runD:null,
+    inv24:at(24),inv48:at(48),covH:burn>0?p.inv0/burn:null,
+    reqDrv:perDrvH>0?burn/perDrvH:0,perDrvH,burnH:Math.round(burn)};
 }
-function _fcNextShift(){const n=new Date();const h2=n.getHours()+n.getMinutes()/60;
-  const t1=h2<6?6:(h2<18?18:30); return +(t1-h2).toFixed(1);} // horas hasta el próximo 06:00/18:00
 function _fcPad(reg){const S=STATUS;if(!(S&&Array.isArray(S.pads)))return null;
   let p=S.pads.find(x=>x.well_id&&reg&&x.well_id===reg.id);
   if(!p&&reg){const nm=String(reg.log_match||reg.name||'').toUpperCase();
@@ -3748,13 +3787,16 @@ function fcPrefill(id){
   const reg=REGISTRY.find(w=>w.id===id)||{};
   const R=RES_DATA[id];const w=(R&&R.ok)?R.w:null;
   const T=(w&&w.targets)||{};
+  const belly=fcIsBelly(reg);
   const lbsBox=+T.net_weight_load||45000;
   let invType=null,boxes=0,pilaT=0,pilaIsLbs=false,inv=0;
   if(w&&w.inventory){
-    if(w.inventory.type==='boxes'){invType='boxes';boxes=+w.inventory.full||0;inv=boxes*lbsBox;}
+    const rawPila=(w.inventory.pila!=null)?+w.inventory.pila:(belly?+w.inventory.full:null);
+    if(belly&&rawPila!=null){invType='pila';const pv=rawPila||0;
+      pilaIsLbs=pv>20000;pilaT=pilaIsLbs?pv/2000:pv;inv=pilaIsLbs?pv:pv*2000;}
+    else if(w.inventory.type==='boxes'){invType='boxes';boxes=+w.inventory.full||0;inv=boxes*lbsBox;}
     else if(w.inventory.pila!=null){invType='pila';const pv=+w.inventory.pila||0;
-      pilaIsLbs=pv>20000;                 // >20k no son tons: la pila ya viene capturada en lbs
-      pilaT=pilaIsLbs?pv/2000:pv; inv=pilaIsLbs?pv:pv*2000;}
+      pilaIsLbs=pv>20000;pilaT=pilaIsLbs?pv/2000:pv;inv=pilaIsLbs?pv:pv*2000;}
   }
   const dl=(w&&w.daily)||[];
   const run=dl.filter(d=>(+d.stages_day||0)>0);
@@ -3768,26 +3810,25 @@ function fcPrefill(id){
   const avgLoad=lds?Math.round(tons*2000/lds):lbsBox;
   const cd=(w&&w.cycleDaily)||[];const lastC=cd.slice(-3);
   const cycH=lastC.length?lastC.reduce((s,c)=>s+(((+c.terminal||0)+(+c.transit||0)*2+(+c.offload||0))/60),0)/lastC.length/2:((+T.weighted_ct||192)/60/2);
-  const pad=_fcPad(reg);let dNow=0,dRest=0,bump=0;
-  if(pad&&pad.brk){Object.keys(pad.brk).forEach(st=>{const n=+pad.brk[st]||0;const b=bktOf(st);
-    if(b==='a')dNow+=n; if(b==='r')dRest+=n;
-    if(/TRANSIT|LOADING|TERMINAL|WAITING/i.test(st))bump+=n;});}
+  const pad=_fcPad(reg);let dNow=0,dRest=0;
+  if(pad&&pad.brk){Object.keys(pad.brk).forEach(st2=>{const n=+pad.brk[st2]||0;const b=bktOf(st2);
+    if(b==='a')dNow+=n; if(b==='r')dRest+=n;});}
   if(!dNow&&dl.length)dNow=+dl[dl.length-1].drivers||+T.drivers_day||8;
   return {inv:Math.round(inv),spd:+spd.toFixed(1),tps:+tps.toFixed(1),tr:+tr.toFixed(2),
-    avgLoad,dNow,dNext:dRest,d2:0,bump,cycH:+cycH.toFixed(1),sh1:_fcNextShift(),
+    avgLoad,dNow,dNext:dRest||dNow,dFollow:dNow,
+    bump:dNow, /* regla Alan: los activos van CON carga en vuelo */
+    cycH:+cycH.toFixed(1),belly:belly||invType==='pila',sh:fcShiftHours(reg),
     hasInv:!!(w&&w.inventory),hasW:!!w,invType,boxes,pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox};}
 function _fcStore(id){try{return JSON.parse(localStorage.getItem('meds_fc:'+id)||'null');}catch(_){return null;}}
-function _fcSave(){if(!FC.id)return;const o={};['inv','spd','tps','dnow','tr','load','dn1','dn2','bump'].forEach(k=>{const el=$('fc-'+k);if(el)o[k]=el.value;});o.hz=FC.hz;try{localStorage.setItem('meds_fc:'+FC.id,JSON.stringify(o));}catch(_){}}
-FC.hz=48;
+function _fcSave(){if(!FC.id)return;const o={};['inv','spd','tps','dnow','tr','load','dn1','dn2','bump'].forEach(k=>{const el=$('fc-'+k);if(el)o[k]=el.value;});
+  o.hz=FC.hz;o.shp=FC.shp;try{localStorage.setItem('meds_fc:'+FC.id,JSON.stringify(o));}catch(_){}}
 window.fcHz=function(hv){FC.hz=hv;setSegAct(['fch24','fch48','fch72'],'fch'+hv);_fcSave();fcCalc();};
+window.fcShp=function(v){FC.shp=v;setSegAct(['fcs618','fcs012'],v==='012'?'fcs012':'fcs618');_fcSave();fcCalc();};
 window.fcWell=function(id){FC.id=id;renderFc();};
 window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.disabled=true;}
   const reg=REGISTRY.find(w=>w.id===FC.id)||{};
-  Promise.all([
-    apiWell(FC.id,reg.status,true).catch(()=>null),
-    apiStatus().catch(()=>null)
-  ]).then(rr=>{
-    if(rr[0]&&rr[0].daily)RES_DATA[FC.id]={ok:true,w:rr[0]};
+  Promise.all([apiWell(FC.id,reg.status,true).catch(()=>null),apiStatus().catch(()=>null)])
+  .then(rr=>{if(rr[0]&&rr[0].daily)RES_DATA[FC.id]={ok:true,w:rr[0]};
     if(rr[1])STATUS=rr[1];
     try{localStorage.removeItem('meds_fc:'+FC.id);}catch(_){}
     renderFc();
@@ -3795,26 +3836,92 @@ window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.di
 let _fcT=null;window.fcInput=function(){clearTimeout(_fcT);_fcT=setTimeout(function(){_fcSave();fcCalc();},160);};
 function fcParams(){
   const g=k=>_fcN(($('fc-'+k)||{}).value,0);
+  const pair=FC.shp==='012'?[0,12]:[6,18];
   return {H:FC.hz,inv0:g('inv'),burnLbsH:g('spd')*g('tps')*2000/24,
-    tr:g('tr'),avgLoad:g('load'),dNow:g('dnow'),dNext:g('dn1'),d2:g('dn2'),
-    sh1H:FC.sh1H,sh2H:FC.sh1H+12,bumpLoads:g('bump'),cycH:FC.cycH||2};}
+    tr:g('tr'),avgLoad:g('load'),dNow:g('dnow'),dNext:g('dn1'),
+    dFollow:($('fc-dn2')&&$('fc-dn2').value!=='')?g('dn2'):null,
+    shiftT:fcShiftTimes(pair,FC.hz,1),bumpLoads:g('bump'),cycH:FC.cycH||2,
+    tps:g('tps'),belly:FC.belly};}
+/* ── GAUGE: silo de cajas (MIN 4 · GOAL 6 etapas) / sandpile belly (MIN 4 etapas · TARGET 3M lbs) ── */
+const FC_BELLY_TARGET=3000000, FC_MIN_STG=4, FC_GOAL_STG=6;
+function fcGaugeCalc(lbs,tps,belly){
+  const perStg=Math.max(1,tps*2000);
+  const stgCov=lbs/perStg;
+  const pct=belly?(lbs/FC_BELLY_TARGET*100):(stgCov/FC_GOAL_STG*100);
+  const minPct=belly?(FC_MIN_STG*perStg/FC_BELLY_TARGET*100):(FC_MIN_STG/FC_GOAL_STG*100);
+  /* bad < MIN stages · mid entre MIN y GOAL/TARGET · ok al cumplir GOAL (cajas) o TARGET 3M (belly) */
+  const okNow=belly?(lbs>=FC_BELLY_TARGET):(stgCov>=FC_GOAL_STG);
+  return {stgCov,pct:Math.max(0,pct),minPct,state:okNow?'ok':(stgCov>=FC_MIN_STG?'mid':'bad'),perStg};}
+function fcGaugeSVG(g,belly){
+  const W=150,H2=190,bx=18,bw=W-36,topY=16,botY=H2-18,ih=botY-topY;
+  const fillPct=Math.min(1.12,g.pct/100);
+  const fh=Math.max(2,Math.min(ih,ih*fillPct));
+  const fy=botY-fh;
+  const minY=botY-ih*Math.min(1,g.minPct/100);
+  const col=g.state==='ok'?'#4ca882':g.state==='mid'?'#e0a63e':'#d47272';
+  const grains=[];const gy0=Math.max(topY+8,fy+6);
+  for(let i=0;i<14;i++){const gx=bx+8+((i*37)%(bw-16));const gy=gy0+((i*23)%(Math.max(10,botY-gy0-6)));
+    grains.push('<circle class="grain" style="animation-delay:'+(i*35)+'ms" cx="'+gx+'" cy="'+gy+'" r="2.1" fill="rgba(255,255,255,.5)"/>');}
+  const shape=belly
+    ?'<path d="M'+bx+' '+botY+' Q'+(W/2)+' '+(topY-6)+' '+(bx+bw)+' '+botY+' Z"'
+    :'<rect x="'+bx+'" y="'+topY+'" width="'+bw+'" height="'+ih+'" rx="16"';
+  return '<svg class="fc-gsvg" width="'+W+'" height="'+H2+'" viewBox="0 0 '+W+' '+H2+'">'
+    +'<defs><clipPath id="fcClip">'+shape+'/></clipPath>'
+    +'<linearGradient id="fcG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity=".92"/><stop offset="1" stop-color="'+col+'"/></linearGradient></defs>'
+    +shape+' fill="#F1F5F9" stroke="#dfe7ee" stroke-width="1.5"/>'
+    +'<g clip-path="url(#fcClip)">'
+    +'<rect class="fc-gfill" x="0" y="'+fy+'" width="'+W+'" height="'+(fh+6)+'" fill="url(#fcG)"/>'
+    +'<path d="M0 '+fy+' Q '+(W*0.25)+' '+(fy-5)+' '+(W*0.5)+' '+fy+' T '+W+' '+fy+' V '+(fy+8)+' H0 Z" fill="'+col+'" opacity=".55"/>'
+    +grains.join('')+'</g>'
+    +'<line x1="'+(bx-6)+'" x2="'+(bx+bw+6)+'" y1="'+minY+'" y2="'+minY+'" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
+    +'<text x="'+(bx+bw+4)+'" y="'+(minY-4)+'" text-anchor="end" font-size="8" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+FC_MIN_STG+' STG</text>'
+    +(belly?'':'<line x1="'+(bx-6)+'" x2="'+(bx+bw+6)+'" y1="'+topY+'" y2="'+topY+'" stroke="#c99a3f" stroke-width="1.4" stroke-dasharray="3 4"/>')
+    +'</svg>';}
+function fcGaugePaint(){
+  const host=$('fc-gauge');if(!host)return;
+  const g2=k=>_fcN(($('fc-'+k)||{}).value,0);
+  const lbs=g2('inv'),tps=Math.max(0.1,g2('tps'));
+  const gg=fcGaugeCalc(lbs,tps,FC.belly);
+  host.className='fc-gauge g-'+gg.state;
+  host.innerHTML=
+    '<div class="fc-gpct">'+Math.round(gg.pct)+'%</div>'
+    +'<div class="fc-gsub">'+(FC.belly?'SANDPILE vs 3.0M lbs TARGET':'BOXED SAND vs GOAL '+FC_GOAL_STG+' STAGES')+'<br>'+fmt(Math.round(lbs))+' lbs · '+gg.stgCov.toFixed(1)+' stages of coverage</div>'
+    +fcGaugeSVG(gg,FC.belly)
+    +'<div class="fc-gchips">'
+    +'<span class="fc-gc '+(gg.stgCov>=FC_MIN_STG?'on':'bad')+'">MIN '+FC_MIN_STG+' stg · '+(gg.stgCov>=FC_MIN_STG?'OK':'SHORT '+(FC_MIN_STG-gg.stgCov).toFixed(1))+'</span>'
+    +(FC.belly
+      ?'<span class="fc-gc '+(lbs>=FC_BELLY_TARGET?'on':'')+'">TARGET 3.0M · '+(lbs>=FC_BELLY_TARGET?'OK':fmt(Math.round(FC_BELLY_TARGET-lbs))+' to go')+'</span>'
+      :'<span class="fc-gc '+(gg.stgCov>=FC_GOAL_STG?'on':'')+'">GOAL '+FC_GOAL_STG+' stg · '+(gg.stgCov>=FC_GOAL_STG?'OK':(FC_GOAL_STG-gg.stgCov).toFixed(1)+' to go')+'</span>')
+    +'</div>';}
 const _fcMarks={id:'fcMarks',afterDraw(ch){try{
   const o=ch.$fc||{};const xs=ch.scales.x,ys=ch.scales.y,ctx=ch.ctx;if(!xs||!ys)return;
   ctx.save();ctx.font="700 9px 'Plus Jakarta Sans'";ctx.textAlign='center';
+  if(o.red&&o.red.some(Boolean)){ctx.fillStyle='rgba(212,114,114,.10)';
+    let s=null;for(let i=0;i<=o.H;i++){const on=o.red[i];
+      if(on&&s==null)s=i;
+      if((!on||i===o.H)&&s!=null){const x1=xs.getPixelForValue(s),x2=xs.getPixelForValue(i);
+        ctx.fillRect(x1,ys.top,Math.max(2,x2-x1),ys.bottom-ys.top);s=null;}}}
+  (o.shiftT||[]).forEach((t,i)=>{const x=xs.getPixelForValue(t);
+    const lvl=o.lvls[i+1],prev=o.lvls[i];const up=lvl>prev,down=lvl<prev;
+    ctx.strokeStyle='rgba(58,124,165,.45)';ctx.setLineDash([3,4]);ctx.lineWidth=1.2;
+    ctx.beginPath();ctx.moveTo(x,ys.top+16);ctx.lineTo(x,ys.bottom);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=up?'#2F7A45':down?'#c24545':'#5d6b7a';
+    ctx.beginPath();
+    if(up){ctx.moveTo(x,ys.top+18);ctx.lineTo(x-5,ys.top+27);ctx.lineTo(x+5,ys.top+27);}
+    else{ctx.moveTo(x,ys.top+27);ctx.lineTo(x-5,ys.top+18);ctx.lineTo(x+5,ys.top+18);}
+    ctx.closePath();ctx.fill();
+    ctx.fillText(lvl+' drv',x,ys.top+40);});
   const vline=(i,col,lbl,dy)=>{if(i==null||i<0||i>o.H)return;const x=xs.getPixelForValue(i);
     ctx.strokeStyle=col;ctx.setLineDash([5,4]);ctx.lineWidth=1.4;
     ctx.beginPath();ctx.moveTo(x,ys.top);ctx.lineTo(x,ys.bottom);ctx.stroke();
     ctx.setLineDash([]);ctx.fillStyle=col;ctx.fillText(lbl,x,ys.top+(dy||10));};
-  if(o.red&&o.red.some(Boolean)){ctx.fillStyle='rgba(212,114,114,.10)';
-    let s=null;for(let i=0;i<=o.H;i++){const on=o.red[i];
-      if(on&&s==null)s=i; if((!on||i===o.H)&&s!=null){const x1=xs.getPixelForValue(s),x2=xs.getPixelForValue(on?i:i-0+0.0001>i?i:i);
-        ctx.fillRect(x1,ys.top,Math.max(2,xs.getPixelForValue(on?i:i)-x1),ys.bottom-ys.top);s=null;}}}
   if(o.H>=48)vline(48,'#c99a3f','GOAL 48 H',12);
   if(o.runS!=null)vline(o.runS,'#c24545','RUNOUT',24);
-  ctx.restore();}catch(_){/* los marcadores jamás tumban el chart */}}};
+  ctx.restore();}catch(_){/* nunca tumbar el chart */}}};
 function fcCalc(){
   if(!$('fc-inv'))return;
   const p=fcParams();const r=fcSim(p);
+  fcGaugePaint();
   const now=Date.now();
   const lab=i=>i===0?'Now':new Date(now+i*36e5).toLocaleString('en-US',{weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false});
   const labs=r.solid.map((_,i)=>lab(i));
@@ -3824,68 +3931,78 @@ function fcCalc(){
     el.classList.remove('bad','okk');if(cls)el.classList.add(cls);};
   set('fck-cov',r.covH!=null?(r.covH>=24?(r.covH/24).toFixed(1)+' d':Math.round(r.covH)+' h'):'—',r.covH!=null&&r.covH<12?'bad':(r.covH>=24?'okk':''));
   set('fck-run',r.runS!=null?fmtT(r.runS):'No runout ✓',r.runS!=null?'bad':'okk');
-  const sb=$('fck-run');if(sb)sb.querySelector('.sb').textContent=r.runS!=null?('in ~'+r.runS.toFixed(1)+' h at current plan'):('dry-only would stop '+(r.runD!=null?fmtT(r.runD):'beyond horizon'));
+  const sb=$('fck-run');if(sb)sb.querySelector('.sb').textContent=r.runS!=null?('in ~'+r.runS.toFixed(1)+' h at current crew plan'):('dry-only would stop '+(r.runD!=null?fmtT(r.runD):'beyond horizon'));
   set('fck-48',fmt(FC.hz>=48?r.inv48:r.inv24)+' lbs','');
   const k48=$('fck-48');if(k48)k48.querySelector('.sb').textContent='projected @ '+(FC.hz>=48?'48':'24')+' h · @24 h '+fmt(r.inv24)+' lbs';
   set('fck-req',r.reqDrv?r.reqDrv.toFixed(1):'—',(p.dNow>=r.reqDrv)?'okk':'bad');
-  const kr=$('fck-req');if(kr)kr.querySelector('.sb').textContent='to match burn · running '+p.dNow+' now'+(p.dNext?(' · +'+p.dNext+' next shift'):'');
+  const kr=$('fck-req');if(kr)kr.querySelector('.sb').textContent='to match burn · crew now '+p.dNow+(r.lvls.length>1?(' → '+r.lvls[1]+' next shift'):'');
   set('fck-net',(r.sup[0]-r.burnH>=0?'+':'')+fmt(r.sup[0]-r.burnH)+' lbs/h',(r.sup[0]-r.burnH>=0)?'okk':'bad');
   const kn=$('fck-net');if(kn)kn.querySelector('.sb').textContent='in '+fmt(r.sup[0])+' · burn '+fmt(r.burnH)+' /h';
   const cfg={type:'line',data:{labels:labs,datasets:[
-    {label:'Projected on location',data:r.solid,borderColor:'#1f6f6f',backgroundColor:mkGrad('fcChart','rgba(31,111,111,.16)','rgba(31,111,111,.01)',300),fill:true,tension:.25,pointRadius:0,pointHoverRadius:6,borderWidth:2.6},
+    {label:'Projected on location',data:r.solid,borderColor:'#1f6f6f',backgroundColor:mkGrad('fcChart','rgba(31,111,111,.16)','rgba(31,111,111,.01)',300),fill:true,tension:.22,pointRadius:0,pointHoverRadius:6,borderWidth:2.6},
     {label:'No new trucks (dry-down)',data:r.dry,borderColor:'#94a3b8',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.15}]},
-    options:{interaction:{mode:'index',intersect:false},
+    options:{interaction:{mode:'index',intersect:false},layout:{padding:{top:34}},
       plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
         tooltip:{callbacks:{title:c=>labs[c[0].dataIndex]+(c[0].dataIndex?'':' — current'),
           label:c=>tipL(c,x=>fmt(x)+' lbs'),
           afterBody:it=>{const i=it[0].dataIndex;
-            const out=[sep,'Drivers on: '+r.drvA[i]+' · Supply: '+fmt(r.sup[i])+' lbs/h','Burn: '+fmt(r.burnH)+' lbs/h · Net: '+(r.sup[i]-r.burnH>=0?'+':'')+fmt(r.sup[i]-r.burnH)+' lbs/h'];
-            if(i===Math.ceil(FC.sh1H))out.push('▲ shift change: +'+_fcN(($('fc-dn1')||{}).value,0)+' drivers');
-            if(i===Math.ceil(FC.sh1H+12)&&_fcN(($('fc-dn2')||{}).value,0)>0)out.push('▲ following shift: +'+_fcN(($('fc-dn2')||{}).value,0)+' drivers');
+            const out=[sep,'Crew on: '+r.drvA[i]+' drivers · Supply: '+fmt(r.sup[i])+' lbs/h','Burn: '+fmt(r.burnH)+' lbs/h · Net: '+(r.sup[i]-r.burnH>=0?'+':'')+fmt(r.sup[i]-r.burnH)+' lbs/h'];
+            r.shiftT.forEach((t2,si2)=>{if(Math.ceil(t2)===i){const nl=r.lvls[si2+1],pl=r.lvls[si2];
+              out.push((nl>pl?'▲':'▼')+' shift change → crew '+nl+' drivers (was '+pl+')');}});
             if(r.red[i])out.push('🔴 frac waiting on sand (NPT risk)');
             return out;}}}},
       scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:12}},
-        y:{...gO,min:0,ticks:{callback:v=>fK?fmt(v/1000)+'K':v}}}},
+        y:{...gO,min:0,ticks:{callback:v=>fmt(v/1000)+'K'}}}},
     plugins:[_fcMarks]};
   const ch=mkChart('fcChart',cfg);
-  if(ch){ch.$fc={H:r.H,red:r.red,runS:r.runS};try{ch.draw&&ch.update('none');}catch(_){}}
+  if(ch){ch.$fc={H:r.H,red:r.red,runS:r.runS,shiftT:r.shiftT,lvls:r.lvls};try{ch.update&&ch.update('none');}catch(_){}}
 }
 function renderFc(){
   const pane=$('p-fc');if(!pane)return;
   const lives=REGISTRY.filter(w=>yrOK(w)&&String(w.status)==='Live');
   if(!lives.length){pane.innerHTML='<div class="note" style="margin:14px">No live wells in this year — the forecast runs on active pads. Switch year or set a well to Live in the Registry.</div>';return;}
   if(!FC.id||!lives.some(w=>w.id===FC.id))FC.id=lives[0].id;
-  const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.sh1H=pf.sh1;
+  const reg=REGISTRY.find(w=>w.id===FC.id)||{};
+  const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;
   const sv=_fcStore(FC.id)||{};FC.hz=+sv.hz||FC.hz||48;
+  FC.shp=sv.shp||((pf.sh[0]===0)?'012':'618');
   const V=(k,d)=>sv[k]!=null?sv[k]:d;
   const inp=(id,lb,unit,val,step)=>`<div class="fc-cell"><div class="fc-lb"><span>${lb}</span><span class="u">${unit}</span></div><input id="fc-${id}" class="fc-in" type="number" inputmode="decimal" step="${step||'any'}" value="${val}" oninput="fcInput()"></div>`;
   const kpi=(id,t)=>`<div class="card kpi fck" id="${id}"><div class="card-t">${t}</div><div class="v">—</div><div class="sb">—</div></div>`;
   pane.innerHTML=`
     <div class="fbar" style="align-items:flex-end;gap:12px">
       <div class="fld" style="min-width:260px"><label>Live pad</label>
-        <select class="ctrl-sel" style="width:100%" onchange="fcWell(this.value)">${lives.map(w=>`<option value="${w.id}"${w.id===FC.id?' selected':''}>${w.id} — ${(w.name||'').slice(0,40)}</option>`).join('')}</select></div>
+        <select class="ctrl-sel" style="width:100%" onchange="fcWell(this.value)">${lives.map(w2=>`<option value="${w2.id}"${w2.id===FC.id?' selected':''}>${w2.id} — ${(w2.name||'').slice(0,40)}</option>`).join('')}</select></div>
       <div class="fld"><label>Horizon</label><div class="seg-ctrl">
         <button id="fch24" class="seg-btn${FC.hz===24?' seg-on':''}" onclick="fcHz(24)">24 h</button>
         <button id="fch48" class="seg-btn${FC.hz===48?' seg-on':''}" onclick="fcHz(48)">48 h</button>
         <button id="fch72" class="seg-btn${FC.hz===72?' seg-on':''}" onclick="fcHz(72)">72 h</button></div></div>
+      <div class="fld"><label>Shift schedule <span style="color:#b6c0ca;font-weight:600">(+1 h ramp)</span></label><div class="seg-ctrl">
+        <button id="fcs618" class="seg-btn${FC.shp!=='012'?' seg-on':''}" onclick="fcShp('618')">06 &amp; 18</button>
+        <button id="fcs012" class="seg-btn${FC.shp==='012'?' seg-on':''}" onclick="fcShp('012')">00 &amp; 12</button></div></div>
       <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver statuses and reset the assumptions to live data"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
-      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'):pf.invType==='pila'?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+' · bellydump'):'no inventory row in Stages — enter lbs on location'):'loading workbook…'} · next shift in ${pf.sh1.toFixed(1)} h</span>
+      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'):pf.invType==='pila'?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+' · bellydump'):'no inventory row in Stages — enter lbs on location'):'loading workbook…'} · shifts ${String(pf.sh[0]).padStart(2,'0')}/${String(pf.sh[1]).padStart(2,'0')}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
     </div>
-    <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· hourly projection · every field is editable, prefilled from live data</span></div>
-    <div class="fc-grp">On location &amp; burn</div>
-    <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-      ${inp('inv','Sand on location','lbs',V('inv',pf.inv),1000)}
-      ${inp('spd','Frac pace','stages/day',V('spd',pf.spd),0.1)}
-      ${inp('tps','Sand per stage','tons',V('tps',pf.tps),1)}
-      ${inp('bump','Loads in transit now','loads',V('bump',pf.bump),1)}
-    </div>
-    <div class="fc-grp">Supply — drivers &amp; shifts</div>
-    <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-      ${inp('dnow','Active drivers now','drivers',V('dnow',pf.dNow),1)}
-      ${inp('dn1','Joining next shift','+drivers',V('dn1',pf.dNext),1)}
-      ${inp('dn2','Joining following shift','+drivers',V('dn2',pf.d2),1)}
-      ${inp('tr','Turn rate per driver','loads/day',V('tr',pf.tr),0.1)}
-      ${inp('load','Average load','lbs',V('load',pf.avgLoad),500)}
+    <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· hourly projection · crew LEVELS per shift · every field editable, prefilled live</span></div>
+    <div class="fc-gwrap mb">
+      <div class="fc-gauge" id="fc-gauge"></div>
+      <div>
+        <div class="fc-grp">On location &amp; burn</div>
+        <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+          ${inp('inv','Sand on location','lbs',V('inv',pf.inv),1000)}
+          ${inp('spd','Frac pace','stages/day',V('spd',pf.spd),0.1)}
+          ${inp('tps','Sand per stage','tons',V('tps',pf.tps),1)}
+          ${inp('bump','Loads in motion','active w/ load',V('bump',pf.bump),1)}
+        </div>
+        <div class="fc-grp">Crew levels — per shift (totals, not +)</div>
+        <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+          ${inp('dnow','Crew now','drivers',V('dnow',pf.dNow),1)}
+          ${inp('dn1','Next shift crew','drivers total',V('dn1',pf.dNext),1)}
+          ${inp('dn2','Following shift crew','drivers total',V('dn2',pf.dFollow),1)}
+          ${inp('tr','Turn rate per driver','loads/day',V('tr',pf.tr),0.1)}
+          ${inp('load','Average load','lbs',V('load',pf.avgLoad),500)}
+        </div>
+      </div>
     </div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${kpi('fck-cov','Coverage (no trucks)')}
@@ -3894,11 +4011,11 @@ function renderFc(){
       ${kpi('fck-req','Drivers to break even')}
       ${kpi('fck-net','Net right now')}
     </div>
-    <div class="card mb"><div class="card-t">Pounds on location — projected with incoming trucks vs dry-down</div>
-      <div class="sb" style="margin-bottom:6px">Solid = with your drivers &amp; shifts landing sand · dashed = nobody else loads · red band = frac waiting on sand</div>
+    <div class="card mb"><div class="card-t">Pounds on location — crew levels stepping at each shift (+1 h ramp)</div>
+      <div class="sb" style="margin-bottom:6px">Solid = projected with your shift plan · dashed = nobody else loads · ▲▼ = crew level change · red band = frac waiting on sand</div>
       <div class="ch ch-l"><canvas id="fcChart"></canvas></div></div>
-    <div class="note">Prefills: on-location from the Stages inventory row (sandcan wells: full boxes × net weight · bellydump wells: the sandpile), pace &amp; tons/stage from the last fraced days, TR &amp; avg load from this well's actuals, drivers from the live status board (resting = next shift). Shift changes assumed at 06:00 / 18:00. Edit anything — the curve recalcs as you type and your numbers stay saved for this well.</div>`;
-  if(!RES_DATA[FC.id]){const reg=REGISTRY.find(w=>w.id===FC.id)||{};
+    <div class="note">Rules: shift changes ${FC.shp==='012'?'00:00 / 12:00':'06:00 / 18:00'} (+1 h ramp-in) — Bayswater runs 06/18, Fasken 00/12; after the two levels you set, the pattern alternates day/night. Loads in motion assumes every active driver is carrying one load landing within the half-cycle. Boxed wells target: MIN ${FC_MIN_STG} stages · GOAL ${FC_GOAL_STG}. Bellydump target: MIN ${FC_MIN_STG} stages · 3.0M lbs.</div>`;
+  if(!RES_DATA[FC.id]){
     apiWell(FC.id,reg.status).then(w2=>{if(w2&&w2.daily){RES_DATA[FC.id]={ok:true,w:w2};
       const at=document.querySelector('.tab.active');if(at&&at.dataset.tab==='fc')renderFc();}}).catch(()=>{});}
   fcCalc();
