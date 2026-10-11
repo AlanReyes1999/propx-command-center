@@ -179,7 +179,19 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fc-gc.on{background:#E7F3EC;color:#2F7A45}.fc-gc.bad{background:#fdecec;color:#b23b3b}
 @keyframes grainUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .fc-gsvg .grain{animation:grainUp .6s ease backwards}
+#p-fc .rbtn{background:#fff;border:1px solid var(--border);color:#2E4057;box-shadow:0 1px 2px rgba(18,38,58,.06)}
+#p-fc .rbtn:hover:not(:disabled){background:#f3f6f9}
+#p-fc .rbtn:disabled{cursor:default}
+#p-fc #fc-sync{border-color:#bcd3e2;color:#2b6a92}
+#p-fc #fc-reset:not(.ghost){border-color:#e2b23e;color:#9a6c10;background:#fdf6e4}
 #fcPG{transform-box:fill-box;transform-origin:50% 100%;transition:transform .85s cubic-bezier(.3,.8,.3,1)}
+#fcPGo{transform-box:fill-box;transform-origin:50% 100%;animation:gbreath 4.2s ease-in-out infinite}
+@keyframes gbreath{0%,100%{transform:scale(1)}50%{transform:scale(1.014,1.022)}}
+#fcWg{transition:transform .7s cubic-bezier(.3,.8,.3,1)}
+#fcWv{animation:gwave 3.4s linear infinite}
+@keyframes gwave{from{transform:translateX(0)}to{transform:translateX(-56px)}}
+@keyframes gtw{0%,100%{opacity:.22}50%{opacity:.75}}
+.fc-gsvg .grain{animation:grainUp .6s ease backwards,gtw 3s ease-in-out infinite}
 #fcEF{transition:y .7s cubic-bezier(.3,.8,.3,1),height .7s cubic-bezier(.3,.8,.3,1),fill .4s}
 @keyframes epulse{0%,100%{opacity:1}50%{opacity:.55}}
 .fc-epulse{animation:epulse 1.1s ease-in-out infinite}
@@ -1081,7 +1093,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-11.81';
+const VBUILD='2026-10-11.82';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3788,6 +3800,15 @@ function fcSim(p){
     inv24:at(24),inv48:at(48),covH:burn>0?p.inv0/burn:null,
     reqDrv:perDrvH>0?burn/perDrvH:0,perDrvH,burnH:Math.round(burn)};
 }
+/* Pico de drivers ACTIVOS dentro de la ventana horaria [h0,h1) en las últimas `back` lecturas */
+function fcWinPeak(pad,h0,h1,back){
+  if(!(pad&&Array.isArray(pad.ts)&&Array.isArray(pad.a)))return 0;
+  const n=pad.ts.length;let mx=0;
+  for(let i=Math.max(0,n-(back||26));i<n;i++){
+    const hh=parseInt(String(pad.ts[i]).slice(11,13),10);if(!isFinite(hh))continue;
+    const inW=(h0<h1)?(hh>=h0&&hh<h1):(hh>=h0||hh<h1);
+    if(inW)mx=Math.max(mx,+pad.a[i]||0);}
+  return mx;}
 function _fcPad(reg){const S=STATUS;if(!(S&&Array.isArray(S.pads)))return null;
   let p=S.pads.find(x=>x.well_id&&reg&&x.well_id===reg.id);
   if(!p&&reg){const nm=String(reg.log_match||reg.name||'').toUpperCase();
@@ -3820,16 +3841,28 @@ function fcPrefill(id){
   const avgLoad=lds?Math.round(tons*2000/lds):lbsBox;
   const cd=(w&&w.cycleDaily)||[];const lastC=cd.slice(-3);
   const cycH=lastC.length?lastC.reduce((s,c)=>s+(((+c.terminal||0)+(+c.transit||0)*2+(+c.offload||0))/60),0)/lastC.length/2:((+T.weighted_ct||192)/60/2);
-  const pad=_fcPad(reg);let dNow=0,dRest=0;const padOk=!!(pad&&pad.brk);
-  if(padOk){Object.keys(pad.brk).forEach(st2=>{const n=+pad.brk[st2]||0;const b=bktOf(st2);
+  const pad=_fcPad(reg);let dNow=0,dRest=0,cov=0;const padOk=!!(pad&&pad.brk);
+  if(padOk){Object.keys(pad.brk).forEach(st2=>{const n=+pad.brk[st2]||0;
+    if(/COVER/i.test(st2)){cov+=n;return;} /* regla Alan: covering cuenta en AMBOS turnos */
+    const b=bktOf(st2);
     if(b==='a')dNow+=n; if(b==='r')dRest+=n;});}
   const brdA=dNow,brdR=dRest,brdAt=(STATUS&&STATUS.latest)?String(STATUS.latest).slice(11,13):'';
-  if(!dNow&&dl.length)dNow=+dl[dl.length-1].drivers||+T.drivers_day||8;
+  if(!dNow&&!cov&&dl.length)dNow=+dl[dl.length-1].drivers||+T.drivers_day||8;
+  /* v3 (regla Alan): el turno entrante NO son solo los resting — es el HEADCOUNT de esa
+     ventana: pico de activos de la ventana del turno (últimas ~26 h) ∨ resting de ahora.
+     El siguiente replica la ventana actual (activos+resting de ese turno). */
+  const shp=fcShiftHours(reg);const curH=new Date().getHours()+new Date().getMinutes()/60;
+  const inA=(shp[0]<shp[1])?(curH>=shp[0]&&curH<shp[1]):(curH>=shp[0]||curH<shp[1]);
+  const nowW=inA?[shp[0],shp[1]]:[shp[1],shp[0]], nxtW=inA?[shp[1],shp[0]]:[shp[0],shp[1]];
+  const pkNext=fcWinPeak(pad,nxtW[0],nxtW[1],26), pkNow=fcWinPeak(pad,nowW[0],nowW[1],26);
+  const dNext=(Math.max(pkNext,dRest)||dNow)+cov;
+  const dFollow=Math.max(pkNow,dNow)+cov;
+  dNow+=cov; /* covering disponible AHORA también (active o resting) */
   return {inv:Math.round(inv),spd:+spd.toFixed(1),tps:+tps.toFixed(1),tr:+tr.toFixed(2),
-    avgLoad,dNow,dNext:dRest||dNow,dFollow:dNow,
+    avgLoad,dNow,dNext,dFollow,pkNext,pkNow,cov,
     bump:dNow, /* regla Alan: los activos van CON carga en vuelo */
     cycH:+cycH.toFixed(1),belly:belly||invType==='pila',sh:fcShiftHours(reg),
-    hasInv:!!(w&&w.inventory),hasW:!!w,invType,boxes,empty:emptyB,pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox,
+    hasInv:!!(w&&w.inventory),hasW:!!w,slim:!!(w&&w.slim),invType,boxes,empty:emptyB,pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox,
     padOk,brdA,brdR,brdAt};}
 /* overrides SOLO de sesión: recargar la página regresa al cálculo estándar con promedios vivos */
 function _fcStore(id){return (FC.mem||{})[id]||null;}
@@ -3849,7 +3882,7 @@ function _fcSave(){if(!FC.id)return;const o={};['inv','spd','tps','dnow','tr','l
   o.hz=FC.hz;o.shp=FC.shp;FC.mem=FC.mem||{};FC.mem[FC.id]=o;_fcRstBtn();}
 window.fcHz=function(hv){FC.hz=hv;setSegAct(['fch24','fch48','fch72'],'fch'+hv);_fcSave();fcCalc();};
 window.fcShp=function(v){FC.shp=v;setSegAct(['fcs618','fcs012'],v==='012'?'fcs012':'fcs618');_fcSave();fcCalc();};
-window.fcWell=function(id){FC.id=id;renderFc();};
+window.fcWell=function(id){FC.id=id;FC._wReq=null;renderFc();};
 window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.disabled=true;}
   const reg=REGISTRY.find(w=>w.id===FC.id)||{};
   Promise.all([apiWell(FC.id,reg.status,true).catch(()=>null),apiStatus().catch(()=>null)])
@@ -3869,14 +3902,19 @@ function fcParams(){
     tps:g('tps'),belly:FC.belly};}
 /* ── GAUGE: silo de cajas (MIN 4 · GOAL 6 etapas) / sandpile belly (MIN 4 etapas · TARGET 3M lbs) ── */
 const FC_BELLY_TARGET=3000000, FC_MIN_STG=4, FC_GOAL_STG=6;
-function fcGaugeCalc(lbs,tps,belly){
+/* Targets de etapas por cliente — regla Alan: Fasken MIN 6 · GOAL 8; resto cajas 4/6; belly MIN 4 + 3.0M */
+function fcStgT(reg){const s=(String(reg&&reg.customer||'')+' '+String(reg&&reg.name||'')).toUpperCase();
+  if(/FASKEN/.test(s))return{min:6,goal:8};
+  return{min:FC_MIN_STG,goal:FC_GOAL_STG};}
+function fcGaugeCalc(lbs,tps,belly,tg){
+  tg=tg||{min:FC_MIN_STG,goal:FC_GOAL_STG};
   const perStg=Math.max(1,tps*2000);
   const stgCov=lbs/perStg;
-  const pct=belly?(lbs/FC_BELLY_TARGET*100):(stgCov/FC_GOAL_STG*100);
-  const minPct=belly?(FC_MIN_STG*perStg/FC_BELLY_TARGET*100):(FC_MIN_STG/FC_GOAL_STG*100);
+  const pct=belly?(lbs/FC_BELLY_TARGET*100):(stgCov/tg.goal*100);
+  const minPct=belly?(tg.min*perStg/FC_BELLY_TARGET*100):(tg.min/tg.goal*100);
   /* bad < MIN stages · mid entre MIN y GOAL/TARGET · ok al cumplir GOAL (cajas) o TARGET 3M (belly) */
-  const okNow=belly?(lbs>=FC_BELLY_TARGET):(stgCov>=FC_GOAL_STG);
-  return {stgCov,pct:Math.max(0,pct),minPct,state:okNow?'ok':(stgCov>=FC_MIN_STG?'mid':'bad'),perStg};}
+  const okNow=belly?(lbs>=FC_BELLY_TARGET):(stgCov>=tg.goal);
+  return {stgCov,pct:Math.max(0,pct),minPct,state:okNow?'ok':(stgCov>=tg.min?'mid':'bad'),perStg,tg};}
 /* Empties (cajas vacías) — regla Alan: <10 verde · 10–20 amarillo tenue · 21–30 amarillo · >30 rojo */
 function fcEmptyState(e){e=Math.max(0,Math.round(e||0));
   return e<10?{k:'ok',c:'#4ca882',cls:'on',t:'OK'}
@@ -3895,7 +3933,7 @@ function _fcGrains(x0,x1,y0,y1,n){const o=[];for(let i=0;i<n;i++){
   o.push('<circle class="grain" style="animation-delay:'+(i*35)+'ms" cx="'+gx+'" cy="'+gy+'" r="2" fill="rgba(255,255,255,.5)"/>');}
   return o.join('');}
 /* Skeleton CAJAS: silo de llenas (MIN 4 · GOAL 6 stg) + columna de vacías con alertas */
-function _fcSkBoxes(){const W=170,H2=190,bx=14,bw=92,ty=16,by=H2-18,ih=by-ty,ex=126,ew=32;
+function _fcSkBoxes(tg){const W=170,H2=190,bx=14,bw=92,ty=16,by=H2-18,ih=by-ty,ex=126,ew=32;
   let tk='';[10,20,30].forEach(v=>{const y=by-ih*Math.min(1,v/40);
     tk+='<line x1="'+(ex+ew)+'" x2="'+(ex+ew+5)+'" y1="'+y+'" y2="'+y+'" stroke="#b6c0ca" stroke-width="1.2"/>'
       +'<text x="'+(ex+ew+7)+'" y="'+(y+2.5)+'" font-size="6.5" font-weight="700" fill="#9aa7b4" font-family="Plus Jakarta Sans">'+v+'</text>';});
@@ -3905,47 +3943,49 @@ function _fcSkBoxes(){const W=170,H2=190,bx=14,bw=92,ty=16,by=H2-18,ih=by-ty,ex=
     +'<linearGradient id="fcGradF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f7a68" stop-opacity=".9"/><stop offset="1" stop-color="#2f7a68"/></linearGradient></defs>'
     +'<rect x="'+bx+'" y="'+ty+'" width="'+bw+'" height="'+ih+'" rx="14" fill="#F1F5F9" stroke="#dfe7ee" stroke-width="1.5"/>'
     +'<g clip-path="url(#fcClipF)"><rect id="fcGF" class="fc-gfill" x="0" y="'+by+'" width="'+W+'" height="'+(ih+6)+'" fill="url(#fcGradF)"/>'
+    +'<g id="fcWg" style="transform:translateY('+by+'px)"><path id="fcWv" d="M-56 0 Q-42 -4 -28 0 T0 0 T28 0 T56 0 T84 0 T112 0 T140 0 T168 0 T196 0 V8 H-56 Z" fill="rgba(255,255,255,.3)"/></g>'
     +_fcGrains(bx+8,bx+bw-8,ty+10,by-8,12)+'</g>'
     +'<line id="fcMinL" x1="'+(bx-5)+'" x2="'+(bx+bw+5)+'" y1="0" y2="0" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
-    +'<text id="fcMinT" x="'+(bx+bw+3)+'" y="0" text-anchor="end" font-size="8" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+FC_MIN_STG+'</text>'
+    +'<text id="fcMinT" x="'+(bx+bw+3)+'" y="0" text-anchor="end" font-size="8" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+tg.min+'</text>'
     +'<line x1="'+(bx-5)+'" x2="'+(bx+bw+5)+'" y1="'+ty+'" y2="'+ty+'" stroke="#c99a3f" stroke-width="1.4" stroke-dasharray="3 4"/>'
-    +'<text x="'+bx+'" y="'+(ty-4)+'" font-size="8" font-weight="800" fill="#c99a3f" font-family="Plus Jakarta Sans">GOAL '+FC_GOAL_STG+'</text>'
+    +'<text x="'+bx+'" y="'+(ty-4)+'" font-size="8" font-weight="800" fill="#c99a3f" font-family="Plus Jakarta Sans">GOAL '+tg.goal+'</text>'
     +'<rect x="'+ex+'" y="'+ty+'" width="'+ew+'" height="'+ih+'" rx="10" fill="#F1F5F9" stroke="#dfe7ee" stroke-width="1.5"/>'
     +'<g clip-path="url(#fcClipE)"><rect id="fcEF" x="'+(ex-2)+'" y="'+by+'" width="'+(ew+4)+'" height="'+(ih+6)+'" fill="#4ca882"/></g>'+tk
     +'<text id="fcFn" x="'+(bx+bw/2)+'" y="'+(H2-3)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">FULL</text>'
     +'<text id="fcEn" x="'+(ex+ew/2)+'" y="'+(H2-3)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">EMPTY</text>'
     +'</svg>';}
 /* Skeleton SANDPILE: la pila ESCALA con la arena (ancho+alto), MIN fijo como referencia */
-function _fcSkPila(){const W=150,H2=190,bx=14,bw=W-28,ty=22,by=H2-18;
+function _fcSkPila(tg){const W=150,H2=190,bx=14,bw=W-28,ty=22,by=H2-18;
   return '<svg class="fc-gsvg" width="'+W+'" height="'+H2+'" viewBox="0 0 '+W+' '+H2+'">'
-    +'<g id="fcPG"><path id="fcPP" d="M'+bx+' '+by+' Q'+(W/2)+' '+(ty-8)+' '+(bx+bw)+' '+by+' Z" fill="#e0a63e"/>'
+    +'<g id="fcPGo"><g id="fcPG"><path id="fcPP" d="M'+bx+' '+by+' Q'+(W/2)+' '+(ty-8)+' '+(bx+bw)+' '+by+' Z" fill="#e0a63e"/>'
     +'<path d="M'+(bx+18)+' '+(by-14)+' Q'+(W/2)+' '+(ty+16)+' '+(bx+bw-18)+' '+(by-14)+'" stroke="rgba(255,255,255,.35)" stroke-width="5" fill="none" stroke-linecap="round"/>'
-    +_fcGrains(bx+16,bx+bw-16,by-70,by-8,12)+'</g>'
+    +_fcGrains(bx+16,bx+bw-16,by-70,by-8,12)+'</g></g>'
     +'<line x1="2" x2="'+(W-2)+'" y1="'+by+'" y2="'+by+'" stroke="#dfe7ee" stroke-width="2"/>'
     +'<line id="fcMinL" x1="6" x2="'+(W-6)+'" y1="0" y2="0" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
-    +'<text id="fcMinT" x="'+(W-6)+'" y="0" text-anchor="end" font-size="8" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+FC_MIN_STG+' STG</text>'
+    +'<text id="fcMinT" x="'+(W-6)+'" y="0" text-anchor="end" font-size="8" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+tg.min+' STG</text>'
     +'</svg>';}
 function fcGaugePaint(){
   const host=$('fc-gauge');if(!host)return;
   const g2=k=>_fcN(($('fc-'+k)||{}).value,0);
   const lbs=Math.max(0,g2('inv')),tps=Math.max(0.1,g2('tps')),emp=Math.max(0,Math.round(g2('emp')));
   const belly=!!FC.belly;
-  const gg=fcGaugeCalc(lbs,tps,belly);
+  const tg=FC.tg||{min:FC_MIN_STG,goal:FC_GOAL_STG};
+  const gg=fcGaugeCalc(lbs,tps,belly,tg);
   const es=fcEmptyState(emp);
-  const mode=belly?'pila':'boxes';
+  const mode=(belly?'pila':'boxes')+':'+tg.min+':'+tg.goal;
   const sub=belly
     ?('SANDPILE vs 3.0M lbs TARGET<br>'+fmt(Math.round(lbs))+' lbs · '+gg.stgCov.toFixed(1)+' stages of coverage')
-    :('BOXED SAND vs GOAL '+FC_GOAL_STG+' STAGES<br>'+fmt(Math.round(lbs))+' lbs · '+gg.stgCov.toFixed(1)+' stg · '+fmt(emp)+' empties on loc');
-  const chips='<span class="fc-gc '+(gg.stgCov>=FC_MIN_STG?'on':'bad')+'">MIN '+FC_MIN_STG+' stg · '+(gg.stgCov>=FC_MIN_STG?'OK':'SHORT '+(FC_MIN_STG-gg.stgCov).toFixed(1))+'</span>'
+    :('BOXED SAND vs GOAL '+tg.goal+' STAGES<br>'+fmt(Math.round(lbs))+' lbs · '+gg.stgCov.toFixed(1)+' stg · '+fmt(emp)+' empties on loc');
+  const chips='<span class="fc-gc '+(gg.stgCov>=tg.min?'on':'bad')+'">MIN '+tg.min+' stg · '+(gg.stgCov>=tg.min?'OK':'SHORT '+(tg.min-gg.stgCov).toFixed(1))+'</span>'
     +(belly
       ?'<span class="fc-gc '+(lbs>=FC_BELLY_TARGET?'on':'')+'">TARGET 3.0M · '+(lbs>=FC_BELLY_TARGET?'OK':fmt(Math.round(FC_BELLY_TARGET-lbs))+' to go')+'</span>'
-      :'<span class="fc-gc '+(gg.stgCov>=FC_GOAL_STG?'on':'')+'">GOAL '+FC_GOAL_STG+' stg · '+(gg.stgCov>=FC_GOAL_STG?'OK':(FC_GOAL_STG-gg.stgCov).toFixed(1)+' to go')+'</span>'
+      :'<span class="fc-gc '+(gg.stgCov>=tg.goal?'on':'')+'">GOAL '+tg.goal+' stg · '+(gg.stgCov>=tg.goal?'OK':(tg.goal-gg.stgCov).toFixed(1)+' to go')+'</span>'
        +'<span class="fc-gc '+es.cls+'">EMPTIES '+emp+' · '+es.t+'</span>');
   host.className='fc-gauge g-'+gg.state;
   if(host._sk!==mode){host._sk=mode;
     host.innerHTML='<div class="fc-gpct" id="fcPct">'+Math.round(gg.pct)+'%</div>'
       +'<div class="fc-gsub" id="fcSub">'+sub+'</div>'
-      +(belly?_fcSkPila():_fcSkBoxes())
+      +(belly?_fcSkPila(tg):_fcSkBoxes(tg))
       +'<div class="fc-gchips" id="fcChips">'+chips+'</div>';}
   else{const s2=$('fcSub');if(s2)s2.innerHTML=sub;const c2=$('fcChips');if(c2)c2.innerHTML=chips;}
   try{
@@ -3963,8 +4003,9 @@ function fcGaugePaint(){
       if(mt&&mt.setAttribute)mt.setAttribute('y',minY-4);
     }else{
       const ty=16,by=172,ih=by-ty;
-      const fr=Math.max(0.015,Math.min(1,gg.stgCov/FC_GOAL_STG));
+      const fr=Math.max(0.015,Math.min(1,gg.stgCov/tg.goal));
       const gf=$('fcGF');if(gf&&gf.setAttribute){gf.setAttribute('y',by-ih*fr);gf.setAttribute('height',ih*fr+6);}
+      const wg=$('fcWg');if(wg&&wg.style)wg.style.transform='translateY('+(by-ih*fr)+'px)';
       const minY=by-ih*Math.min(1,gg.minPct/100);
       const ml=$('fcMinL'),mt=$('fcMinT');
       if(ml&&ml.setAttribute){ml.setAttribute('y1',minY);ml.setAttribute('y2',minY);}
@@ -3972,7 +4013,7 @@ function fcGaugePaint(){
       const efr=Math.min(1,emp/40);
       const ef=$('fcEF');if(ef&&ef.setAttribute){ef.setAttribute('y',by-ih*efr);ef.setAttribute('height',ih*efr+6);ef.setAttribute('fill',es.c);
         if(ef.classList)ef.classList.toggle('fc-epulse',es.k==='crit');}
-      const fn=$('fcFn');if(fn)fn.textContent='FULL '+fmt(Math.round(lbs/Math.max(1,( $('fc-load')&&parseFloat($('fc-load').value))||47000)));
+      const fn=$('fcFn');if(fn)fn.textContent='FULL '+fmt(Math.round(lbs/Math.max(1,FC.lbsBox||47000)));
       const en=$('fcEn');if(en)en.textContent='EMPTY '+emp;
     }
   }catch(_){host._sk=null;}
@@ -4083,7 +4124,17 @@ function renderFc(){
     apiStatus().then(s=>{if(s&&s.pads&&s.pads.length){STATUS=s;
       const at=document.querySelector('.tab.active');
       if(at&&at.dataset.tab==='fc'&&!(FC.mem&&FC.mem[FC.id]))renderFc();}}).catch(()=>{});}
-  const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;FC.pf=pf;
+  /* El portfolio es SLIM (inventory:null): si el packet actual no trae inventario,
+     usa el snapshot local (peek, cualquier edad) y pide el workbook completo en background. */
+  {const cw=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
+   if(cw&&(cw.slim||!cw.inventory)){const warm=_lsSnapPeek(FC.id,reg.status);
+     if(warm&&warm.daily&&warm.daily.length&&warm.inventory)RES_DATA[FC.id]={ok:true,w:warm};}}
+  const _cw2=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
+  if(CONFIG.API_URL&&(!_cw2||_cw2.slim||!_cw2.inventory)&&FC._wReq!==FC.id){FC._wReq=FC.id;
+    apiWell(FC.id,reg.status).then(w2=>{if(w2&&w2.daily&&w2.daily.length){RES_DATA[FC.id]={ok:true,w:w2};
+      const at=document.querySelector('.tab.active');
+      if(at&&at.dataset.tab==='fc'&&FC.id===w2.__reqId&&!(FC.mem&&FC.mem[FC.id]))renderFc();}}).catch(()=>{});}
+  const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;FC.pf=pf;FC.tg=fcStgT(reg);FC.lbsBox=pf.lbsBox;
   const sv=_fcStore(FC.id)||{};FC.hz=+sv.hz||FC.hz||48;
   FC.shp=sv.shp||((pf.sh[0]===0)?'012':'618');
   const V=(k,d)=>sv[k]!=null?sv[k]:d;
@@ -4106,7 +4157,7 @@ function renderFc(){
         <button id="fcs012" class="seg-btn${FC.shp==='012'?' seg-on':''}" onclick="fcShp('012')">00 &amp; 12</button></div></div>
       <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver statuses and reset the assumptions to live data"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
       <button class="rbtn ghost" id="fc-reset" onclick="fcReset()" disabled title="Already at the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
-      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'):pf.invType==='pila'?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+' · bellydump'):'no inventory row in Stages — enter lbs on location'):'loading workbook…'} · shifts ${String(pf.sh[0]).padStart(2,'0')}/${String(pf.sh[1]).padStart(2,'0')}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
+      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'):pf.invType==='pila'?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+' · bellydump'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'} · shifts ${String(pf.sh[0]).padStart(2,'0')}/${String(pf.sh[1]).padStart(2,'0')}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
     </div>
     <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· hourly projection · crew LEVELS per shift · every field editable, prefilled live</span></div>
     <div class="fc-gwrap mb">
@@ -4121,7 +4172,7 @@ function renderFc(){
           ${FC.belly?'':inp('emp','Empty boxes','on location',V('emp',pf.empty),1)}
         </div>
         <div class="fc-grp">Crew levels — per shift (totals, not +)
-          <span class="fc-src ${pf.padOk?'live':'fb'}">${pf.padOk?('crew board'+(pf.brdAt?' '+pf.brdAt+':00':'')+' — '+pf.brdA+' active · '+pf.brdR+' resting'):'no live board for this pad — crew from daily log'}</span></div>
+          <span class="fc-src ${pf.padOk?'live':'fb'}">${pf.padOk?('crew board'+(pf.brdAt?' '+pf.brdAt+':00':'')+' — '+pf.brdA+' active · '+pf.brdR+' resting'+(pf.cov?(' · '+pf.cov+' covering (both shifts)'):'')+((pf.pkNext||pf.pkNow)?(' · shift peaks '+(pf.pkNext||'—')+' next / '+(pf.pkNow||'—')+' current'):'')):'no live board for this pad — crew from daily log'}</span></div>
         <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
           ${inp('dnow','Crew now','on duty now',V('dnow',pf.dNow),1)}
           ${inp('dn1','Next shift crew','enters '+_nb1+':00 (resting now)',V('dn1',pf.dNext),1)}
@@ -4141,9 +4192,6 @@ function renderFc(){
     <div class="card mb"><div class="card-t">Pounds on location — crew levels stepping at each shift (+1 h ramp)</div>
       <div class="sb" style="margin-bottom:6px">Solid = projected with shift plan · dashed = nobody else loads · ▲▼ = crew level change · red band = frac waiting on sand</div>
       <div class="ch ch-l"><canvas id="fcChart"></canvas></div></div>`;
-  if(!RES_DATA[FC.id]){
-    apiWell(FC.id,reg.status).then(w2=>{if(w2&&w2.daily){RES_DATA[FC.id]={ok:true,w:w2};
-      const at=document.querySelector('.tab.active');if(at&&at.dataset.tab==='fc')renderFc();}}).catch(()=>{});}
   fcCalc();_fcRstBtn();
 }
 /* ════════════════════════════════════════════════════════════
