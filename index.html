@@ -154,7 +154,20 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 #pill-upd.syncing::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#e0a63e;margin-left:6px;vertical-align:1px;animation:ldp 1s ease-in-out infinite}
 #pill-upd.flash{animation:updfl .9s ease}
 @keyframes updfl{0%{background:#dff3e7;color:#1f6b3a}100%{background:inherit}}
-/* ═══ v75 · EXPORT: modal selector + veil de progreso ═══ */
+/* ═══ v77 · SAND FORECAST ═══ */
+.fc-in{width:100%;border:1.5px solid #dde5ec;border-radius:10px;padding:9px 11px;font:700 14px/1 'Plus Jakarta Sans';color:#12263A;background:#fff;font-variant-numeric:tabular-nums;transition:border-color .15s,box-shadow .15s}
+.fc-in:focus{outline:none;border-color:#3a7ca5;box-shadow:0 0 0 3px rgba(58,124,165,.12)}
+.fc-lb{font:700 8.5px/1 'Plus Jakarta Sans';letter-spacing:.1em;color:#8a97a6;text-transform:uppercase;margin-bottom:6px;display:flex;justify-content:space-between;gap:6px}
+.fc-lb .u{color:#b6c0ca;font-weight:600;letter-spacing:.02em;text-transform:none}
+.fc-cell{background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 12px}
+.fc-grp{font:800 9.5px/1 'Plus Jakarta Sans';letter-spacing:.12em;color:#5d6b7a;text-transform:uppercase;margin:4px 0 8px;display:flex;align-items:center;gap:7px}
+.fc-grp::after{content:'';flex:1;height:1px;background:#e8edf2}
+#fc-sync.busy .ico{animation:rspin .9s linear infinite}
+.fck .v{font-size:21px}
+.fck.bad{background:#fdf2f2;border-color:#f3c9c9}
+.fck.bad .v{color:#c24545}
+.fck.okk{background:#f2faf5;border-color:#cfe8d9}
+@media(max-width:768px){.fc-in{font-size:13px;padding:8px 10px}}
 #pdfModal{position:fixed;inset:0;z-index:460;display:none;align-items:center;justify-content:center;background:rgba(18,38,58,.38);backdrop-filter:blur(3px);padding:16px}
 #pdfModal.open{display:flex}
 #pdfModal .pm-panel{width:min(540px,96vw);max-height:86vh;display:flex;flex-direction:column;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(18,38,58,.28);font-family:'Plus Jakarta Sans',system-ui,sans-serif;animation:pmIn .26s cubic-bezier(.2,.8,.25,1);overflow:hidden}
@@ -575,6 +588,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
   <button data-m="res" class="on"><span class="mi"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="20" x2="5" y2="12"/><line x1="12" y1="20" x2="12" y2="5"/><line x1="19" y1="20" x2="19" y2="9"/></svg></span>Overview</button>
   <button data-m="pozo"><span class="mi"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5S6 9.5 6 14a6 6 0 0 0 12 0c0-4.5-6-11.5-6-11.5z"/></svg></span>Well</button>
   <button data-m="sts"><span class="mi"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16V7h11v9M13 10h5l3 3.5V16h-3"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg></span>Status</button>
+  <button data-m="fc"><span class="mi"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 5-8 4 5"/><path d="M3 21h18"/></svg></span>Forecast</button>
   <button data-m="cie"><span class="mi"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4m0 1h13l-2.5 4L17 13H4"/></svg></span>Closeouts</button>
 </nav>
 <div class="tabs" id="tabbar">
@@ -582,6 +596,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
   <div class="tab" data-tab="pozo">Well · Detail</div>
   
   <div class="tab" data-tab="sts">Status Live</div>
+  <div class="tab" data-tab="fc">Forecast</div>
   
   <div class="tab" data-tab="cie">Closeouts</div>
 </div>
@@ -746,6 +761,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
 </div>
 
 <!-- ============ CIERRES ============ -->
+<div class="pane" id="p-fc"></div>
 <div class="pane" id="p-cie">
   <div class="st">Closed Wells <span class="ssub">— executive summary per well · parity with your historical INDEX</span></div>
   <div class="grid g2 mb" id="cie-cards"></div>
@@ -1039,7 +1055,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-05.76';
+const VBUILD='2026-10-11.77';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3686,6 +3702,203 @@ function stsPresetInit(S){const lD=keyDate(S.latest);SF.d0=keyDate(keyShift(S.la
 
 
 /* ════════════════════════════════════════════════════════════
+   RENDER · SAND FORECAST (v77) — proyección por hora de arena en locación
+   Modelo: inv(t+1) = inv(t) + drivers(t)·TR/24·avgLoad − burn
+   · inventario inicial = cajas full (pestaña Stages) × lbs/caja
+   · drivers(t) escalona los turnos (ahora → +próximo turno → +siguiente)
+   · bump = cargas ya en tránsito aterrizando dentro del medio-ciclo
+   · burn = stages/día × tons/stage (prefill del ritmo real reciente)
+   Todo editable; la simulación corre 100% en el navegador.
+   ════════════════════════════════════════════════════════════ */
+let FC={id:null};
+function _fcN(v,d){v=parseFloat(v);return isFinite(v)?v:d;}
+function fcSim(p){
+  const H=Math.max(6,Math.round(p.H||48));
+  const perDrvH=(Math.max(0,p.tr)/24)*Math.max(0,p.avgLoad);   // lbs/h que aporta 1 driver
+  const burn=Math.max(0,p.burnLbsH);
+  const bumpSpan=Math.max(1,Math.round(p.cycH||2));            // h en que aterriza lo que ya viene en camino
+  const solid=[],dry=[],red=[],sup=[],drvA=[];
+  let inv=Math.max(0,p.inv0),invD=Math.max(0,p.inv0),runS=null,runD=null;
+  for(let t=0;t<=H;t++){
+    solid.push(Math.round(inv));dry.push(Math.round(invD));
+    const drv=Math.max(0,p.dNow)+(t>=p.sh1H?Math.max(0,p.dNext):0)+(t>=p.sh2H?Math.max(0,p.d2):0);
+    const s=drv*perDrvH+((t<bumpSpan)?(Math.max(0,p.bumpLoads)*p.avgLoad)/bumpSpan:0);
+    sup.push(Math.round(s));drvA.push(drv);
+    const next=inv+s-burn;
+    if(runS==null&&next<=0)runS=t+ (burn-s>0? Math.min(1,inv/Math.max(burn-s,1)) :1);
+    if(runD==null&&invD-burn<=0&&runD==null)runD=t+Math.min(1,invD/Math.max(burn,1));
+    red.push(next<=0&&s<burn);
+    inv=Math.max(0,next);invD=Math.max(0,invD-burn);
+  }
+  const at=i=>solid[Math.min(i,solid.length-1)];
+  return {H,solid,dry,red,sup,drvA,runS:(runS!=null&&runS<=H)?runS:null,runD:(runD!=null&&runD<=H)?runD:null,
+    inv24:at(24),inv48:at(48),
+    covH:burn>0?p.inv0/burn:null,
+    reqDrv:perDrvH>0?burn/perDrvH:0,
+    perDrvH,burnH:Math.round(burn)};
+}
+function _fcNextShift(){const n=new Date();const h2=n.getHours()+n.getMinutes()/60;
+  const t1=h2<6?6:(h2<18?18:30); return +(t1-h2).toFixed(1);} // horas hasta el próximo 06:00/18:00
+function _fcPad(reg){const S=STATUS;if(!(S&&Array.isArray(S.pads)))return null;
+  let p=S.pads.find(x=>x.well_id&&reg&&x.well_id===reg.id);
+  if(!p&&reg){const nm=String(reg.log_match||reg.name||'').toUpperCase();
+    p=S.pads.find(x=>{const w2=String(x.well||'').toUpperCase();return nm&&w2&&(w2.indexOf(nm)>=0||nm.indexOf(w2)>=0);});}
+  return p||null;}
+function fcPrefill(id){
+  const reg=REGISTRY.find(w=>w.id===id)||{};
+  const R=RES_DATA[id];const w=(R&&R.ok)?R.w:null;
+  const T=(w&&w.targets)||{};
+  const lbsBox=+T.net_weight_load||45000;
+  const inv=(w&&w.inventory&&w.inventory.type==='boxes')?(+w.inventory.full||0)*lbsBox
+           :(w&&w.inventory&&w.inventory.pila!=null)?(+w.inventory.pila||0)*2000:0;
+  const dl=(w&&w.daily)||[];
+  const run=dl.filter(d=>(+d.stages_day||0)>0);
+  const spd=run.length?run.slice(-2).reduce((s,d)=>s+(+d.stages_day||0),0)/Math.min(2,run.length):(+T.stages_day||((+T.total_stages&&+T.duration_days)?T.total_stages/T.duration_days:8));
+  const stg=(w&&w.stages)||[];
+  const ut=stg.filter(s=>+s.used_tons>0).slice(-8);
+  const tps=ut.length?ut.reduce((s,x)=>s+(+x.used_tons||0),0)/ut.length:((+T.total_tons&&+T.total_stages)?T.total_tons/T.total_stages:170);
+  let L2=0,D2=0;dl.forEach(d=>{if(+d.drivers>0){L2+=(+d.loads||0);D2+=(+d.drivers||0);}});
+  const tr=D2?(L2/D2):(+T.turn_rate_target||4);
+  let tons=0,lds=0;dl.forEach(d=>{tons+=(+d.tons||0);lds+=(+d.loads||0);});
+  const avgLoad=lds?Math.round(tons*2000/lds):lbsBox;
+  const cd=(w&&w.cycleDaily)||[];const lastC=cd.slice(-3);
+  const cycH=lastC.length?lastC.reduce((s,c)=>s+(((+c.terminal||0)+(+c.transit||0)*2+(+c.offload||0))/60),0)/lastC.length/2:((+T.weighted_ct||192)/60/2);
+  const pad=_fcPad(reg);let dNow=0,dRest=0,bump=0;
+  if(pad&&pad.brk){Object.keys(pad.brk).forEach(st=>{const n=+pad.brk[st]||0;const b=bktOf(st);
+    if(b==='a')dNow+=n; if(b==='r')dRest+=n;
+    if(/TRANSIT|LOADING|TERMINAL|WAITING/i.test(st))bump+=n;});}
+  if(!dNow&&dl.length)dNow=+dl[dl.length-1].drivers||+T.drivers_day||8;
+  return {inv:Math.round(inv),spd:+spd.toFixed(1),tps:+tps.toFixed(1),tr:+tr.toFixed(2),
+    avgLoad,dNow,dNext:dRest,d2:0,bump,cycH:+cycH.toFixed(1),sh1:_fcNextShift(),
+    hasInv:!!(w&&w.inventory),hasW:!!w,boxes:(w&&w.inventory&&w.inventory.full)||0,lbsBox};}
+function _fcStore(id){try{return JSON.parse(localStorage.getItem('meds_fc:'+id)||'null');}catch(_){return null;}}
+function _fcSave(){if(!FC.id)return;const o={};['inv','spd','tps','dnow','tr','load','dn1','dn2','bump'].forEach(k=>{const el=$('fc-'+k);if(el)o[k]=el.value;});o.hz=FC.hz;try{localStorage.setItem('meds_fc:'+FC.id,JSON.stringify(o));}catch(_){}}
+FC.hz=48;
+window.fcHz=function(hv){FC.hz=hv;setSegAct(['fch24','fch48','fch72'],'fch'+hv);_fcSave();fcCalc();};
+window.fcWell=function(id){FC.id=id;renderFc();};
+window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.disabled=true;}
+  const reg=REGISTRY.find(w=>w.id===FC.id)||{};
+  Promise.all([
+    apiWell(FC.id,reg.status,true).catch(()=>null),
+    apiStatus().catch(()=>null)
+  ]).then(rr=>{
+    if(rr[0]&&rr[0].daily)RES_DATA[FC.id]={ok:true,w:rr[0]};
+    if(rr[1])STATUS=rr[1];
+    try{localStorage.removeItem('meds_fc:'+FC.id);}catch(_){}
+    renderFc();
+  }).finally(()=>{const b2=$('fc-sync');if(b2){b2.classList.remove('busy');b2.disabled=false;}});};
+let _fcT=null;window.fcInput=function(){clearTimeout(_fcT);_fcT=setTimeout(function(){_fcSave();fcCalc();},160);};
+function fcParams(){
+  const g=k=>_fcN(($('fc-'+k)||{}).value,0);
+  return {H:FC.hz,inv0:g('inv'),burnLbsH:g('spd')*g('tps')*2000/24,
+    tr:g('tr'),avgLoad:g('load'),dNow:g('dnow'),dNext:g('dn1'),d2:g('dn2'),
+    sh1H:FC.sh1H,sh2H:FC.sh1H+12,bumpLoads:g('bump'),cycH:FC.cycH||2};}
+const _fcMarks={id:'fcMarks',afterDraw(ch){try{
+  const o=ch.$fc||{};const xs=ch.scales.x,ys=ch.scales.y,ctx=ch.ctx;if(!xs||!ys)return;
+  ctx.save();ctx.font="700 9px 'Plus Jakarta Sans'";ctx.textAlign='center';
+  const vline=(i,col,lbl,dy)=>{if(i==null||i<0||i>o.H)return;const x=xs.getPixelForValue(i);
+    ctx.strokeStyle=col;ctx.setLineDash([5,4]);ctx.lineWidth=1.4;
+    ctx.beginPath();ctx.moveTo(x,ys.top);ctx.lineTo(x,ys.bottom);ctx.stroke();
+    ctx.setLineDash([]);ctx.fillStyle=col;ctx.fillText(lbl,x,ys.top+(dy||10));};
+  if(o.red&&o.red.some(Boolean)){ctx.fillStyle='rgba(212,114,114,.10)';
+    let s=null;for(let i=0;i<=o.H;i++){const on=o.red[i];
+      if(on&&s==null)s=i; if((!on||i===o.H)&&s!=null){const x1=xs.getPixelForValue(s),x2=xs.getPixelForValue(on?i:i-0+0.0001>i?i:i);
+        ctx.fillRect(x1,ys.top,Math.max(2,xs.getPixelForValue(on?i:i)-x1),ys.bottom-ys.top);s=null;}}}
+  if(o.H>=48)vline(48,'#c99a3f','GOAL 48 H',12);
+  if(o.runS!=null)vline(o.runS,'#c24545','RUNOUT',24);
+  ctx.restore();}catch(_){/* los marcadores jamás tumban el chart */}}};
+function fcCalc(){
+  if(!$('fc-inv'))return;
+  const p=fcParams();const r=fcSim(p);
+  const now=Date.now();
+  const lab=i=>i===0?'Now':new Date(now+i*36e5).toLocaleString('en-US',{weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false});
+  const labs=r.solid.map((_,i)=>lab(i));
+  const fmtT=hF=>{if(hF==null)return null;const d=new Date(now+hF*36e5);
+    return d.toLocaleString('en-US',{weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false});};
+  const set=(id,v,cls)=>{const el=$(id);if(!el)return;el.querySelector('.v').innerHTML=v;
+    el.classList.remove('bad','okk');if(cls)el.classList.add(cls);};
+  set('fck-cov',r.covH!=null?(r.covH>=24?(r.covH/24).toFixed(1)+' d':Math.round(r.covH)+' h'):'—',r.covH!=null&&r.covH<12?'bad':(r.covH>=24?'okk':''));
+  set('fck-run',r.runS!=null?fmtT(r.runS):'No runout ✓',r.runS!=null?'bad':'okk');
+  const sb=$('fck-run');if(sb)sb.querySelector('.sb').textContent=r.runS!=null?('in ~'+r.runS.toFixed(1)+' h at current plan'):('dry-only would stop '+(r.runD!=null?fmtT(r.runD):'beyond horizon'));
+  set('fck-48',fmt(FC.hz>=48?r.inv48:r.inv24)+' lbs','');
+  const k48=$('fck-48');if(k48)k48.querySelector('.sb').textContent='projected @ '+(FC.hz>=48?'48':'24')+' h · @24 h '+fmt(r.inv24)+' lbs';
+  set('fck-req',r.reqDrv?r.reqDrv.toFixed(1):'—',(p.dNow>=r.reqDrv)?'okk':'bad');
+  const kr=$('fck-req');if(kr)kr.querySelector('.sb').textContent='to match burn · running '+p.dNow+' now'+(p.dNext?(' · +'+p.dNext+' next shift'):'');
+  set('fck-net',(r.sup[0]-r.burnH>=0?'+':'')+fmt(r.sup[0]-r.burnH)+' lbs/h',(r.sup[0]-r.burnH>=0)?'okk':'bad');
+  const kn=$('fck-net');if(kn)kn.querySelector('.sb').textContent='in '+fmt(r.sup[0])+' · burn '+fmt(r.burnH)+' /h';
+  const cfg={type:'line',data:{labels:labs,datasets:[
+    {label:'Projected on location',data:r.solid,borderColor:'#1f6f6f',backgroundColor:mkGrad('fcChart','rgba(31,111,111,.16)','rgba(31,111,111,.01)',300),fill:true,tension:.25,pointRadius:0,pointHoverRadius:6,borderWidth:2.6},
+    {label:'No new trucks (dry-down)',data:r.dry,borderColor:'#94a3b8',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.15}]},
+    options:{interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
+        tooltip:{callbacks:{title:c=>labs[c[0].dataIndex]+(c[0].dataIndex?'':' — current'),
+          label:c=>tipL(c,x=>fmt(x)+' lbs'),
+          afterBody:it=>{const i=it[0].dataIndex;
+            const out=[sep,'Drivers on: '+r.drvA[i]+' · Supply: '+fmt(r.sup[i])+' lbs/h','Burn: '+fmt(r.burnH)+' lbs/h · Net: '+(r.sup[i]-r.burnH>=0?'+':'')+fmt(r.sup[i]-r.burnH)+' lbs/h'];
+            if(i===Math.ceil(FC.sh1H))out.push('▲ shift change: +'+_fcN(($('fc-dn1')||{}).value,0)+' drivers');
+            if(i===Math.ceil(FC.sh1H+12)&&_fcN(($('fc-dn2')||{}).value,0)>0)out.push('▲ following shift: +'+_fcN(($('fc-dn2')||{}).value,0)+' drivers');
+            if(r.red[i])out.push('🔴 frac waiting on sand (NPT risk)');
+            return out;}}}},
+      scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:12}},
+        y:{...gO,min:0,ticks:{callback:v=>fK?fmt(v/1000)+'K':v}}}},
+    plugins:[_fcMarks]};
+  const ch=mkChart('fcChart',cfg);
+  if(ch){ch.$fc={H:r.H,red:r.red,runS:r.runS};try{ch.draw&&ch.update('none');}catch(_){}}
+}
+function renderFc(){
+  const pane=$('p-fc');if(!pane)return;
+  const lives=REGISTRY.filter(w=>yrOK(w)&&String(w.status)==='Live');
+  if(!lives.length){pane.innerHTML='<div class="note" style="margin:14px">No live wells in this year — the forecast runs on active pads. Switch year or set a well to Live in the Registry.</div>';return;}
+  if(!FC.id||!lives.some(w=>w.id===FC.id))FC.id=lives[0].id;
+  const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.sh1H=pf.sh1;
+  const sv=_fcStore(FC.id)||{};FC.hz=+sv.hz||FC.hz||48;
+  const V=(k,d)=>sv[k]!=null?sv[k]:d;
+  const inp=(id,lb,unit,val,step)=>`<div class="fc-cell"><div class="fc-lb"><span>${lb}</span><span class="u">${unit}</span></div><input id="fc-${id}" class="fc-in" type="number" inputmode="decimal" step="${step||'any'}" value="${val}" oninput="fcInput()"></div>`;
+  const kpi=(id,t)=>`<div class="card kpi fck" id="${id}"><div class="card-t">${t}</div><div class="v">—</div><div class="sb">—</div></div>`;
+  pane.innerHTML=`
+    <div class="fbar" style="align-items:flex-end;gap:12px">
+      <div class="fld" style="min-width:260px"><label>Live pad</label>
+        <select class="ctrl-sel" style="width:100%" onchange="fcWell(this.value)">${lives.map(w=>`<option value="${w.id}"${w.id===FC.id?' selected':''}>${w.id} — ${(w.name||'').slice(0,40)}</option>`).join('')}</select></div>
+      <div class="fld"><label>Horizon</label><div class="seg-ctrl">
+        <button id="fch24" class="seg-btn${FC.hz===24?' seg-on':''}" onclick="fcHz(24)">24 h</button>
+        <button id="fch48" class="seg-btn${FC.hz===48?' seg-on':''}" onclick="fcHz(48)">48 h</button>
+        <button id="fch72" class="seg-btn${FC.hz===72?' seg-on':''}" onclick="fcHz(72)">72 h</button></div></div>
+      <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver statuses and reset the assumptions to live data"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
+      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.hasInv?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'):'no inventory row in Stages — enter lbs on location'):'loading workbook…'} · next shift in ${pf.sh1.toFixed(1)} h</span>
+    </div>
+    <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· hourly projection · every field is editable, prefilled from live data</span></div>
+    <div class="fc-grp">On location &amp; burn</div>
+    <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      ${inp('inv','Sand on location','lbs',V('inv',pf.inv),1000)}
+      ${inp('spd','Frac pace','stages/day',V('spd',pf.spd),0.1)}
+      ${inp('tps','Sand per stage','tons',V('tps',pf.tps),1)}
+      ${inp('bump','Loads in transit now','loads',V('bump',pf.bump),1)}
+    </div>
+    <div class="fc-grp">Supply — drivers &amp; shifts</div>
+    <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      ${inp('dnow','Active drivers now','drivers',V('dnow',pf.dNow),1)}
+      ${inp('dn1','Joining next shift','+drivers',V('dn1',pf.dNext),1)}
+      ${inp('dn2','Joining following shift','+drivers',V('dn2',pf.d2),1)}
+      ${inp('tr','Turn rate per driver','loads/day',V('tr',pf.tr),0.1)}
+      ${inp('load','Average load','lbs',V('load',pf.avgLoad),500)}
+    </div>
+    <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+      ${kpi('fck-cov','Coverage (no trucks)')}
+      ${kpi('fck-run','Runout')}
+      ${kpi('fck-48','Inventory ahead')}
+      ${kpi('fck-req','Drivers to break even')}
+      ${kpi('fck-net','Net right now')}
+    </div>
+    <div class="card mb"><div class="card-t">Pounds on location — projected with incoming trucks vs dry-down</div>
+      <div class="sb" style="margin-bottom:6px">Solid = with your drivers &amp; shifts landing sand · dashed = nobody else loads · red band = frac waiting on sand</div>
+      <div class="ch ch-l"><canvas id="fcChart"></canvas></div></div>
+    <div class="note">Prefills: pace &amp; tons/stage from the last fraced days, TR &amp; avg load from this well's actuals, drivers from the live status board (resting = next shift). Shift changes assumed at 06:00 / 18:00. Edit anything — the curve recalcs as you type and your numbers stay saved for this well.</div>`;
+  if(!RES_DATA[FC.id]){const reg=REGISTRY.find(w=>w.id===FC.id)||{};
+    apiWell(FC.id,reg.status).then(w2=>{if(w2&&w2.daily){RES_DATA[FC.id]={ok:true,w:w2};
+      const at=document.querySelector('.tab.active');if(at&&at.dataset.tab==='fc')renderFc();}}).catch(()=>{});}
+  fcCalc();
+}
+/* ════════════════════════════════════════════════════════════
    RENDER · FINANCIERO / CIERRES
    ════════════════════════════════════════════════════════════ */
 function renderCie(){
@@ -3740,7 +3953,7 @@ function show(tab){
   document.querySelectorAll('#mnav button').forEach(b=>b.classList.toggle('on',b.dataset.m===tab));
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
   $('p-'+tab).classList.add('active');
-  const fn={res:renderResumen,pozo:renderPozo,sts:renderStatus,cie:renderCie}[tab];
+  const fn={res:renderResumen,pozo:renderPozo,sts:renderStatus,fc:renderFc,cie:renderCie}[tab];
   if(fn&&!RENDERED[tab]){try{fn();RENDERED[tab]=true;}
     catch(e){console.error('[show]',tab,e);const p=$('p-'+tab);
       if(p)p.innerHTML='<div class="note" style="background:#fdecec;color:#b91c1c;padding:14px;border-radius:12px;margin:14px">This tab did not load ('+String(e&&e.message||e).slice(0,90)+') — <a href="#" style="color:#b91c1c;font-weight:800" onclick="show(\''+tab+'\');return false">Reintentar ↻</a></div>';}}
@@ -3810,7 +4023,7 @@ async function _ensurePdfLibs(){ if(_pdfLibs)return _pdfLibs;
   if(!(window.jspdf&&window.jspdf.jsPDF))await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
   if(!window.html2canvas)await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
   _pdfLibs={jsPDF:window.jspdf.jsPDF,h2c:window.html2canvas};return _pdfLibs;}
-const _SEC_ES={res:'Multi-Well Overview',pozo:'Well Detail',sts:'Driver Status Live',cie:'Closeouts'};
+const _SEC_ES={res:'Multi-Well Overview',pozo:'Well Detail',sts:'Driver Status Live',fc:'Sand Forecast',cie:'Closeouts'};
 const _PZ_ES={'cl-exec':'Executive','cl-dva':'Design vs Actual','cl-daily':'Daily Ops','cl-cycle':'Cycle Times','cl-dt':'Downtime','cl-src':'Sourcing','cl-stg':'Stage Analysis','cl-rost':'Roster','cl-fin':'Financial'};
 /* Bloques lógicos de la vista: cards/grids/headers — nada se corta jamás en el PDF */
 function _pdfBlocks(pane){
@@ -3837,6 +4050,7 @@ function _pdfCatalog(){
   if(_pzMode==='pre')out.push({k:'pozo:pre',l:'Well — Pre-Well Design',t:CURRENT_ID||''});
   else if(hasWell)Object.keys(_PZ_ES).forEach(pz=>out.push({k:'pozo:'+pz,l:'Well — '+_PZ_ES[pz],t:CURRENT_ID||''}));
   out.push({k:'sts',l:'Status Live',t:'drivers'});
+  out.push({k:'fc',l:'Sand Forecast',t:'projection'});
   out.push({k:'cie',l:'Closeouts',t:'wells'});
   return out;}
 let _pdfSel=new Set(),_pdfExp=true;
@@ -3896,7 +4110,7 @@ async function _gotoSection(key){
   const parts=key.split(':'),mt=parts[0],pz=parts[1]||'';
   const tabEl=document.querySelector('.tab[data-tab="'+mt+'"]');
   if(tabEl&&!tabEl.classList.contains('active'))tabEl.click();
-  else try{({res:renderResumen,pozo:renderPozo,sts:renderStatus,cie:renderCie}[mt]||renderResumen)();}catch(_){}
+  else try{({res:renderResumen,pozo:renderPozo,sts:renderStatus,fc:renderFc,cie:renderCie}[mt]||renderResumen)();}catch(_){}
   if(mt==='pozo'&&pz){
     if(pz==='pre'){if(_pzMode!=='pre')pzMode('pre');}
     else{if(_pzMode!=='close')pzMode('close');pzShow(pz);}
@@ -3963,7 +4177,7 @@ window.pdfRun=async function(){
       if(!pane)continue;
       forceW(pane);
       if(isM){ /* re-render a 1240px: builders del tab actual */
-        try{({res:renderResumen,pozo:renderPozo,sts:renderStatus,cie:renderCie}[mt]||renderResumen)();}catch(_){}
+        try{({res:renderResumen,pozo:renderPozo,sts:renderStatus,fc:renderFc,cie:renderCie}[mt]||renderResumen)();}catch(_){}
         if(mt==='pozo'&&pzK&&pzK!=='pre'){try{_pzDirty[pzK]=true;pzShow(pzK);}catch(_){}}
         await _settle(360);
       }
@@ -4069,7 +4283,7 @@ async function refreshLive(manual){
     paintHeader();
     Object.keys(RENDERED).forEach(k=>RENDERED[k]=false);
     const cur=document.querySelector('.tab.active').dataset.tab;RENDERED[cur]=true;
-    ({res:renderResumen,pozo:renderPozo,sts:renderStatus,cie:renderCie}[cur])();
+    ({res:renderResumen,pozo:renderPozo,sts:renderStatus,fc:renderFc,cie:renderCie}[cur])();
     if(manual&&CONFIG.API_URL){
       /* v75: la reconstrucción del portafolio NO bloquea el botón — corre detrás con indicador en el pill */
       (async function(){const _pu=$('pill-upd');
@@ -4176,7 +4390,7 @@ async function init(){
       else if(API_STATE.mode==='live'){API_STATE={mode:'error',reason:'Registry connected ✓ but ?action=well&id='+CURRENT_ID+' did not answer valid JSON. Try that URL in your browser; if it fails, check spreadsheet_id in Registry and that Code.gs is v6 (New version).'};}
     }
       try{const at=document.querySelector('.tab.active');const cur=(at&&at.dataset&&at.dataset.tab)||'res';
-        ({res:renderResumen,pozo:renderPozo,sts:renderStatus,cie:renderCie}[cur]||renderResumen)();paintHeader();
+        ({res:renderResumen,pozo:renderPozo,sts:renderStatus,fc:renderFc,cie:renderCie}[cur]||renderResumen)();paintHeader();
       }catch(_e2){console.warn('post-well render:',_e2);}
     };
     wellP.then(function(w){try{blog('well@'+(Date.now()-_t0)+'ms',!!w&&!(w&&w.error),(w&&w.error)||'');_handleWell(w);}catch(e3){console.error('handleWell:',e3);}});
