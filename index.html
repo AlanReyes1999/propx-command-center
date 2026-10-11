@@ -1071,7 +1071,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-11.79';
+const VBUILD='2026-10-11.80';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3819,9 +3819,18 @@ function fcPrefill(id){
     bump:dNow, /* regla Alan: los activos van CON carga en vuelo */
     cycH:+cycH.toFixed(1),belly:belly||invType==='pila',sh:fcShiftHours(reg),
     hasInv:!!(w&&w.inventory),hasW:!!w,invType,boxes,pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox};}
-function _fcStore(id){try{return JSON.parse(localStorage.getItem('meds_fc:'+id)||'null');}catch(_){return null;}}
+/* overrides SOLO de sesión: recargar la página regresa al cálculo estándar con promedios vivos */
+function _fcStore(id){return (FC.mem||{})[id]||null;}
+function _fcDirty(){const pf=FC.pf||{};const map={inv:'inv',spd:'spd',tps:'tps',dnow:'dNow',tr:'tr',load:'avgLoad',dn1:'dNext',dn2:'dFollow',bump:'bump'};
+  if(FC.shp!==((pf.sh&&pf.sh[0]===0)?'012':'618'))return true;
+  for(const k in map){const el=$('fc-'+k);if(!el)continue;const cur=parseFloat(el.value),base=+pf[map[k]];
+    if(isFinite(cur)&&isFinite(base)){if(Math.abs(cur-base)>1e-9)return true;}
+    else if(String(el.value==null?'':el.value)!==String(pf[map[k]]==null?'':pf[map[k]]))return true;}
+  return false;}
+function _fcRstBtn(){const b=$('fc-reset');if(b)b.style.display=_fcDirty()?'':'none';}
+window.fcReset=function(){if(FC.mem)delete FC.mem[FC.id];renderFc();};
 function _fcSave(){if(!FC.id)return;const o={};['inv','spd','tps','dnow','tr','load','dn1','dn2','bump'].forEach(k=>{const el=$('fc-'+k);if(el)o[k]=el.value;});
-  o.hz=FC.hz;o.shp=FC.shp;try{localStorage.setItem('meds_fc:'+FC.id,JSON.stringify(o));}catch(_){}}
+  o.hz=FC.hz;o.shp=FC.shp;FC.mem=FC.mem||{};FC.mem[FC.id]=o;_fcRstBtn();}
 window.fcHz=function(hv){FC.hz=hv;setSegAct(['fch24','fch48','fch72'],'fch'+hv);_fcSave();fcCalc();};
 window.fcShp=function(v){FC.shp=v;setSegAct(['fcs618','fcs012'],v==='012'?'fcs012':'fcs618');_fcSave();fcCalc();};
 window.fcWell=function(id){FC.id=id;renderFc();};
@@ -3830,7 +3839,7 @@ window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.di
   Promise.all([apiWell(FC.id,reg.status,true).catch(()=>null),apiStatus().catch(()=>null)])
   .then(rr=>{if(rr[0]&&rr[0].daily)RES_DATA[FC.id]={ok:true,w:rr[0]};
     if(rr[1])STATUS=rr[1];
-    try{localStorage.removeItem('meds_fc:'+FC.id);}catch(_){}
+    if(FC.mem)delete FC.mem[FC.id];
     renderFc();
   }).finally(()=>{const b2=$('fc-sync');if(b2){b2.classList.remove('busy');b2.disabled=false;}});};
 let _fcT=null;window.fcInput=function(){clearTimeout(_fcT);_fcT=setTimeout(function(){_fcSave();fcCalc();},160);};
@@ -3963,7 +3972,7 @@ function renderFc(){
   if(!lives.length){pane.innerHTML='<div class="note" style="margin:14px">No live wells in this year — the forecast runs on active pads. Switch year or set a well to Live in the Registry.</div>';return;}
   if(!FC.id||!lives.some(w=>w.id===FC.id))FC.id=lives[0].id;
   const reg=REGISTRY.find(w=>w.id===FC.id)||{};
-  const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;
+  const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;FC.pf=pf;
   const sv=_fcStore(FC.id)||{};FC.hz=+sv.hz||FC.hz||48;
   FC.shp=sv.shp||((pf.sh[0]===0)?'012':'618');
   const V=(k,d)=>sv[k]!=null?sv[k]:d;
@@ -3981,6 +3990,7 @@ function renderFc(){
         <button id="fcs618" class="seg-btn${FC.shp!=='012'?' seg-on':''}" onclick="fcShp('618')">06 &amp; 18</button>
         <button id="fcs012" class="seg-btn${FC.shp==='012'?' seg-on':''}" onclick="fcShp('012')">00 &amp; 12</button></div></div>
       <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver statuses and reset the assumptions to live data"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
+      <button class="rbtn" id="fc-reset" onclick="fcReset()" style="display:none" title="Discard manual edits — every field returns to the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
       <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'):pf.invType==='pila'?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+' · bellydump'):'no inventory row in Stages — enter lbs on location'):'loading workbook…'} · shifts ${String(pf.sh[0]).padStart(2,'0')}/${String(pf.sh[1]).padStart(2,'0')}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
     </div>
     <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· hourly projection · crew LEVELS per shift · every field editable, prefilled live</span></div>
@@ -4012,13 +4022,12 @@ function renderFc(){
       ${kpi('fck-net','Net right now')}
     </div>
     <div class="card mb"><div class="card-t">Pounds on location — crew levels stepping at each shift (+1 h ramp)</div>
-      <div class="sb" style="margin-bottom:6px">Solid = projected with your shift plan · dashed = nobody else loads · ▲▼ = crew level change · red band = frac waiting on sand</div>
-      <div class="ch ch-l"><canvas id="fcChart"></canvas></div></div>
-    <div class="note">Rules: shift changes ${FC.shp==='012'?'00:00 / 12:00':'06:00 / 18:00'} (+1 h ramp-in) — Bayswater runs 06/18, Fasken 00/12; after the two levels you set, the pattern alternates day/night. Loads in motion assumes every active driver is carrying one load landing within the half-cycle. Boxed wells target: MIN ${FC_MIN_STG} stages · GOAL ${FC_GOAL_STG}. Bellydump target: MIN ${FC_MIN_STG} stages · 3.0M lbs.</div>`;
+      <div class="sb" style="margin-bottom:6px">Solid = projected with shift plan · dashed = nobody else loads · ▲▼ = crew level change · red band = frac waiting on sand</div>
+      <div class="ch ch-l"><canvas id="fcChart"></canvas></div></div>`;
   if(!RES_DATA[FC.id]){
     apiWell(FC.id,reg.status).then(w2=>{if(w2&&w2.daily){RES_DATA[FC.id]={ok:true,w:w2};
       const at=document.querySelector('.tab.active');if(at&&at.dataset.tab==='fc')renderFc();}}).catch(()=>{});}
-  fcCalc();
+  fcCalc();_fcRstBtn();
 }
 /* ════════════════════════════════════════════════════════════
    RENDER · FINANCIERO / CIERRES
