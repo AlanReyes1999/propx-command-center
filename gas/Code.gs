@@ -1,4 +1,9 @@
-/** MEDS · PropX Live API — Code.gs v9.2. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.3. PEGAR TAL CUAL → Nueva versión.
+ *  v9.3 CREW POR TURNO: si el Status Log trae columna "shift" (DAY/NIGHT/COVERING por
+ *       driver-fila), cada pad publica sbrk = {DAY:{status:n},NIGHT:{...},COVER:{...}}
+ *       del último snapshot — el Forecast arma los niveles de crew por turno EXACTOS
+ *       (next shift = night/day reales + covering en ambos). Sin esa columna, sbrk=null
+ *       y el portal usa su fallback. Nada más cambia.
  *  v9.2 SERIE POR HORA: nuevo campo hourly[] por día (hora del Delivered) con loads,
  *    drivers únicos, revenue, fsc, tons y promedios de ciclo (terminal/transit OW/offload)
  *    por hora — el portal lo usa para la vista por hora al filtrar UN día. El portfolio
@@ -84,7 +89,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.2';
+const API_VERSION='v9.3';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -661,6 +666,13 @@ function getStatus(days){
   const isRest=s=>{const u=_nrm(s);return CFG.restingStatuses.some(function(k){return u.indexOf(k)>=0;});};
   // Racha Resting >2d — solo posible si el Status Log trae columna driver (snapshot por driver):
   const dIdx=SL.H.findIndex(function(hh){return /^driver/i.test(String(hh).trim());});
+  // v9.3: columna shift opcional (DAY / NIGHT / COVERING por fila) → crew por turno exacto
+  const sIdx=SL.H.findIndex(function(hh){return /^shift/i.test(String(hh).trim());});
+  const shK=function(v){const u=String(v||'').toUpperCase();
+    if(u.indexOf('COVER')>=0)return 'COVER';
+    if(u.indexOf('NIGHT')>=0||u.indexOf('PM')===0)return 'NIGHT';
+    if(u.indexOf('DAY')>=0||u.indexOf('AM')===0)return 'DAY';
+    return '';};
   const R2H=+CFG.resting2dHours||48; const drv={};
   const kMs=function(k){const m=String(k).match(/(\d{4})-(\d{2})-(\d{2}) (\d{2})/);return m?new Date(+m[1],+m[2]-1,+m[3],+m[4]).getTime():0;};
   const wells={}; let latest='';
@@ -675,6 +687,8 @@ function getStatus(days){
     const c=W.k[key]=W.k[key]||{a:0,r:0,i:0};
     if(isAct(st))c.a+=n; else if(isRest(st))c.r+=n; else c.i+=n;
     const S2=W.s=W.s||{}; const bs=S2[key]=S2[key]||{}; bs[st]=(bs[st]||0)+n; // breakdown crudo por estado (chips del portal)
+    if(sIdx>=0){const sk=shK(r[sIdx]); if(sk){const SB=W.sb=W.sb||{}; const bb=SB[key]=SB[key]||{};
+      const o2=bb[sk]=bb[sk]||{}; o2[st]=(o2[st]||0)+n;}} // v9.3: por turno
     if(dIdx>=0){const dn=String(r[dIdx]||'').trim(); if(dn){const D=drv[dn]=drv[dn]||{};
       if(!D.firstKey||key<D.firstKey)D.firstKey=key;
       if(!D.lastKey||key>=D.lastKey){D.lastKey=key;D.lastRest=isRest(st);D.well=wl;}
@@ -707,6 +721,7 @@ function getStatus(days){
       live:(lastK===latest), first:K[0]||'', last:lastK,
       on_duty_now:(a[a.length-1]||0)+(r[r.length-1]||0)+(ii[ii.length-1]||0),
       brk:(wells[wl].s&&wells[wl].s[lastK])||{},
+      sbrk:(wells[wl].sb&&wells[wl].sb[lastK])||null, // v9.3: {DAY:{status:n},NIGHT:{...},COVER:{...}} o null
       ts:ts, a:a, r:r, i:ii };
   }).filter(Boolean).sort((x,y)=>(y.live-x.live)||(y.on_duty_now-x.on_duty_now));
   // Nombres crudos del Status Log que no cruzaron NINGÚN pad del Registry (para depurar log_match)
