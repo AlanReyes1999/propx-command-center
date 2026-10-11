@@ -179,6 +179,16 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fc-gc.on{background:#E7F3EC;color:#2F7A45}.fc-gc.bad{background:#fdecec;color:#b23b3b}
 @keyframes grainUp{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .fc-gsvg .grain{animation:grainUp .6s ease backwards}
+#fcPG{transform-box:fill-box;transform-origin:50% 100%;transition:transform .85s cubic-bezier(.3,.8,.3,1)}
+#fcEF{transition:y .7s cubic-bezier(.3,.8,.3,1),height .7s cubic-bezier(.3,.8,.3,1),fill .4s}
+@keyframes epulse{0%,100%{opacity:1}50%{opacity:.55}}
+.fc-epulse{animation:epulse 1.1s ease-in-out infinite}
+.fc-src{float:right;font:700 8.5px/1.4 'Plus Jakarta Sans';letter-spacing:.04em;color:#8a97a6;text-transform:none}
+.fc-src.live{color:#2F7A45}.fc-src.fb{color:#b45309}
+.rbtn.ghost{opacity:.42}
+.rbtn.alive{animation:rpop .45s ease}
+@keyframes rpop{0%{transform:scale(1)}45%{transform:scale(1.07)}100%{transform:scale(1)}}
+.fc-gc.warn{background:#faf3dc;color:#9a7b2d}.fc-gc.hi{background:#fbeccf;color:#a06514}
 .fck .v{font-size:21px}
 .fck.bad{background:#fdf2f2;border-color:#f3c9c9}
 .fck.bad .v{color:#c24545}
@@ -1071,7 +1081,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-11.80';
+const VBUILD='2026-10-11.81';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3789,12 +3799,12 @@ function fcPrefill(id){
   const T=(w&&w.targets)||{};
   const belly=fcIsBelly(reg);
   const lbsBox=+T.net_weight_load||45000;
-  let invType=null,boxes=0,pilaT=0,pilaIsLbs=false,inv=0;
+  let invType=null,boxes=0,pilaT=0,pilaIsLbs=false,inv=0,emptyB=0;
   if(w&&w.inventory){
     const rawPila=(w.inventory.pila!=null)?+w.inventory.pila:(belly?+w.inventory.full:null);
     if(belly&&rawPila!=null){invType='pila';const pv=rawPila||0;
       pilaIsLbs=pv>20000;pilaT=pilaIsLbs?pv/2000:pv;inv=pilaIsLbs?pv:pv*2000;}
-    else if(w.inventory.type==='boxes'){invType='boxes';boxes=+w.inventory.full||0;inv=boxes*lbsBox;}
+    else if(w.inventory.type==='boxes'){invType='boxes';boxes=+w.inventory.full||0;emptyB=(w.inventory.empty!=null)?+w.inventory.empty:0;inv=boxes*lbsBox;}
     else if(w.inventory.pila!=null){invType='pila';const pv=+w.inventory.pila||0;
       pilaIsLbs=pv>20000;pilaT=pilaIsLbs?pv/2000:pv;inv=pilaIsLbs?pv:pv*2000;}
   }
@@ -3810,26 +3820,32 @@ function fcPrefill(id){
   const avgLoad=lds?Math.round(tons*2000/lds):lbsBox;
   const cd=(w&&w.cycleDaily)||[];const lastC=cd.slice(-3);
   const cycH=lastC.length?lastC.reduce((s,c)=>s+(((+c.terminal||0)+(+c.transit||0)*2+(+c.offload||0))/60),0)/lastC.length/2:((+T.weighted_ct||192)/60/2);
-  const pad=_fcPad(reg);let dNow=0,dRest=0;
-  if(pad&&pad.brk){Object.keys(pad.brk).forEach(st2=>{const n=+pad.brk[st2]||0;const b=bktOf(st2);
+  const pad=_fcPad(reg);let dNow=0,dRest=0;const padOk=!!(pad&&pad.brk);
+  if(padOk){Object.keys(pad.brk).forEach(st2=>{const n=+pad.brk[st2]||0;const b=bktOf(st2);
     if(b==='a')dNow+=n; if(b==='r')dRest+=n;});}
+  const brdA=dNow,brdR=dRest,brdAt=(STATUS&&STATUS.latest)?String(STATUS.latest).slice(11,13):'';
   if(!dNow&&dl.length)dNow=+dl[dl.length-1].drivers||+T.drivers_day||8;
   return {inv:Math.round(inv),spd:+spd.toFixed(1),tps:+tps.toFixed(1),tr:+tr.toFixed(2),
     avgLoad,dNow,dNext:dRest||dNow,dFollow:dNow,
     bump:dNow, /* regla Alan: los activos van CON carga en vuelo */
     cycH:+cycH.toFixed(1),belly:belly||invType==='pila',sh:fcShiftHours(reg),
-    hasInv:!!(w&&w.inventory),hasW:!!w,invType,boxes,pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox};}
+    hasInv:!!(w&&w.inventory),hasW:!!w,invType,boxes,empty:emptyB,pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox,
+    padOk,brdA,brdR,brdAt};}
 /* overrides SOLO de sesión: recargar la página regresa al cálculo estándar con promedios vivos */
 function _fcStore(id){return (FC.mem||{})[id]||null;}
-function _fcDirty(){const pf=FC.pf||{};const map={inv:'inv',spd:'spd',tps:'tps',dnow:'dNow',tr:'tr',load:'avgLoad',dn1:'dNext',dn2:'dFollow',bump:'bump'};
+function _fcDirty(){const pf=FC.pf||{};const map={inv:'inv',spd:'spd',tps:'tps',dnow:'dNow',tr:'tr',load:'avgLoad',dn1:'dNext',dn2:'dFollow',bump:'bump',emp:'empty'};
   if(FC.shp!==((pf.sh&&pf.sh[0]===0)?'012':'618'))return true;
   for(const k in map){const el=$('fc-'+k);if(!el)continue;const cur=parseFloat(el.value),base=+pf[map[k]];
     if(isFinite(cur)&&isFinite(base)){if(Math.abs(cur-base)>1e-9)return true;}
     else if(String(el.value==null?'':el.value)!==String(pf[map[k]]==null?'':pf[map[k]]))return true;}
   return false;}
-function _fcRstBtn(){const b=$('fc-reset');if(b)b.style.display=_fcDirty()?'':'none';}
+function _fcRstBtn(){const b=$('fc-reset');if(!b)return;const d=_fcDirty();
+  const was=b.disabled===false;
+  b.disabled=!d;b.classList.toggle('ghost',!d);
+  if(d&&!was){b.classList.remove('alive');void(b.offsetWidth);b.classList.add('alive');}
+  b.title=d?'Discard manual edits — every field returns to the live averages':'Already at the live averages';}
 window.fcReset=function(){if(FC.mem)delete FC.mem[FC.id];renderFc();};
-function _fcSave(){if(!FC.id)return;const o={};['inv','spd','tps','dnow','tr','load','dn1','dn2','bump'].forEach(k=>{const el=$('fc-'+k);if(el)o[k]=el.value;});
+function _fcSave(){if(!FC.id)return;const o={};['inv','spd','tps','dnow','tr','load','dn1','dn2','bump','emp'].forEach(k=>{const el=$('fc-'+k);if(el)o[k]=el.value;});
   o.hz=FC.hz;o.shp=FC.shp;FC.mem=FC.mem||{};FC.mem[FC.id]=o;_fcRstBtn();}
 window.fcHz=function(hv){FC.hz=hv;setSegAct(['fch24','fch48','fch72'],'fch'+hv);_fcSave();fcCalc();};
 window.fcShp=function(v){FC.shp=v;setSegAct(['fcs618','fcs012'],v==='012'?'fcs012':'fcs618');_fcSave();fcCalc();};
@@ -3861,47 +3877,106 @@ function fcGaugeCalc(lbs,tps,belly){
   /* bad < MIN stages · mid entre MIN y GOAL/TARGET · ok al cumplir GOAL (cajas) o TARGET 3M (belly) */
   const okNow=belly?(lbs>=FC_BELLY_TARGET):(stgCov>=FC_GOAL_STG);
   return {stgCov,pct:Math.max(0,pct),minPct,state:okNow?'ok':(stgCov>=FC_MIN_STG?'mid':'bad'),perStg};}
-function fcGaugeSVG(g,belly){
-  const W=150,H2=190,bx=18,bw=W-36,topY=16,botY=H2-18,ih=botY-topY;
-  const fillPct=Math.min(1.12,g.pct/100);
-  const fh=Math.max(2,Math.min(ih,ih*fillPct));
-  const fy=botY-fh;
-  const minY=botY-ih*Math.min(1,g.minPct/100);
-  const col=g.state==='ok'?'#4ca882':g.state==='mid'?'#e0a63e':'#d47272';
-  const grains=[];const gy0=Math.max(topY+8,fy+6);
-  for(let i=0;i<14;i++){const gx=bx+8+((i*37)%(bw-16));const gy=gy0+((i*23)%(Math.max(10,botY-gy0-6)));
-    grains.push('<circle class="grain" style="animation-delay:'+(i*35)+'ms" cx="'+gx+'" cy="'+gy+'" r="2.1" fill="rgba(255,255,255,.5)"/>');}
-  const shape=belly
-    ?'<path d="M'+bx+' '+botY+' Q'+(W/2)+' '+(topY-6)+' '+(bx+bw)+' '+botY+' Z"'
-    :'<rect x="'+bx+'" y="'+topY+'" width="'+bw+'" height="'+ih+'" rx="16"';
+/* Empties (cajas vacías) — regla Alan: <10 verde · 10–20 amarillo tenue · 21–30 amarillo · >30 rojo */
+function fcEmptyState(e){e=Math.max(0,Math.round(e||0));
+  return e<10?{k:'ok',c:'#4ca882',cls:'on',t:'OK'}
+    :e<=20?{k:'watch',c:'#d9c379',cls:'warn',t:'WATCH'}
+    :e<=30?{k:'high',c:'#e0a63e',cls:'hi',t:'HIGH — plan box swaps'}
+    :{k:'crit',c:'#d47272',cls:'bad',t:'CRITICAL — swap now'};}
+function _fcTw(el,to,f){if(!el)return;const from=parseFloat(el.dataset&&el.dataset.v);
+  if(el.dataset)el.dataset.v=String(to);
+  if(typeof requestAnimationFrame==='undefined'||!isFinite(from)||Math.abs(to-from)<0.6){el.textContent=f(to);return;}
+  const t0=performance.now(),d=520;
+  requestAnimationFrame(function st(t){const k=Math.min(1,(t-t0)/d);
+    el.textContent=f(from+(to-from)*(1-Math.pow(1-k,3)));
+    if(k<1)requestAnimationFrame(st);});}
+function _fcGrains(x0,x1,y0,y1,n){const o=[];for(let i=0;i<n;i++){
+  const gx=x0+((i*37)%Math.max(8,(x1-x0)));const gy=y0+((i*23)%Math.max(8,(y1-y0)));
+  o.push('<circle class="grain" style="animation-delay:'+(i*35)+'ms" cx="'+gx+'" cy="'+gy+'" r="2" fill="rgba(255,255,255,.5)"/>');}
+  return o.join('');}
+/* Skeleton CAJAS: silo de llenas (MIN 4 · GOAL 6 stg) + columna de vacías con alertas */
+function _fcSkBoxes(){const W=170,H2=190,bx=14,bw=92,ty=16,by=H2-18,ih=by-ty,ex=126,ew=32;
+  let tk='';[10,20,30].forEach(v=>{const y=by-ih*Math.min(1,v/40);
+    tk+='<line x1="'+(ex+ew)+'" x2="'+(ex+ew+5)+'" y1="'+y+'" y2="'+y+'" stroke="#b6c0ca" stroke-width="1.2"/>'
+      +'<text x="'+(ex+ew+7)+'" y="'+(y+2.5)+'" font-size="6.5" font-weight="700" fill="#9aa7b4" font-family="Plus Jakarta Sans">'+v+'</text>';});
   return '<svg class="fc-gsvg" width="'+W+'" height="'+H2+'" viewBox="0 0 '+W+' '+H2+'">'
-    +'<defs><clipPath id="fcClip">'+shape+'/></clipPath>'
-    +'<linearGradient id="fcG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity=".92"/><stop offset="1" stop-color="'+col+'"/></linearGradient></defs>'
-    +shape+' fill="#F1F5F9" stroke="#dfe7ee" stroke-width="1.5"/>'
-    +'<g clip-path="url(#fcClip)">'
-    +'<rect class="fc-gfill" x="0" y="'+fy+'" width="'+W+'" height="'+(fh+6)+'" fill="url(#fcG)"/>'
-    +'<path d="M0 '+fy+' Q '+(W*0.25)+' '+(fy-5)+' '+(W*0.5)+' '+fy+' T '+W+' '+fy+' V '+(fy+8)+' H0 Z" fill="'+col+'" opacity=".55"/>'
-    +grains.join('')+'</g>'
-    +'<line x1="'+(bx-6)+'" x2="'+(bx+bw+6)+'" y1="'+minY+'" y2="'+minY+'" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
-    +'<text x="'+(bx+bw+4)+'" y="'+(minY-4)+'" text-anchor="end" font-size="8" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+FC_MIN_STG+' STG</text>'
-    +(belly?'':'<line x1="'+(bx-6)+'" x2="'+(bx+bw+6)+'" y1="'+topY+'" y2="'+topY+'" stroke="#c99a3f" stroke-width="1.4" stroke-dasharray="3 4"/>')
+    +'<defs><clipPath id="fcClipF"><rect x="'+bx+'" y="'+ty+'" width="'+bw+'" height="'+ih+'" rx="14"/></clipPath>'
+    +'<clipPath id="fcClipE"><rect x="'+ex+'" y="'+ty+'" width="'+ew+'" height="'+ih+'" rx="10"/></clipPath>'
+    +'<linearGradient id="fcGradF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f7a68" stop-opacity=".9"/><stop offset="1" stop-color="#2f7a68"/></linearGradient></defs>'
+    +'<rect x="'+bx+'" y="'+ty+'" width="'+bw+'" height="'+ih+'" rx="14" fill="#F1F5F9" stroke="#dfe7ee" stroke-width="1.5"/>'
+    +'<g clip-path="url(#fcClipF)"><rect id="fcGF" class="fc-gfill" x="0" y="'+by+'" width="'+W+'" height="'+(ih+6)+'" fill="url(#fcGradF)"/>'
+    +_fcGrains(bx+8,bx+bw-8,ty+10,by-8,12)+'</g>'
+    +'<line id="fcMinL" x1="'+(bx-5)+'" x2="'+(bx+bw+5)+'" y1="0" y2="0" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
+    +'<text id="fcMinT" x="'+(bx+bw+3)+'" y="0" text-anchor="end" font-size="8" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+FC_MIN_STG+'</text>'
+    +'<line x1="'+(bx-5)+'" x2="'+(bx+bw+5)+'" y1="'+ty+'" y2="'+ty+'" stroke="#c99a3f" stroke-width="1.4" stroke-dasharray="3 4"/>'
+    +'<text x="'+bx+'" y="'+(ty-4)+'" font-size="8" font-weight="800" fill="#c99a3f" font-family="Plus Jakarta Sans">GOAL '+FC_GOAL_STG+'</text>'
+    +'<rect x="'+ex+'" y="'+ty+'" width="'+ew+'" height="'+ih+'" rx="10" fill="#F1F5F9" stroke="#dfe7ee" stroke-width="1.5"/>'
+    +'<g clip-path="url(#fcClipE)"><rect id="fcEF" x="'+(ex-2)+'" y="'+by+'" width="'+(ew+4)+'" height="'+(ih+6)+'" fill="#4ca882"/></g>'+tk
+    +'<text id="fcFn" x="'+(bx+bw/2)+'" y="'+(H2-3)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">FULL</text>'
+    +'<text id="fcEn" x="'+(ex+ew/2)+'" y="'+(H2-3)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">EMPTY</text>'
+    +'</svg>';}
+/* Skeleton SANDPILE: la pila ESCALA con la arena (ancho+alto), MIN fijo como referencia */
+function _fcSkPila(){const W=150,H2=190,bx=14,bw=W-28,ty=22,by=H2-18;
+  return '<svg class="fc-gsvg" width="'+W+'" height="'+H2+'" viewBox="0 0 '+W+' '+H2+'">'
+    +'<g id="fcPG"><path id="fcPP" d="M'+bx+' '+by+' Q'+(W/2)+' '+(ty-8)+' '+(bx+bw)+' '+by+' Z" fill="#e0a63e"/>'
+    +'<path d="M'+(bx+18)+' '+(by-14)+' Q'+(W/2)+' '+(ty+16)+' '+(bx+bw-18)+' '+(by-14)+'" stroke="rgba(255,255,255,.35)" stroke-width="5" fill="none" stroke-linecap="round"/>'
+    +_fcGrains(bx+16,bx+bw-16,by-70,by-8,12)+'</g>'
+    +'<line x1="2" x2="'+(W-2)+'" y1="'+by+'" y2="'+by+'" stroke="#dfe7ee" stroke-width="2"/>'
+    +'<line id="fcMinL" x1="6" x2="'+(W-6)+'" y1="0" y2="0" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
+    +'<text id="fcMinT" x="'+(W-6)+'" y="0" text-anchor="end" font-size="8" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+FC_MIN_STG+' STG</text>'
     +'</svg>';}
 function fcGaugePaint(){
   const host=$('fc-gauge');if(!host)return;
   const g2=k=>_fcN(($('fc-'+k)||{}).value,0);
-  const lbs=g2('inv'),tps=Math.max(0.1,g2('tps'));
-  const gg=fcGaugeCalc(lbs,tps,FC.belly);
-  host.className='fc-gauge g-'+gg.state;
-  host.innerHTML=
-    '<div class="fc-gpct">'+Math.round(gg.pct)+'%</div>'
-    +'<div class="fc-gsub">'+(FC.belly?'SANDPILE vs 3.0M lbs TARGET':'BOXED SAND vs GOAL '+FC_GOAL_STG+' STAGES')+'<br>'+fmt(Math.round(lbs))+' lbs · '+gg.stgCov.toFixed(1)+' stages of coverage</div>'
-    +fcGaugeSVG(gg,FC.belly)
-    +'<div class="fc-gchips">'
-    +'<span class="fc-gc '+(gg.stgCov>=FC_MIN_STG?'on':'bad')+'">MIN '+FC_MIN_STG+' stg · '+(gg.stgCov>=FC_MIN_STG?'OK':'SHORT '+(FC_MIN_STG-gg.stgCov).toFixed(1))+'</span>'
-    +(FC.belly
+  const lbs=Math.max(0,g2('inv')),tps=Math.max(0.1,g2('tps')),emp=Math.max(0,Math.round(g2('emp')));
+  const belly=!!FC.belly;
+  const gg=fcGaugeCalc(lbs,tps,belly);
+  const es=fcEmptyState(emp);
+  const mode=belly?'pila':'boxes';
+  const sub=belly
+    ?('SANDPILE vs 3.0M lbs TARGET<br>'+fmt(Math.round(lbs))+' lbs · '+gg.stgCov.toFixed(1)+' stages of coverage')
+    :('BOXED SAND vs GOAL '+FC_GOAL_STG+' STAGES<br>'+fmt(Math.round(lbs))+' lbs · '+gg.stgCov.toFixed(1)+' stg · '+fmt(emp)+' empties on loc');
+  const chips='<span class="fc-gc '+(gg.stgCov>=FC_MIN_STG?'on':'bad')+'">MIN '+FC_MIN_STG+' stg · '+(gg.stgCov>=FC_MIN_STG?'OK':'SHORT '+(FC_MIN_STG-gg.stgCov).toFixed(1))+'</span>'
+    +(belly
       ?'<span class="fc-gc '+(lbs>=FC_BELLY_TARGET?'on':'')+'">TARGET 3.0M · '+(lbs>=FC_BELLY_TARGET?'OK':fmt(Math.round(FC_BELLY_TARGET-lbs))+' to go')+'</span>'
-      :'<span class="fc-gc '+(gg.stgCov>=FC_GOAL_STG?'on':'')+'">GOAL '+FC_GOAL_STG+' stg · '+(gg.stgCov>=FC_GOAL_STG?'OK':(FC_GOAL_STG-gg.stgCov).toFixed(1)+' to go')+'</span>')
-    +'</div>';}
+      :'<span class="fc-gc '+(gg.stgCov>=FC_GOAL_STG?'on':'')+'">GOAL '+FC_GOAL_STG+' stg · '+(gg.stgCov>=FC_GOAL_STG?'OK':(FC_GOAL_STG-gg.stgCov).toFixed(1)+' to go')+'</span>'
+       +'<span class="fc-gc '+es.cls+'">EMPTIES '+emp+' · '+es.t+'</span>');
+  host.className='fc-gauge g-'+gg.state;
+  if(host._sk!==mode){host._sk=mode;
+    host.innerHTML='<div class="fc-gpct" id="fcPct">'+Math.round(gg.pct)+'%</div>'
+      +'<div class="fc-gsub" id="fcSub">'+sub+'</div>'
+      +(belly?_fcSkPila():_fcSkBoxes())
+      +'<div class="fc-gchips" id="fcChips">'+chips+'</div>';}
+  else{const s2=$('fcSub');if(s2)s2.innerHTML=sub;const c2=$('fcChips');if(c2)c2.innerHTML=chips;}
+  try{
+    _fcTw($('fcPct'),Math.round(gg.pct),v=>Math.round(v)+'%');
+    const col=gg.state==='ok'?'#4ca882':gg.state==='mid'?'#e0a63e':'#d47272';
+    if(belly){
+      const s=Math.max(0.12,Math.min(1.08,gg.pct/100));
+      const pg=$('fcPG');if(pg&&pg.style)pg.style.transform='scale('+s.toFixed(3)+')';
+      const pp=$('fcPP');if(pp&&pp.setAttribute)pp.setAttribute('fill',col);
+      /* ápice visual de la curva Q (t=.5): y=93 → alto útil 79px; MIN usa la MISMA escala
+         que el scale() de la pila para que crucen exactamente en pct===minPct */
+      const by=172,ih=79,minY=by-ih*Math.min(1,gg.minPct/100);
+      const ml=$('fcMinL'),mt=$('fcMinT');
+      if(ml&&ml.setAttribute){ml.setAttribute('y1',minY);ml.setAttribute('y2',minY);}
+      if(mt&&mt.setAttribute)mt.setAttribute('y',minY-4);
+    }else{
+      const ty=16,by=172,ih=by-ty;
+      const fr=Math.max(0.015,Math.min(1,gg.stgCov/FC_GOAL_STG));
+      const gf=$('fcGF');if(gf&&gf.setAttribute){gf.setAttribute('y',by-ih*fr);gf.setAttribute('height',ih*fr+6);}
+      const minY=by-ih*Math.min(1,gg.minPct/100);
+      const ml=$('fcMinL'),mt=$('fcMinT');
+      if(ml&&ml.setAttribute){ml.setAttribute('y1',minY);ml.setAttribute('y2',minY);}
+      if(mt&&mt.setAttribute)mt.setAttribute('y',minY-4);
+      const efr=Math.min(1,emp/40);
+      const ef=$('fcEF');if(ef&&ef.setAttribute){ef.setAttribute('y',by-ih*efr);ef.setAttribute('height',ih*efr+6);ef.setAttribute('fill',es.c);
+        if(ef.classList)ef.classList.toggle('fc-epulse',es.k==='crit');}
+      const fn=$('fcFn');if(fn)fn.textContent='FULL '+fmt(Math.round(lbs/Math.max(1,( $('fc-load')&&parseFloat($('fc-load').value))||47000)));
+      const en=$('fcEn');if(en)en.textContent='EMPTY '+emp;
+    }
+  }catch(_){host._sk=null;}
+}
 const _fcMarks={id:'fcMarks',afterDraw(ch){try{
   const o=ch.$fc||{};const xs=ch.scales.x,ys=ch.scales.y,ctx=ch.ctx;if(!xs||!ys)return;
   ctx.save();ctx.font="700 9px 'Plus Jakarta Sans'";ctx.textAlign='center';
@@ -3914,12 +3989,24 @@ const _fcMarks={id:'fcMarks',afterDraw(ch){try{
     const lvl=o.lvls[i+1],prev=o.lvls[i];const up=lvl>prev,down=lvl<prev;
     ctx.strokeStyle='rgba(58,124,165,.45)';ctx.setLineDash([3,4]);ctx.lineWidth=1.2;
     ctx.beginPath();ctx.moveTo(x,ys.top+16);ctx.lineTo(x,ys.bottom);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle=up?'#2F7A45':down?'#c24545':'#5d6b7a';
+    ctx.fillStyle=up?'#2F7A45':down?'#c24545':'#8a97a6';
     ctx.beginPath();
-    if(up){ctx.moveTo(x,ys.top+18);ctx.lineTo(x-5,ys.top+27);ctx.lineTo(x+5,ys.top+27);}
-    else{ctx.moveTo(x,ys.top+27);ctx.lineTo(x-5,ys.top+18);ctx.lineTo(x+5,ys.top+18);}
-    ctx.closePath();ctx.fill();
+    if(up){ctx.moveTo(x,ys.top+18);ctx.lineTo(x-5,ys.top+27);ctx.lineTo(x+5,ys.top+27);ctx.closePath();ctx.fill();}
+    else if(down){ctx.moveTo(x,ys.top+27);ctx.lineTo(x-5,ys.top+18);ctx.lineTo(x+5,ys.top+18);ctx.closePath();ctx.fill();}
+    else{ctx.arc(x,ys.top+22,3,0,Math.PI*2);ctx.fill();}
     ctx.fillText(lvl+' drv',x,ys.top+40);});
+  if(o.pin!=null&&o.pin>=0&&o.pin<=o.H){const x=xs.getPixelForValue(o.pin);
+    ctx.strokeStyle='#3a7ca5';ctx.lineWidth=1.8;ctx.setLineDash([]);
+    ctx.beginPath();ctx.moveTo(x,ys.top);ctx.lineTo(x,ys.bottom);ctx.stroke();
+    const yv=ys.getPixelForValue(o.solid[o.pin]);
+    ctx.fillStyle='#3a7ca5';ctx.beginPath();ctx.arc(x,yv,4.5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+    const txt=(o.labs?o.labs[o.pin]:('h+'+o.pin))+' · '+fmt(o.solid[o.pin])+' lbs · '+o.drvA[o.pin]+' drv';
+    ctx.font="700 9.5px 'Plus Jakarta Sans'";const tw=ctx.measureText(txt).width;
+    let bx2=Math.min(Math.max(x-tw/2-8,xs.left+2),xs.right-tw-18);
+    ctx.fillStyle='rgba(18,38,58,.92)';
+    ctx.beginPath();ctx.roundRect?ctx.roundRect(bx2,ys.top+2,tw+16,20,7):ctx.rect(bx2,ys.top+2,tw+16,20);ctx.fill();
+    ctx.fillStyle='#fff';ctx.textAlign='left';ctx.fillText(txt,bx2+8,ys.top+15);ctx.textAlign='center';}
   const vline=(i,col,lbl,dy)=>{if(i==null||i<0||i>o.H)return;const x=xs.getPixelForValue(i);
     ctx.strokeStyle=col;ctx.setLineDash([5,4]);ctx.lineWidth=1.4;
     ctx.beginPath();ctx.moveTo(x,ys.top);ctx.lineTo(x,ys.bottom);ctx.stroke();
@@ -3945,26 +4032,44 @@ function fcCalc(){
   const k48=$('fck-48');if(k48)k48.querySelector('.sb').textContent='projected @ '+(FC.hz>=48?'48':'24')+' h · @24 h '+fmt(r.inv24)+' lbs';
   set('fck-req',r.reqDrv?r.reqDrv.toFixed(1):'—',(p.dNow>=r.reqDrv)?'okk':'bad');
   const kr=$('fck-req');if(kr)kr.querySelector('.sb').textContent='to match burn · crew now '+p.dNow+(r.lvls.length>1?(' → '+r.lvls[1]+' next shift'):'');
-  set('fck-net',(r.sup[0]-r.burnH>=0?'+':'')+fmt(r.sup[0]-r.burnH)+' lbs/h',(r.sup[0]-r.burnH>=0)?'okk':'bad');
-  const kn=$('fck-net');if(kn)kn.querySelector('.sb').textContent='in '+fmt(r.sup[0])+' · burn '+fmt(r.burnH)+' /h';
+  /* NET = flujo SOSTENIDO del crew (sin el one-shot de cargas en vuelo) */
+  const steady=Math.round(p.dNow*r.perDrvH);
+  const net0=steady-r.burnH;
+  set('fck-net',(net0>=0?'+':'')+fmt(net0)+' lbs/h',net0>=0?'okk':'bad');
+  const kn=$('fck-net');if(kn)kn.querySelector('.sb').textContent='crew in '+fmt(steady)+' /h · burn '+fmt(r.burnH)+' /h'+(p.bumpLoads>0?(' · +'+p.bumpLoads+' loads landing ≤'+Math.max(1,Math.round(p.cycH))+' h'):'');
+  const FD={H:r.H,red:r.red,runS:r.runS,shiftT:r.shiftT,lvls:r.lvls,labs,solid:r.solid,drvA:r.drvA,sup:r.sup,burnH:r.burnH,pin:null};
+  const TT={callbacks:{
+    title:c=>{const F=c[0].chart.$fc||FD;return F.labs[c[0].dataIndex]+(c[0].dataIndex?'':' — current');},
+    label:c=>tipL(c,x=>fmt(x)+' lbs'),
+    afterBody:it=>{const F=it[0].chart.$fc||FD;const i=it[0].dataIndex;
+      const out=[sep,'Crew on: '+F.drvA[i]+' drivers · Supply: '+fmt(F.sup[i])+' lbs/h','Burn: '+fmt(F.burnH)+' lbs/h · Net: '+(F.sup[i]-F.burnH>=0?'+':'')+fmt(F.sup[i]-F.burnH)+' lbs/h'];
+      F.shiftT.forEach((t2,si2)=>{if(Math.ceil(t2)===i){const nl=F.lvls[si2+1],pl=F.lvls[si2];
+        out.push((nl>pl?'▲':nl<pl?'▼':'▬')+' shift change → crew '+nl+' drivers (was '+pl+')');}});
+      if(F.red[i])out.push('🔴 frac waiting on sand (NPT risk)');
+      out.push('👆 click to pin this hour');
+      return out;}}};
+  const CLICK=(ev,els,chart)=>{try{const sx=chart.scales.x;if(!sx)return;
+    const px=(ev&&ev.x!=null)?ev.x:(ev&&ev.native?ev.native.offsetX:null);if(px==null)return;
+    let idx=Math.round(sx.getValueForPixel(px));idx=Math.max(0,Math.min(chart.$fc.H,idx));
+    chart.$fc.pin=(chart.$fc.pin===idx)?null:idx;chart.update('none');}catch(_){}};
+  let ch=(typeof Chart!=='undefined'&&Chart.getChart)?Chart.getChart('fcChart'):null;
+  if(ch&&ch.$fcOwn){ /* morph animado in-place (sin recrear) */
+    const keepPin=(ch.$fc&&ch.$fc.pin!=null&&ch.$fc.pin<=FD.H)?ch.$fc.pin:null;
+    FD.pin=keepPin;ch.$fc=FD;
+    ch.data.labels=labs;ch.data.datasets[0].data=r.solid;ch.data.datasets[1].data=r.dry;
+    try{ch.update();}catch(_){}
+    return;}
   const cfg={type:'line',data:{labels:labs,datasets:[
     {label:'Projected on location',data:r.solid,borderColor:'#1f6f6f',backgroundColor:mkGrad('fcChart','rgba(31,111,111,.16)','rgba(31,111,111,.01)',300),fill:true,tension:.22,pointRadius:0,pointHoverRadius:6,borderWidth:2.6},
     {label:'No new trucks (dry-down)',data:r.dry,borderColor:'#94a3b8',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.15}]},
     options:{interaction:{mode:'index',intersect:false},layout:{padding:{top:34}},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
-        tooltip:{callbacks:{title:c=>labs[c[0].dataIndex]+(c[0].dataIndex?'':' — current'),
-          label:c=>tipL(c,x=>fmt(x)+' lbs'),
-          afterBody:it=>{const i=it[0].dataIndex;
-            const out=[sep,'Crew on: '+r.drvA[i]+' drivers · Supply: '+fmt(r.sup[i])+' lbs/h','Burn: '+fmt(r.burnH)+' lbs/h · Net: '+(r.sup[i]-r.burnH>=0?'+':'')+fmt(r.sup[i]-r.burnH)+' lbs/h'];
-            r.shiftT.forEach((t2,si2)=>{if(Math.ceil(t2)===i){const nl=r.lvls[si2+1],pl=r.lvls[si2];
-              out.push((nl>pl?'▲':'▼')+' shift change → crew '+nl+' drivers (was '+pl+')');}});
-            if(r.red[i])out.push('🔴 frac waiting on sand (NPT risk)');
-            return out;}}}},
+      onClick:CLICK,
+      plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},tooltip:TT},
       scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:12}},
         y:{...gO,min:0,ticks:{callback:v=>fmt(v/1000)+'K'}}}},
     plugins:[_fcMarks]};
-  const ch=mkChart('fcChart',cfg);
-  if(ch){ch.$fc={H:r.H,red:r.red,runS:r.runS,shiftT:r.shiftT,lvls:r.lvls};try{ch.update&&ch.update('none');}catch(_){}}
+  const ch2=mkChart('fcChart',cfg);
+  if(ch2){ch2.$fcOwn=true;ch2.$fc=FD;try{ch2.update&&ch2.update('none');}catch(_){}}
 }
 function renderFc(){
   const pane=$('p-fc');if(!pane)return;
@@ -3972,10 +4077,20 @@ function renderFc(){
   if(!lives.length){pane.innerHTML='<div class="note" style="margin:14px">No live wells in this year — the forecast runs on active pads. Switch year or set a well to Live in the Registry.</div>';return;}
   if(!FC.id||!lives.some(w=>w.id===FC.id))FC.id=lives[0].id;
   const reg=REGISTRY.find(w=>w.id===FC.id)||{};
+  /* El crew board aterriza DESPUÉS del primer render (boot async): si este pozo aún no
+     tiene pad en STATUS, trae el feed y repinta — fix del 11/11/11 por fallback al daily. */
+  if(CONFIG.API_URL&&!_fcPad(reg)&&Date.now()-(FC._stsAt||0)>30000){FC._stsAt=Date.now();
+    apiStatus().then(s=>{if(s&&s.pads&&s.pads.length){STATUS=s;
+      const at=document.querySelector('.tab.active');
+      if(at&&at.dataset.tab==='fc'&&!(FC.mem&&FC.mem[FC.id]))renderFc();}}).catch(()=>{});}
   const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;FC.pf=pf;
   const sv=_fcStore(FC.id)||{};FC.hz=+sv.hz||FC.hz||48;
   FC.shp=sv.shp||((pf.sh[0]===0)?'012':'618');
   const V=(k,d)=>sv[k]!=null?sv[k]:d;
+  const _pr=FC.shp==='012'?[0,12]:[6,18];
+  const _cu=new Date().getHours()+new Date().getMinutes()/60;
+  const _ord=_pr.slice().sort((a,b)=>((a-_cu+24)%24)-((b-_cu+24)%24));
+  const _nb1=String(_ord[0]).padStart(2,'0'),_nb2=String(_ord[1]).padStart(2,'0');
   const inp=(id,lb,unit,val,step)=>`<div class="fc-cell"><div class="fc-lb"><span>${lb}</span><span class="u">${unit}</span></div><input id="fc-${id}" class="fc-in" type="number" inputmode="decimal" step="${step||'any'}" value="${val}" oninput="fcInput()"></div>`;
   const kpi=(id,t)=>`<div class="card kpi fck" id="${id}"><div class="card-t">${t}</div><div class="v">—</div><div class="sb">—</div></div>`;
   pane.innerHTML=`
@@ -3990,7 +4105,7 @@ function renderFc(){
         <button id="fcs618" class="seg-btn${FC.shp!=='012'?' seg-on':''}" onclick="fcShp('618')">06 &amp; 18</button>
         <button id="fcs012" class="seg-btn${FC.shp==='012'?' seg-on':''}" onclick="fcShp('012')">00 &amp; 12</button></div></div>
       <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver statuses and reset the assumptions to live data"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
-      <button class="rbtn" id="fc-reset" onclick="fcReset()" style="display:none" title="Discard manual edits — every field returns to the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
+      <button class="rbtn ghost" id="fc-reset" onclick="fcReset()" disabled title="Already at the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
       <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'):pf.invType==='pila'?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+' · bellydump'):'no inventory row in Stages — enter lbs on location'):'loading workbook…'} · shifts ${String(pf.sh[0]).padStart(2,'0')}/${String(pf.sh[1]).padStart(2,'0')}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
     </div>
     <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· hourly projection · crew LEVELS per shift · every field editable, prefilled live</span></div>
@@ -4003,12 +4118,14 @@ function renderFc(){
           ${inp('spd','Frac pace','stages/day',V('spd',pf.spd),0.1)}
           ${inp('tps','Sand per stage','tons',V('tps',pf.tps),1)}
           ${inp('bump','Loads in motion','active w/ load',V('bump',pf.bump),1)}
+          ${FC.belly?'':inp('emp','Empty boxes','on location',V('emp',pf.empty),1)}
         </div>
-        <div class="fc-grp">Crew levels — per shift (totals, not +)</div>
+        <div class="fc-grp">Crew levels — per shift (totals, not +)
+          <span class="fc-src ${pf.padOk?'live':'fb'}">${pf.padOk?('crew board'+(pf.brdAt?' '+pf.brdAt+':00':'')+' — '+pf.brdA+' active · '+pf.brdR+' resting'):'no live board for this pad — crew from daily log'}</span></div>
         <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-          ${inp('dnow','Crew now','drivers',V('dnow',pf.dNow),1)}
-          ${inp('dn1','Next shift crew','drivers total',V('dn1',pf.dNext),1)}
-          ${inp('dn2','Following shift crew','drivers total',V('dn2',pf.dFollow),1)}
+          ${inp('dnow','Crew now','on duty now',V('dnow',pf.dNow),1)}
+          ${inp('dn1','Next shift crew','enters '+_nb1+':00 (resting now)',V('dn1',pf.dNext),1)}
+          ${inp('dn2','Following shift crew','enters '+_nb2+':00 (mirrors now)',V('dn2',pf.dFollow),1)}
           ${inp('tr','Turn rate per driver','loads/day',V('tr',pf.tr),0.1)}
           ${inp('load','Average load','lbs',V('load',pf.avgLoad),500)}
         </div>
@@ -4509,7 +4626,10 @@ async function init(){
     /* v73: el status NO bloquea el primer pintado — aterriza y repinta si su tab está activo */
     apiStatus().then(function(s){ if(s)STATUS=s;
       blog('status(pads:'+((STATUS&&STATUS.pads&&STATUS.pads.length)||0)+')',true);
-      try{const at=document.querySelector('.tab.active');if(at&&at.dataset.tab==='sts')renderStatus();paintHeader();}catch(_){}
+      try{const at=document.querySelector('.tab.active');
+        if(at&&at.dataset.tab==='sts')renderStatus();
+        else if(at&&at.dataset.tab==='fc'&&typeof renderFc==='function'&&!(window.FC&&FC.mem&&FC.mem[FC.id]))renderFc();
+        paintHeader();}catch(_){}
     }).catch(function(e){blog('status',false,e);});
     const _handleWell=function(w){ if(_bootEp!==WELL_EPOCH){blog('well(descartado·cambio)',true);return;} if(CONFIG.API_URL){const reg=reg0;
       const wErr=(w&&w.error)?String(w.error):'';
