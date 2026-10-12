@@ -1,4 +1,10 @@
-/** MEDS · PropX Live API — Code.gs v9.4.5. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.5. PEGAR TAL CUAL → Nueva versión.
+ *  v9.5 CACHÉ DE SERVIDOR: well (75 s), status (60 s) y portfolio (120 s) se sirven
+ *  desde CacheService comprimidos (gzip, con chunking para libros grandes) — cambiar
+ *  de pozo o recargar el portal responde al instante para TODOS los usuarios y el
+ *  workbook solo se lee de verdad una vez por ventana. Live sync (fresh=1) salta la
+ *  caché y la reescribe. Un libro gigantesco que no quepa ni en 5 chunks simplemente
+ *  no se cachea (sigue funcionando igual que hoy).
  *  v9.4.5 PERFIL HORARIO (hw): por driver se publica un mapa de 24 horas con la
  *  frecuencia real de actividad (0-9 = en cuántos de sus días trabajó esa hora).
  *  El portal lo usa para pesar la proyección de crew hora por hora y para marcar
@@ -126,7 +132,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.4.5';
+const API_VERSION='v9.5';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -257,8 +263,37 @@ function getPortfolio(fresh){
   return buildPortfolio();
 }
 
+/* ── v9.5 · caché comprimida (gzip+base64, chunked ≤5×98KB) ── */
+const _CK={well:75,status:60,portfolio:120};
+function _cPut(key,obj,ttl){try{
+  const raw=JSON.stringify(obj);
+  const gz=Utilities.base64Encode(Utilities.gzip(Utilities.newBlob(raw,'application/json')).getBytes());
+  const C=CacheService.getScriptCache();
+  if(gz.length<=98000){C.put(key,gz,ttl);C.remove(key+':n');}
+  else{const n=Math.ceil(gz.length/98000);
+    if(n>5)return; /* libro gigante: mejor sin caché que a medias */
+    const kv={};for(let i=0;i<n;i++)kv[key+':'+i]=gz.substr(i*98000,98000);
+    kv[key+':n']=String(n);C.putAll(kv,ttl);C.remove(key);}
+}catch(_){}}
+function _cGet(key){try{
+  const C=CacheService.getScriptCache();
+  let gz=C.get(key);
+  if(!gz){const n=+(C.get(key+':n')||0);if(!n)return null;
+    const ks=[];for(let i=0;i<n;i++)ks.push(key+':'+i);
+    const parts=C.getAll(ks);gz='';
+    for(let i=0;i<n;i++){const p=parts[key+':'+i];if(!p)return null;gz+=p;}}
+  const raw=Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(gz),'application/x-gzip')).getDataAsString();
+  return JSON.parse(raw);
+}catch(_){return null;}}
 function doGet(e){
   const a=(e&&e.parameter&&e.parameter.action)||'registry';
+  const fresh=!!(e&&e.parameter&&e.parameter.fresh);
+  const ck=(a==='well')?('w5:'+((e&&e.parameter&&e.parameter.id)||''))
+          :(a==='status')?('s5:'+((e&&e.parameter&&e.parameter.days)||''))
+          :(a==='portfolio')?'p5':null;
+  if(ck&&!fresh){const hit=_cGet(ck);
+    if(hit&&typeof hit==='object'){hit.api_version=API_VERSION;hit.action_received=a;hit.served='cache';
+      return ContentService.createTextOutput(JSON.stringify(hit)).setMimeType(ContentService.MimeType.JSON);}}
   let out;
   try{
     out=(a==='ping')?{ok:true,time:new Date().toISOString()}
@@ -270,6 +305,7 @@ function doGet(e){
   }catch(err){ out={error:String(err)}; }
   if(out&&typeof out==='object')out.api_version=API_VERSION;
   out.action_received=a;
+  if(ck&&out&&!out.error)_cPut(ck,out,_CK[a]);
   return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
 }
 

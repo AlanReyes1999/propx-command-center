@@ -1197,7 +1197,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.101';
+const VBUILD='2026-10-12.102';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -1284,7 +1284,7 @@ async function _apiWellNet(id,status,force,sig){
           blog('well(snap✗·live✗)',false,e2);return null;}}}
     if(!force){const lv=_lsSnapGet(id,status); // LIVE fresco (<90s): sin red
       if(lv){lv.__src={mode:'local',at:(lv.snapshot&&lv.snapshot.at)||null};blog('well(local·fresco)',true);return _S(lv);}}
-    {const jw=await fetchJSON(CONFIG.API_URL+'?action=well&id='+encodeURIComponent(id),sig);
+    {const jw=await fetchJSON(CONFIG.API_URL+'?action=well&id='+encodeURIComponent(id)+(force?'&fresh=1':''),sig);
       if(jw&&jw.daily&&jw.daily.length){jw.__src={mode:'live',at:(jw.snapshot&&jw.snapshot.at)||null};try{_lsSnapPut(id,jw,status);}catch(_){}}
       return _S(jw);}
   }catch(e){console.warn('well:',e);blog('wellFetch',false,e);return null;}
