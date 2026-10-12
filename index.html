@@ -249,8 +249,13 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fg-bar::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
   background:linear-gradient(100deg,transparent 32%,rgba(255,255,255,.42) 50%,transparent 68%);
   background-size:230% 100%;background-position:-130% 0;
-  animation:fgSheen 3.4s ease-in-out infinite;animation-delay:calc(var(--ri,0)*180ms)}
-@keyframes fgSheen{0%,55%{background-position:-130% 0}85%,100%{background-position:130% 0}}
+  animation:fgSheen 1.5s ease-out both;animation-delay:calc(var(--ri,0)*140ms + .2s)}
+@keyframes fgSheen{from{background-position:-130% 0}to{background-position:130% 0}}
+/* rojas: parpadeo de alerta continuo (el degradado se conserva — solo pulsa la opacidad) */
+.fg-bar.bg-r{animation-name:growW,fgAlert;animation-duration:.7s,1.7s;
+  animation-timing-function:cubic-bezier(.25,.9,.3,1),ease-in-out;
+  animation-iteration-count:1,infinite;animation-fill-mode:backwards,none}
+@keyframes fgAlert{0%,100%{opacity:1}50%{opacity:.5}}
 .fg-bar.bg-g{background:linear-gradient(135deg,#bfe3d2,#9fd4bb);color:#1e5c3f}
 .fg-bar.bg-y{background:linear-gradient(135deg,#f3e3b5,#ecd58f);color:#7a5c14}
 .fg-bar.bg-r{background:linear-gradient(135deg,#f3c3c3,#eaa5a5);color:#7d2b2b}
@@ -1192,7 +1197,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.99';
+const VBUILD='2026-10-12.100';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
