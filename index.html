@@ -1188,7 +1188,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.96';
+const VBUILD='2026-10-12.97';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -4411,15 +4411,15 @@ function fcCalc(){
   set('fck-net',(netK>=0?'+':'')+fmt(netK)+' lbs/h',netK>=0?'okk':'bad');
   const kn=$('fck-net');if(kn)kn.querySelector('.sb').textContent='at '+eK.name.toLowerCase()+' · roster in '+fmt(steady)+' /h · burn '+fmt(Math.round(B[K]))+' /h'+(p.bumpLoads>0?(' · +'+p.bumpLoads+' loads ≤'+Math.max(1,Math.round(p.cycH))+' h'):'');
   /* chips de escenario = selector de KPI pace */
-  const esc=$('fc-esc');if(esc)esc.innerHTML=FC_ESC.map(e=>{const req=SIM[e.k].reqDrv;
+  const esc=$('fc-esc');if(esc)esc.innerHTML=FC_ESC.map(e=>{const rq=Math.ceil(SIM[e.k].reqDrv-1e-9);
     return '<span class="fc-ec'+(e.k===K?' sel':'')+'" onclick="fcKpi(\''+e.k+'\')" title="Anchor all KPIs to this pace"><span class="dt" style="background:'+e.col+'"></span>'+e.name
-      +' <b>'+fmt(Math.round(B[e.k]))+'</b> lbs/h · need <b>'+req.toFixed(1)+'</b> drv '
-      +(crew0>=req?'<b class="ok2">✓ covered</b>':'<b class="bad2">short '+(req-crew0).toFixed(1)+'</b>')+'</span>';}).join('');
+      +' <b>'+fmt(Math.round(B[e.k]))+'</b> lbs/h · need <b>'+rq+'</b> drv '
+      +(crew0>=rq?'<b class="ok2">✓ covered</b>':'<b class="bad2">short '+(rq-crew0)+'</b>')+'</span>';}).join('');
   /* alert banner */
   const al=$('fc-alert');if(al){
     const allShort=FC_ESC.every(e=>crew0<SIM[e.k].reqDrv);
     if(worst!=null&&worst<12){al.className='red on';
-      al.innerHTML='✗ <b>NPT RISK</b> — runout in ~'+worst.toFixed(1)+' h at '+wn.name.toLowerCase()+' ('+fmtT(worst)+'). Need '+(SIM[worstK].reqDrv-crew0).toFixed(1)+' more drivers or slow-down coordination NOW.';}
+      al.innerHTML='✗ <b>NPT RISK</b> — runout in ~'+worst.toFixed(1)+' h at '+wn.name.toLowerCase()+' ('+fmtT(worst)+'). Need '+Math.max(0,Math.ceil(SIM[worstK].reqDrv-1e-9)-crew0)+' more drivers or slow-down coordination NOW.';}
     else if(worst!=null&&worst<24){al.className='amb on';
       al.innerHTML='▲ Watch — runout in ~'+Math.round(worst)+' h at '+wn.name.toLowerCase()+' ('+fmtT(worst)+'). Line up next-shift coverage.';}
     else if(allShort){al.className='amb on';
@@ -4444,8 +4444,9 @@ function fcCalc(){
       if(i<F.iNow)return [sep,'Actual, rebuilt from hourly deliveries','Crew (board): '+(F.crewFull[i]!=null?F.crewFull[i]:'—')+' drv'];
       const j=i-F.iNow;const crew=F.curve[j]||0;
       const kk=F.kpiK||'m';const ee=FC_ESC.find(e2=>e2.k===kk)||FC_ESC[0];const req=F.reqs[kk];
+      const rq2=Math.ceil(req-1e-9);
       const out=[sep,'Crew '+crew+' · supply '+fmt(F.sup[j])+' /h',
-        (crew>=req?'✓ ':'✗ ')+ee.name+': need '+req.toFixed(1)+' drv'+(crew>=req?'':' · short '+(req-crew).toFixed(1))];
+        (crew>=rq2?'✓ ':'✗ ')+ee.name+': need '+rq2+' drv'+(crew>=rq2?'':' · short '+(rq2-crew))];
       if(F.red[j])out.push('✗ NPT at 6 h pace');
       out.push('Click → full hour panel');
       return out;}}};
@@ -4505,10 +4506,10 @@ function fcPinShow(i,F){
   const on=rows.filter(r=>r.inc&&r.onAt&&r.onAt(j));
   const dtr=(FC.pf&&FC.pf.dtr)||4, padDays=(FC.pf&&FC.pf.padDays)||1;
   const crew=F.curve[j]||0;
-  const esc=FC_ESC.map(e=>{const v=F.SIM[e.k][j];const req=F.reqs[e.k];
+  const esc=FC_ESC.map(e=>{const v=F.SIM[e.k][j];const rq3=Math.ceil(F.reqs[e.k]-1e-9);
     return '<div class="fcp-row"><span class="dt" style="background:'+e.col+'"></span>'
-      +e.name+': <b>'+fmt(v)+'</b> lbs · need <b>'+req.toFixed(1)+'</b> '
-      +(crew>=req?'<b class="ok2">✓</b>':'<b class="bad2">short '+(req-crew).toFixed(1)+'</b>')+'</div>';}).join('');
+      +e.name+': <b>'+fmt(v)+'</b> lbs · need <b>'+rq3+'</b> '
+      +(crew>=rq3?'<b class="ok2">✓</b>':'<b class="bad2">short '+(rq3-crew)+'</b>')+'</div>';}).join('');
   const drv=on.length?on.map(r=>{const sc=fcScore(r,rows,dtr,padDays);const wb=fcHrsBand(r.sp);
     return '<div class="fcp-drv"><span class="fcr-nm" onclick="fcGotoDriver(\''+String(r.d).replace(/'/g,"\\'")+'\')">'+r.d+'</span>'
       +'<span style="color:#8a97a6">'+r.c+'</span>'
