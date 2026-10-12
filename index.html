@@ -201,6 +201,37 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .rbtn.alive{animation:rpop .45s ease}
 @keyframes rpop{0%{transform:scale(1)}45%{transform:scale(1.07)}100%{transform:scale(1)}}
 .fc-gc.warn{background:#faf3dc;color:#9a7b2d}.fc-gc.hi{background:#fbeccf;color:#a06514}
+.fc-esc{display:flex;gap:8px;flex-wrap:wrap;margin:2px 0 8px}
+.fc-ec{display:flex;align-items:center;gap:6px;font:700 9.5px/1.2 'Plus Jakarta Sans';color:#44566B;background:#fff;border:1px solid var(--border);border-radius:999px;padding:5px 10px}
+.fc-ec .dt{width:8px;height:8px;border-radius:3px;flex:0 0 auto}
+.fc-ec b{font-weight:800}.fc-ec .ok2{color:#2F7A45}.fc-ec .bad2{color:#c24545}
+#fc-roster{margin-bottom:14px}
+#fc-roster .rhead{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+#fc-roster .rhead .chev{transition:transform .25s}#fc-roster.open .rhead .chev{transform:rotate(90deg)}
+#fc-roster .rbody{display:none}#fc-roster.open .rbody{display:block;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.fcr-t{width:100%;border-collapse:collapse;font:600 11px/1.35 'Plus Jakarta Sans'}
+.fcr-t th{font:700 8.5px/1.2 'Plus Jakarta Sans';letter-spacing:.08em;text-transform:uppercase;color:#8a97a6;text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap}
+.fcr-t td{padding:7px 8px;border-bottom:1px solid #eef2f6;white-space:nowrap}
+.fcr-t tr.exc td{opacity:.38}
+.fcr-t tr:hover td{background:#f6f9fb}
+.fcr-nm{color:#1c5d8f;cursor:pointer;font-weight:700}.fcr-nm:hover{text-decoration:underline}
+.fcr-new{font:800 8px/1 'Plus Jakarta Sans';background:#e8f1fb;color:#2b6a92;border-radius:999px;padding:3px 7px;letter-spacing:.06em}
+.fcr-sc{font-weight:800;font-variant-numeric:tabular-nums}
+.fcr-win{font-variant-numeric:tabular-nums;color:#2E4057}
+#fc-pin{display:none;margin-top:10px;border:1px solid #bcd3e2;background:#f6fafd;border-radius:14px;padding:12px 14px;animation:fadeUp .25s ease}
+#fc-pin.on{display:block}
+#fc-pin .ph{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+#fc-pin .ph b{font:800 13px/1 'Plus Jakarta Sans';color:#12263A}
+#fc-pin .px{margin-left:auto;cursor:pointer;color:#8a97a6;font-weight:800;padding:2px 6px}
+#fc-pin .pg{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.fcp-row{display:flex;align-items:center;gap:7px;font:600 10.5px/1.5 'Plus Jakarta Sans';color:#44566B}
+.fcp-row .dt{width:8px;height:8px;border-radius:3px;flex:0 0 auto}
+.fcp-row b{font-variant-numeric:tabular-nums}
+.fcp-drv{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed #e3eaf1;font:600 10.5px/1.4 'Plus Jakarta Sans'}
+.fcp-drv:last-child{border-bottom:none}
+.fcp-drv .sc{margin-left:auto;font-weight:800;color:#2E4057;font-variant-numeric:tabular-nums}
+@media(max-width:700px){.fcr-t th:nth-child(7),.fcr-t td:nth-child(7),.fcr-t th:nth-child(8),.fcr-t td:nth-child(8){display:none}}
 @media(max-width:700px){
   .fc-src{float:none;display:block;margin-top:3px}
   .fc-gauge{max-width:330px;width:100%;margin:0 auto}
@@ -1099,7 +1130,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-11.85';
+const VBUILD='2026-10-12.86';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3756,67 +3787,68 @@ function stsPresetInit(S){const lD=keyDate(S.latest);SF.d0=keyDate(keyShift(S.la
    · burn = stages/día × tons/stage (prefill del ritmo real reciente)
    Todo editable; la simulación corre 100% en el navegador.
    ════════════════════════════════════════════════════════════ */
-let FC={id:null,hz:48};
+let FC={id:null,hz:48,mem:{},exc:{},rOpen:false};
 function _fcN(v,d){v=parseFloat(v);return isFinite(v)?v:d;}
-/* ── Reglas por cliente ──
-   BELLYDUMP: equipment con 'belly' o cliente BAYSWATER/BW (regla operativa).
-   TURNOS: hora local de cambio por cliente; el nivel nuevo ENTRA +1 h (ramp). */
-const FC_SHIFTS={BAYSWATER:[6,18],BW:[6,18],FASKEN:[0,12]};
 function fcIsBelly(reg){return /belly/i.test(String(reg&&reg.equipment||''))
   ||/^(BW\b|BAYSWATER)/i.test(String(reg&&reg.customer||''))
   ||/BAYSWATER/i.test(String(reg&&reg.name||''));}
-function fcShiftHours(reg){const s=(String(reg&&reg.customer||'')+' '+String(reg&&reg.name||'')).toUpperCase();
-  if(/FASKEN/.test(s))return FC_SHIFTS.FASKEN;
-  if(/BAYSWATER|\bBW\b/.test(s))return FC_SHIFTS.BAYSWATER;
-  return [6,18];}
-/* próximos cambios de turno (horas desde ahora, ya con +rampH) dentro del horizonte */
-function fcShiftTimes(pair,H,rampH){const n=new Date();const cur=n.getHours()+n.getMinutes()/60;
-  const hs=pair.slice().sort((a,b)=>a-b);const out=[];
-  for(let d=0;d<Math.ceil(H/24)+2&&out.length<8;d++)
-    for(const sh of hs){const t=sh+d*24-cur+(rampH==null?1:rampH);
-      if(t>0&&t<=H)out.push(+t.toFixed(2));}
-  return out.sort((a,b)=>a-b);}
-/* ── MOTOR v2: niveles de crew por turno (no deltas) ──
-   drivers(t): nivel actual → nivel "next" tras el 1er cambio → "following" tras el 2º,
-   y de ahí ALTERNA next/following (patrón día-noche). */
-function fcSim(p){
+/* ── v3 · ROSTER APRENDIDO → curva de crew por hora ──
+   Cada driver proyecta su ventana media real [aS, aS+sp) todos los días; un driver NUEVO
+   (nw) proyecta [activación, +12 h] por día hasta tener historial. Solo proyectan drivers
+   vistos en las últimas 36 h (último load) y no excluidos a mano. */
+function _fcTS(day,hm){if(!day)return null;const m=String(hm||'').match(/^(\d{1,2}):(\d{2})/);
+  const d=new Date(day+'T00:00:00');if(isNaN(d))return null;
+  return d.getTime()+(m?(+m[1]*36e5+ +m[2]*6e4):0);}
+function fcRosterProj(w,now,H){
+  const R=(w&&w.roster)||[];const exc=FC.exc[FC.id]||{};
+  const curve=new Array(H+1).fill(0);
+  const rows=[];const RECENT=36*36e5;
+  R.forEach(r=>{
+    const lastTS=_fcTS((r.last||'').slice(0,10),(r.last||'').slice(11,13)+':00');
+    const fresh=lastTS!=null&&(now-lastTS)<=RECENT;
+    const inc=fresh&&!exc[r.d];
+    let aS=+r.aS||0,sp=Math.min(17,Math.max(4,+r.sp||12));
+    if(r.nw){const f=_fcTS((r.fs||'').slice(0,10),(r.fs||'').slice(11,13)+':00');
+      if(f!=null){aS=new Date(f).getHours();sp=12;}}
+    const onAt=t=>{const hh=new Date(now+t*36e5).getHours()+new Date(now+t*36e5).getMinutes()/60;
+      let x=hh-aS;if(x<0)x+=24;return x<sp;};
+    if(inc)for(let t=0;t<=H;t++)if(onAt(t))curve[t]++;
+    rows.push({d:r.d,c:r.c||'',n:+r.n||0,aS,sp,tp:+r.tp||0,days:+r.days||0,pd:+r.pd||0,
+      nw:!!r.nw,fs:r.fs||'',last:r.last||'',fresh,inc,onAt});
+  });
+  return {curve,rows,has:R.length>0};}
+/* Score del grid (misma fórmula, rango completo del pozo): TR 40 + Volumen 40 + Consistencia 20 */
+function fcScore(row,rows,dtr,padDays){
+  const vmax=Math.max(1,...rows.map(x=>x.n));
+  return Math.round((row.tp/Math.max(0.1,dtr))*100*0.4+(row.n/vmax)*100*0.4+(row.days/Math.max(1,padDays))*100*0.2);}
+/* ── burn real por ventana desde Stages (start/end + used tons, prorrateo por solape) ── */
+function fcBurnWin(w,hrs,now){
+  const st=(w&&w.stages)||[];const a=now-hrs*36e5;let tons=0,any=false;
+  st.forEach(s=>{if(!(+s.used_tons>0)||!s.day)return;
+    const t0=_fcTS(s.day,s.start);let t1=_fcTS(s.day,s.end);
+    if(t0==null)return;
+    if(t1==null)t1=t0+2*36e5; else if(t1<=t0)t1+=864e5;
+    const o0=Math.max(t0,a),o1=Math.min(t1,now);
+    if(o1>o0){tons+=(+s.used_tons)*(o1-o0)/(t1-t0);any=true;}});
+  return any?tons*2000/hrs:null;}
+/* ── MOTOR v3: curva de crew + un burn → serie de inventario ── */
+function fcSim(p,burn){
   const H=Math.max(6,Math.round(p.H||48));
-  const perDrvH=(Math.max(0,p.tr)/24)*Math.max(0,p.avgLoad);
-  const burn=Math.max(0,p.burnLbsH);
   const bumpSpan=Math.max(1,Math.round(p.cycH||2));
-  const st=(p.shiftT||[]).filter(t=>t>0&&t<=H);
-  const lvls=[Math.max(0,p.dNow)];
-  const nx=Math.max(0,p.dNext), fo=(p.dFollow==null||p.dFollow==='')?nx:Math.max(0,p.dFollow);
-  for(let i=0;i<st.length;i++)lvls.push(i%2===0?nx:fo);
-  const drvAt=t=>{let li=0;for(let i=0;i<st.length;i++){if(t>=st[i])li=i+1;else break;}return lvls[Math.min(li,lvls.length-1)];};
-  const solid=[],dry=[],red=[],sup=[],drvA=[];
-  let inv=Math.max(0,p.inv0),invD=Math.max(0,p.inv0),runS=null,runD=null;
+  const solid=[],red=[],sup=[];let inv=Math.max(0,p.inv0),runS=null;
   for(let t=0;t<=H;t++){
-    solid.push(Math.round(inv));dry.push(Math.round(invD));
-    const drv=drvAt(t);
-    const s=drv*perDrvH+((t<bumpSpan)?(Math.max(0,p.bumpLoads)*p.avgLoad)/bumpSpan:0);
-    sup.push(Math.round(s));drvA.push(drv);
+    solid.push(Math.round(inv));
+    const drv=p.curve[Math.min(t,p.curve.length-1)]||0;
+    const s=drv*p.perDrvH+((t<bumpSpan)?(Math.max(0,p.bumpLoads)*p.avgLoad)/bumpSpan:0);
+    sup.push(Math.round(s));
     const next=inv+s-burn;
-    if(runS==null&&next<=0)runS=t+(burn-s>0?Math.min(1,inv/Math.max(burn-s,1)):1);
-    if(runD==null&&invD-burn<=0)runD=t+Math.min(1,invD/Math.max(burn,1));
+    if(runS==null&&next<=0&&burn>s)runS=t+Math.min(1,inv/Math.max(burn-s,1));
     red.push(next<=0&&s<burn);
-    inv=Math.max(0,next);invD=Math.max(0,invD-burn);
+    inv=Math.max(0,next);
   }
-  const at=i=>solid[Math.min(i,solid.length-1)];
-  return {H,solid,dry,red,sup,drvA,lvls,shiftT:st,
-    runS:(runS!=null&&runS<=H)?runS:null,runD:(runD!=null&&runD<=H)?runD:null,
-    inv24:at(24),inv48:at(48),covH:burn>0?p.inv0/burn:null,
-    reqDrv:perDrvH>0?burn/perDrvH:0,perDrvH,burnH:Math.round(burn)};
-}
-/* Pico de drivers ACTIVOS dentro de la ventana horaria [h0,h1) en las últimas `back` lecturas */
-function fcWinPeak(pad,h0,h1,back){
-  if(!(pad&&Array.isArray(pad.ts)&&Array.isArray(pad.a)))return 0;
-  const n=pad.ts.length;let mx=0;
-  for(let i=Math.max(0,n-(back||26));i<n;i++){
-    const hh=parseInt(String(pad.ts[i]).slice(11,13),10);if(!isFinite(hh))continue;
-    const inW=(h0<h1)?(hh>=h0&&hh<h1):(hh>=h0||hh<h1);
-    if(inW)mx=Math.max(mx,+pad.a[i]||0);}
-  return mx;}
+  return {H,solid,red,sup,runS:(runS!=null&&runS<=H)?runS:null,
+    inv24:solid[Math.min(24,H)],inv48:solid[Math.min(48,H)],
+    covH:burn>0?p.inv0/burn:null,reqDrv:p.perDrvH>0?burn/p.perDrvH:0};}
 function _fcPad(reg){const S=STATUS;if(!(S&&Array.isArray(S.pads)))return null;
   let p=S.pads.find(x=>x.well_id&&reg&&x.well_id===reg.id);
   if(!p&&reg){const nm=String(reg.log_match||reg.name||'').toUpperCase();
@@ -3849,47 +3881,21 @@ function fcPrefill(id){
   const avgLoad=lds?Math.round(tons*2000/lds):lbsBox;
   const cd=(w&&w.cycleDaily)||[];const lastC=cd.slice(-3);
   const cycH=lastC.length?lastC.reduce((s,c)=>s+(((+c.terminal||0)+(+c.transit||0)*2+(+c.offload||0))/60),0)/lastC.length/2:((+T.weighted_ct||192)/60/2);
-  const pad=_fcPad(reg);let dNow=0,dRest=0,cov=0;const padOk=!!(pad&&pad.brk);
-  if(padOk){Object.keys(pad.brk).forEach(st2=>{const n=+pad.brk[st2]||0;
-    if(/COVER/i.test(st2)){cov+=n;return;} /* regla Alan: covering cuenta en AMBOS turnos */
-    const b=bktOf(st2);
-    if(b==='a'||/DELIVERED/i.test(st2))dNow+=n; else if(b==='r')dRest+=n;});}
-  const brdA=dNow,brdR=dRest,brdAt=(STATUS&&STATUS.latest)?String(STATUS.latest).slice(11,13):'';
-  if(!dNow&&!cov&&dl.length)dNow=+dl[dl.length-1].drivers||+T.drivers_day||8;
-  /* v3 (regla Alan): el turno entrante NO son solo los resting — es el HEADCOUNT de esa
-     ventana: pico de activos de la ventana del turno (últimas ~26 h) ∨ resting de ahora.
-     El siguiente replica la ventana actual (activos+resting de ese turno). */
-  const shp=fcShiftHours(reg);const curH=new Date().getHours()+new Date().getMinutes()/60;
-  const inA=(shp[0]<shp[1])?(curH>=shp[0]&&curH<shp[1]):(curH>=shp[0]||curH<shp[1]);
-  const nowW=inA?[shp[0],shp[1]]:[shp[1],shp[0]], nxtW=inA?[shp[1],shp[0]]:[shp[0],shp[1]];
-  const pkNext=fcWinPeak(pad,nxtW[0],nxtW[1],26), pkNow=fcWinPeak(pad,nowW[0],nowW[1],26);
-  /* v4 (.83): con GAS v9.3 el pad trae sbrk {DAY,NIGHT,COVER} del Status Log → crews EXACTOS.
-     Contables: activos (Active / Waiting for Load / Pad / Well / Truck Stop / Transit /
-     Loading / Terminal / Delivered) y Resting. Fuera: Truck Down, Didn't Report, Day Off,
-     Transfer, Banned, Quit, Resting +2d. Covering suma en AMBOS turnos. */
-  const sbk=pad&&pad.sbrk;
-  const cntOK=st3=>{const b3=bktOf(st3);return b3==='a'||b3==='r'||/DELIVERED/i.test(st3);};
-  const sumOK=o3=>{let s3=0;if(o3)Object.keys(o3).forEach(k3=>{if(cntOK(k3))s3+=(+o3[k3]||0);});return s3;};
-  const dayN=sbk?sumOK(sbk.DAY):null, nightN=sbk?sumOK(sbk.NIGHT):null, covN=sbk?sumOK(sbk.COVER):0;
-  let dNext,dFollow,src;
-  if(sbk){src='sheet';
-    dNext=(inA?nightN:dayN)+covN;
-    dFollow=(inA?dayN:nightN)+covN;}
-  else if(padOk){src='peaks';
-    dNext=(Math.max(pkNext,dRest)||dNow)+cov;
-    dFollow=Math.max(pkNow,dNow)+cov;}
-  else{src='daily';dNext=dRest||dNow;dFollow=dNow;}
-  dNow+=cov; /* covering con status propio (legacy) disponible AHORA también */
+  /* board on-duty (chip + loads in motion) */
+  const pad=_fcPad(reg);let brdOn=0;const padOk=!!(pad&&pad.brk);
+  if(padOk)Object.keys(pad.brk).forEach(st2=>{const b=bktOf(st2);
+    if(b==='a'||/DELIVERED/i.test(st2))brdOn+=(+pad.brk[st2]||0);});
+  const brdAt=(STATUS&&STATUS.latest)?String(STATUS.latest).slice(11,13):'';
+  const dtr=+T.turn_rate_target||4;
+  const padDays=dl.filter(d=>(+d.loads||0)>0).length||1;
   return {inv:Math.round(inv),spd:+spd.toFixed(1),tps:+tps.toFixed(1),tr:+tr.toFixed(2),
-    avgLoad,dNow,dNext,dFollow,pkNext,pkNow,cov,dayN,nightN,covN,src,
-    bump:dNow, /* regla Alan: los activos van CON carga en vuelo */
-    cycH:+cycH.toFixed(1),belly:belly||invType==='pila',sh:fcShiftHours(reg),
-    hasInv:!!(w&&w.inventory),hasW:!!w,slim:!!(w&&w.slim),invType,boxes,empty:emptyB,invStg,invStale,pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox,
-    padOk,brdA,brdR,brdAt};}
-/* overrides SOLO de sesión: recargar la página regresa al cálculo estándar con promedios vivos */
+    avgLoad,bump:brdOn,cycH:+cycH.toFixed(1),belly:belly||invType==='pila',
+    hasInv:!!(w&&w.inventory),hasW:!!w,slim:!!(w&&w.slim),invType,boxes,empty:emptyB,invStg,invStale,
+    pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox,padOk,brdOn,brdAt,dtr,padDays,w};}
+/* overrides SOLO de sesión + exclusiones del roster */
 function _fcStore(id){return (FC.mem||{})[id]||null;}
-function _fcDirty(){const pf=FC.pf||{};const map={inv:'inv',spd:'spd',tps:'tps',dnow:'dNow',tr:'tr',load:'avgLoad',dn1:'dNext',dn2:'dFollow',bump:'bump',emp:'empty'};
-  if(FC.shp!==((pf.sh&&pf.sh[0]===0)?'012':'618'))return true;
+function _fcDirty(){const pf=FC.pf||{};const map={inv:'inv',spd:'spd',tps:'tps',tr:'tr',load:'avgLoad',bump:'bump',emp:'empty'};
+  if(Object.keys(FC.exc[FC.id]||{}).length)return true;
   for(const k in map){const el=$('fc-'+k);if(!el)continue;const cur=parseFloat(el.value),base=+pf[map[k]];
     if(isFinite(cur)&&isFinite(base)){if(Math.abs(cur-base)>1e-9)return true;}
     else if(String(el.value==null?'':el.value)!==String(pf[map[k]]==null?'':pf[map[k]]))return true;}
@@ -3898,12 +3904,11 @@ function _fcRstBtn(){const b=$('fc-reset');if(!b)return;const d=_fcDirty();
   const was=b.disabled===false;
   b.disabled=!d;b.classList.toggle('ghost',!d);
   if(d&&!was){b.classList.remove('alive');void(b.offsetWidth);b.classList.add('alive');}
-  b.title=d?'Discard manual edits — every field returns to the live averages':'Already at the live averages';}
-window.fcReset=function(){if(FC.mem)delete FC.mem[FC.id];renderFc();};
-function _fcSave(){if(!FC.id)return;const o={};['inv','spd','tps','dnow','tr','load','dn1','dn2','bump','emp'].forEach(k=>{const el=$('fc-'+k);if(el)o[k]=el.value;});
-  o.hz=FC.hz;o.shp=FC.shp;FC.mem=FC.mem||{};FC.mem[FC.id]=o;_fcRstBtn();}
-window.fcHz=function(hv){FC.hz=hv;setSegAct(['fch24','fch48','fch72'],'fch'+hv);_fcSave();fcCalc();};
-window.fcShp=function(v){FC.shp=v;setSegAct(['fcs618','fcs012'],v==='012'?'fcs012':'fcs618');_fcSave();fcCalc();};
+  b.title=d?'Discard edits & roster exclusions — back to the learned averages':'Already at the live averages';}
+window.fcReset=function(){if(FC.mem)delete FC.mem[FC.id];FC.exc[FC.id]={};renderFc();};
+function _fcSave(){if(!FC.id)return;const o={};['inv','spd','tps','tr','load','bump','emp'].forEach(k=>{const el=$('fc-'+k);if(el)o[k]=el.value;});
+  o.hz=FC.hz;FC.mem=FC.mem||{};FC.mem[FC.id]=o;_fcRstBtn();}
+window.fcHz=function(hv){FC.hz=hv;setSegAct(['fch24','fch48','fch72'],'fch'+hv);_fcSave();renderFcProj();fcCalc();};
 window.fcWell=function(id){FC.id=id;FC._wReq=null;renderFc();};
 window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.disabled=true;}
   const reg=REGISTRY.find(w=>w.id===FC.id)||{};
@@ -3914,15 +3919,39 @@ window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.di
     renderFc();
   }).finally(()=>{const b2=$('fc-sync');if(b2){b2.classList.remove('busy');b2.disabled=false;}});};
 let _fcT=null;window.fcInput=function(){clearTimeout(_fcT);_fcT=setTimeout(function(){_fcSave();fcCalc();},160);};
+window.fcTogDrv=function(nm){nm=decodeURIComponent(nm);const E=FC.exc[FC.id]=FC.exc[FC.id]||{};
+  if(E[nm])delete E[nm];else E[nm]=1;
+  renderFcProj();fcRosterTable();fcCalc();_fcRstBtn();};
+window.fcRosterTog=function(){FC.rOpen=!FC.rOpen;const c=$('fc-roster');if(c)c.classList.toggle('open',FC.rOpen);};
+/* salto al Driver Grid del pozo con la búsqueda puesta */
+window.fcGotoDriver=function(nm){try{
+  const tgt=FC.id;
+  if(CURRENT_ID!==tgt&&typeof loadWell==='function')loadWell(tgt);
+  /* navega directo a la sección Driver Grid (cl-rost) del Well Detail */
+  const go=(typeof _gotoSection==='function')?_gotoSection('pozo:cl-rost'):null;
+  Promise.resolve(go).catch(function(){}).then(function(){
+    let tries=0;const tick=setInterval(function(){tries++;
+      const gs=$('gridSearch');
+      if(gs&&CURRENT_ID===tgt){gQ=nm;gs.value=nm;try{buildGrid();}catch(_){}
+        const pb=$('perfBody');if(pb&&pb.scrollIntoView)pb.scrollIntoView({behavior:'smooth',block:'center'});
+        clearInterval(tick);}
+      if(tries>24)clearInterval(tick);},350);});
+}catch(_){}};
+function renderFcProj(){ /* recalcula curva + burns con el estado actual */
+  const pf=FC.pf;if(!pf)return;
+  const now=Date.now();
+  FC._proj=fcRosterProj(pf.w,now,Math.max(72,FC.hz));
+  if(!FC._proj.has){ /* GAS sin roster aún → curva plana con el board */
+    const lvl=pf.brdOn||0;FC._proj={curve:new Array(FC.hz+1).fill(lvl),rows:[],has:false};}
+  const bm=null; /* media editable se lee en fcCalc de los inputs */
+  FC._burn={b6:fcBurnWin(pf.w,6,now),b12:fcBurnWin(pf.w,12,now),b24:fcBurnWin(pf.w,24,now)};
+}
 function fcParams(){
   const g=k=>_fcN(($('fc-'+k)||{}).value,0);
-  const pair=FC.shp==='012'?[0,12]:[6,18];
-  return {H:FC.hz,inv0:g('inv'),burnLbsH:g('spd')*g('tps')*2000/24,
-    tr:g('tr'),avgLoad:g('load'),dNow:g('dnow'),dNext:g('dn1'),
-    dFollow:($('fc-dn2')&&$('fc-dn2').value!=='')?g('dn2'):null,
-    shiftT:fcShiftTimes(pair,FC.hz,1),bumpLoads:g('bump'),cycH:FC.cycH||2,
-    tps:g('tps'),belly:FC.belly};}
-/* ── GAUGE: silo de cajas (MIN 4 · GOAL 6 etapas) / sandpile belly (MIN 4 etapas · TARGET 3M lbs) ── */
+  return {H:FC.hz,inv0:g('inv'),
+    perDrvH:(Math.max(0,g('tr'))/24)*Math.max(0,g('load')),avgLoad:g('load'),
+    bumpLoads:g('bump'),cycH:FC.cycH||2,curve:(FC._proj&&FC._proj.curve)||[],
+    burnMean:g('spd')*g('tps')*2000/24};}
 const FC_BELLY_TARGET=3000000, FC_MIN_STG=4, FC_GOAL_STG=6;
 /* Targets de etapas por cliente — regla Alan: Fasken MIN 6 · GOAL 8; resto cajas 4/6; belly MIN 4 + 3.0M */
 function fcStgT(reg){const s=(String(reg&&reg.customer||'')+' '+String(reg&&reg.name||'')).toUpperCase();
@@ -4040,6 +4069,11 @@ function fcGaugePaint(){
     }
   }catch(_){host._sk=null;}
 }
+const FC_ESC=[
+  {k:'m', name:'Avg pace',      col:'#1f6f6f'},
+  {k:'b6', name:'Last 6 h pace', col:'#d47272'},
+  {k:'b12',name:'Last 12 h pace',col:'#e0a63e'},
+  {k:'b24',name:'Last 24 h pace',col:'#4ca882'}];
 const _fcMarks={id:'fcMarks',afterDraw(ch){try{
   const o=ch.$fc||{};const xs=ch.scales.x,ys=ch.scales.y,ctx=ch.ctx;if(!xs||!ys)return;
   ctx.save();ctx.font="700 9px 'Plus Jakarta Sans'";ctx.textAlign='center';
@@ -4048,125 +4082,201 @@ const _fcMarks={id:'fcMarks',afterDraw(ch){try{
       if(on&&s==null)s=i;
       if((!on||i===o.H)&&s!=null){const x1=xs.getPixelForValue(s),x2=xs.getPixelForValue(i);
         ctx.fillRect(x1,ys.top,Math.max(2,x2-x1),ys.bottom-ys.top);s=null;}}}
-  (o.shiftT||[]).forEach((t,i)=>{const x=xs.getPixelForValue(t);
-    const lvl=o.lvls[i+1],prev=o.lvls[i];const up=lvl>prev,down=lvl<prev;
-    ctx.strokeStyle='rgba(58,124,165,.45)';ctx.setLineDash([3,4]);ctx.lineWidth=1.2;
-    ctx.beginPath();ctx.moveTo(x,ys.top+16);ctx.lineTo(x,ys.bottom);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle=up?'#2F7A45':down?'#c24545':'#8a97a6';
-    ctx.beginPath();
-    if(up){ctx.moveTo(x,ys.top+18);ctx.lineTo(x-5,ys.top+27);ctx.lineTo(x+5,ys.top+27);ctx.closePath();ctx.fill();}
-    else if(down){ctx.moveTo(x,ys.top+27);ctx.lineTo(x-5,ys.top+18);ctx.lineTo(x+5,ys.top+18);ctx.closePath();ctx.fill();}
-    else{ctx.arc(x,ys.top+22,3,0,Math.PI*2);ctx.fill();}
-    ctx.fillText(lvl+' drv',x,ys.top+40);});
-  if(o.pin!=null&&o.pin>=0&&o.pin<=o.H){const x=xs.getPixelForValue(o.pin);
-    ctx.strokeStyle='#3a7ca5';ctx.lineWidth=1.8;ctx.setLineDash([]);
-    ctx.beginPath();ctx.moveTo(x,ys.top);ctx.lineTo(x,ys.bottom);ctx.stroke();
-    const yv=ys.getPixelForValue(o.solid[o.pin]);
-    ctx.fillStyle='#3a7ca5';ctx.beginPath();ctx.arc(x,yv,4.5,0,Math.PI*2);ctx.fill();
-    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
-    const txt=(o.labs?o.labs[o.pin]:('h+'+o.pin))+' · '+fmt(o.solid[o.pin])+' lbs · '+o.drvA[o.pin]+' drv';
-    ctx.font="700 9.5px 'Plus Jakarta Sans'";const tw=ctx.measureText(txt).width;
-    let bx2=Math.min(Math.max(x-tw/2-8,xs.left+2),xs.right-tw-18);
-    ctx.fillStyle='rgba(18,38,58,.92)';
-    ctx.beginPath();ctx.roundRect?ctx.roundRect(bx2,ys.top+2,tw+16,20,7):ctx.rect(bx2,ys.top+2,tw+16,20);ctx.fill();
-    ctx.fillStyle='#fff';ctx.textAlign='left';ctx.fillText(txt,bx2+8,ys.top+15);ctx.textAlign='center';}
+  /* cambios de la curva de crew: tick + etiqueta 'N drv' (espaciados) */
+  let lastLbl=-9;
+  (o.curve||[]).forEach((v,i)=>{if(i===0||v===(o.curve[i-1]||0))return;
+    const x=xs.getPixelForValue(i);
+    ctx.strokeStyle='rgba(58,124,165,.35)';ctx.setLineDash([3,4]);ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,ys.top+14);ctx.lineTo(x,ys.bottom);ctx.stroke();ctx.setLineDash([]);
+    if(i-lastLbl>=3){const up=v>(o.curve[i-1]||0);
+      ctx.fillStyle=up?'#2F7A45':'#c24545';
+      ctx.beginPath();
+      if(up){ctx.moveTo(x,ys.top+15);ctx.lineTo(x-4,ys.top+22);ctx.lineTo(x+4,ys.top+22);}
+      else{ctx.moveTo(x,ys.top+22);ctx.lineTo(x-4,ys.top+15);ctx.lineTo(x+4,ys.top+15);}
+      ctx.closePath();ctx.fill();
+      ctx.fillText(v+' drv',x,ys.top+33);lastLbl=i;}});
   const vline=(i,col,lbl,dy)=>{if(i==null||i<0||i>o.H)return;const x=xs.getPixelForValue(i);
     ctx.strokeStyle=col;ctx.setLineDash([5,4]);ctx.lineWidth=1.4;
     ctx.beginPath();ctx.moveTo(x,ys.top);ctx.lineTo(x,ys.bottom);ctx.stroke();
     ctx.setLineDash([]);ctx.fillStyle=col;ctx.fillText(lbl,x,ys.top+(dy||10));};
   if(o.H>=48)vline(48,'#c99a3f','48H COVERAGE TARGET',12);
-  if(o.runS!=null)vline(o.runS,'#c24545','RUNOUT',24);
+  if(o.runWorst!=null)vline(o.runWorst,'#c24545','RUNOUT '+(o.runWorstK||''),24);
+  if(o.pin!=null&&o.pin>=0&&o.pin<=o.H){const x=xs.getPixelForValue(o.pin);
+    ctx.strokeStyle='#3a7ca5';ctx.lineWidth=1.8;
+    ctx.beginPath();ctx.moveTo(x,ys.top);ctx.lineTo(x,ys.bottom);ctx.stroke();
+    const yv=ys.getPixelForValue(o.solid[o.pin]);
+    ctx.fillStyle='#3a7ca5';ctx.beginPath();ctx.arc(x,yv,4.5,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();}
   ctx.restore();}catch(_){/* nunca tumbar el chart */}}};
 function fcCalc(){
   if(!$('fc-inv'))return;
-  const p=fcParams();const r=fcSim(p);
+  if(!FC._proj)renderFcProj();
+  const p=fcParams();
+  const B={m:p.burnMean,
+    b24:(FC._burn&&FC._burn.b24)!=null?FC._burn.b24:p.burnMean,
+    b12:(FC._burn&&FC._burn.b12)!=null?FC._burn.b12:((FC._burn&&FC._burn.b24)!=null?FC._burn.b24:p.burnMean),
+    b6:(FC._burn&&FC._burn.b6)!=null?FC._burn.b6:((FC._burn&&FC._burn.b12)!=null?FC._burn.b12:p.burnMean)};
+  const SIM={};FC_ESC.forEach(e=>{SIM[e.k]=fcSim(p,B[e.k]);});
+  const r=SIM.m;
   fcGaugePaint();
   const now=Date.now();
   const lab=i=>i===0?'Now':new Date(now+i*36e5).toLocaleString('en-US',{weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false});
   const labs=r.solid.map((_,i)=>lab(i));
   const fmtT=hF=>{if(hF==null)return null;const d=new Date(now+hF*36e5);
     return d.toLocaleString('en-US',{weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false});};
+  /* peor escenario = runout más temprano */
+  let worstK='m',worst=null;
+  FC_ESC.forEach(e=>{const rs=SIM[e.k].runS;
+    if(rs!=null&&(worst==null||rs<worst)){worst=rs;worstK=e.k;}});
   const set=(id,v,cls)=>{const el=$(id);if(!el)return;el.querySelector('.v').innerHTML=v;
     el.classList.remove('bad','okk');if(cls)el.classList.add(cls);};
   set('fck-cov',r.covH!=null?(r.covH>=24?(r.covH/24).toFixed(1)+' d':Math.round(r.covH)+' h'):'—',r.covH!=null&&r.covH<12?'bad':(r.covH>=24?'okk':''));
-  set('fck-run',r.runS!=null?fmtT(r.runS):'No runout ✓',r.runS!=null?'bad':'okk');
-  const sb=$('fck-run');if(sb)sb.querySelector('.sb').textContent=r.runS!=null?('in ~'+r.runS.toFixed(1)+' h at current crew plan'):('dry-only would stop '+(r.runD!=null?fmtT(r.runD):'beyond horizon'));
+  const wn=FC_ESC.find(e=>e.k===worstK);
+  set('fck-run',worst!=null?fmtT(worst):'No runout ✓',worst!=null?'bad':'okk');
+  const sb=$('fck-run');if(sb)sb.querySelector('.sb').textContent=worst!=null
+    ?('worst: '+wn.name.toLowerCase()+' · avg pace → '+(r.runS!=null?fmtT(r.runS):'holds'))
+    :'all four paces hold through the horizon';
   set('fck-48',fmt(FC.hz>=48?r.inv48:r.inv24)+' lbs','');
-  const k48=$('fck-48');if(k48)k48.querySelector('.sb').textContent='projected @ '+(FC.hz>=48?'48':'24')+' h · @24 h '+fmt(r.inv24)+' lbs';
-  set('fck-req',r.reqDrv?r.reqDrv.toFixed(1):'—',(p.dNow>=r.reqDrv)?'okk':'bad');
-  const kr=$('fck-req');if(kr)kr.querySelector('.sb').textContent='to match burn · crew now '+p.dNow+(r.lvls.length>1?(' → '+r.lvls[1]+' next shift'):'');
-  /* NET = flujo SOSTENIDO del crew (sin el one-shot de cargas en vuelo) */
-  const steady=Math.round(p.dNow*r.perDrvH);
-  const net0=steady-r.burnH;
+  const k48=$('fck-48');if(k48)k48.querySelector('.sb').textContent='avg pace @ '+(FC.hz>=48?'48':'24')+' h · 6 h pace → '+fmt(FC.hz>=48?SIM.b6.inv48:SIM.b6.inv24)+' lbs';
+  const crew0=p.curve[0]||0;
+  const reqW=SIM[worstK].reqDrv||SIM.m.reqDrv;
+  set('fck-req',reqW?reqW.toFixed(1):'—',(crew0>=reqW)?'okk':'bad');
+  const kr=$('fck-req');if(kr)kr.querySelector('.sb').textContent='worst pace · avg needs '+(SIM.m.reqDrv||0).toFixed(1)+' · roster now '+crew0;
+  const steady=Math.round(crew0*p.perDrvH);
+  const net0=steady-Math.round(B.m);
   set('fck-net',(net0>=0?'+':'')+fmt(net0)+' lbs/h',net0>=0?'okk':'bad');
-  const kn=$('fck-net');if(kn)kn.querySelector('.sb').textContent='crew in '+fmt(steady)+' /h · burn '+fmt(r.burnH)+' /h'+(p.bumpLoads>0?(' · +'+p.bumpLoads+' loads landing ≤'+Math.max(1,Math.round(p.cycH))+' h'):'');
-  const FD={H:r.H,red:r.red,runS:r.runS,shiftT:r.shiftT,lvls:r.lvls,labs,solid:r.solid,drvA:r.drvA,sup:r.sup,burnH:r.burnH,pin:null};
+  const kn=$('fck-net');if(kn)kn.querySelector('.sb').textContent='roster in '+fmt(steady)+' /h · avg burn '+fmt(Math.round(B.m))+' /h'+(p.bumpLoads>0?(' · +'+p.bumpLoads+' loads landing ≤'+Math.max(1,Math.round(p.cycH))+' h'):'');
+  /* chips por escenario: lbs/h · need N drv · estado vs crew ahora */
+  const esc=$('fc-esc');if(esc)esc.innerHTML=FC_ESC.map(e=>{const req=SIM[e.k].reqDrv;
+    return '<span class="fc-ec"><span class="dt" style="background:'+e.col+'"></span>'+e.name
+      +' <b>'+fmt(Math.round(B[e.k]))+'</b> lbs/h · need <b>'+req.toFixed(1)+'</b> drv '
+      +(crew0>=req?'<b class="ok2">✓ covered</b>':'<b class="bad2">short '+(req-crew0).toFixed(1)+'</b>')+'</span>';}).join('');
+  const maxC=Math.max(4,...p.curve.slice(0,r.H+1))+2;
+  const FD={H:r.H,red:SIM.b6.red,runWorst:worst,runWorstK:worst!=null?wn.name.toUpperCase():'',
+    solid:r.solid,curve:p.curve,labs,pin:null,
+    SIM:{m:SIM.m.solid,b6:SIM.b6.solid,b12:SIM.b12.solid,b24:SIM.b24.solid},
+    B,sup:r.sup,reqs:{m:SIM.m.reqDrv,b6:SIM.b6.reqDrv,b12:SIM.b12.reqDrv,b24:SIM.b24.reqDrv}};
   const TT={callbacks:{
     title:c=>{const F=c[0].chart.$fc||FD;return F.labs[c[0].dataIndex]+(c[0].dataIndex?'':' — current');},
-    label:c=>tipL(c,x=>fmt(x)+' lbs'),
+    label:c=>{if(c.dataset.yAxisID==='y2')return ' Crew on: '+c.raw+' drivers';return tipL(c,x=>fmt(x)+' lbs');},
     afterBody:it=>{const F=it[0].chart.$fc||FD;const i=it[0].dataIndex;
-      const out=[sep,'Crew on: '+F.drvA[i]+' drivers · Supply: '+fmt(F.sup[i])+' lbs/h','Burn: '+fmt(F.burnH)+' lbs/h · Net: '+(F.sup[i]-F.burnH>=0?'+':'')+fmt(F.sup[i]-F.burnH)+' lbs/h'];
-      F.shiftT.forEach((t2,si2)=>{if(Math.ceil(t2)===i){const nl=F.lvls[si2+1],pl=F.lvls[si2];
-        out.push((nl>pl?'▲':nl<pl?'▼':'▬')+' shift change → crew '+nl+' drivers (was '+pl+')');}});
-      if(F.red[i])out.push('✗ NPT RISK — frac waiting on sand');
-      out.push('Click to pin this hour');
+      const crew=F.curve[i]||0;
+      const out=[sep,'Crew on: '+crew+' drivers · Supply: '+fmt(F.sup[i])+' lbs/h'];
+      FC_ESC.forEach(e=>{const req=F.reqs[e.k];
+        out.push((crew>=req?'✓ ':'✗ ')+e.name+': burn '+fmt(Math.round(F.B[e.k]))+' /h · need '+req.toFixed(1)+' drv');});
+      if(F.red[i])out.push('✗ NPT RISK at 6 h pace — frac waiting on sand');
+      out.push('Click for the hour detail + mini-roster');
       return out;}}};
   const CLICK=(ev,els,chart)=>{try{const sx=chart.scales.x;if(!sx)return;
     const px=(ev&&ev.x!=null)?ev.x:(ev&&ev.native?ev.native.offsetX:null);if(px==null)return;
     let idx=Math.round(sx.getValueForPixel(px));idx=Math.max(0,Math.min(chart.$fc.H,idx));
-    chart.$fc.pin=(chart.$fc.pin===idx)?null:idx;chart.update('none');}catch(_){}};
+    chart.$fc.pin=(chart.$fc.pin===idx)?null:idx;chart.update('none');
+    if(chart.$fc.pin!=null)fcPinShow(chart.$fc.pin,chart.$fc);else fcPinHide();}catch(_){}};
   let ch=(typeof Chart!=='undefined'&&Chart.getChart)?Chart.getChart('fcChart'):null;
-  if(ch&&ch.$fcOwn){ /* morph animado in-place (sin recrear) */
+  if(ch&&ch.$fcOwn&&ch.data.datasets.length===5){
     const keepPin=(ch.$fc&&ch.$fc.pin!=null&&ch.$fc.pin<=FD.H)?ch.$fc.pin:null;
     FD.pin=keepPin;ch.$fc=FD;
-    ch.data.labels=labs;ch.data.datasets[0].data=r.solid;ch.data.datasets[1].data=r.dry;
+    ch.data.labels=labs;
+    ch.data.datasets[0].data=SIM.m.solid;ch.data.datasets[1].data=SIM.b6.solid;
+    ch.data.datasets[2].data=SIM.b12.solid;ch.data.datasets[3].data=SIM.b24.solid;
+    ch.data.datasets[4].data=p.curve.slice(0,FD.H+1);
+    if(ch.options.scales.y2)ch.options.scales.y2.max=maxC;
     try{ch.update();}catch(_){}
+    if(keepPin!=null)fcPinShow(keepPin,FD);
     return;}
   const cfg={type:'line',data:{labels:labs,datasets:[
-    {label:'Projected on location',data:r.solid,borderColor:'#1f6f6f',backgroundColor:mkGrad('fcChart','rgba(31,111,111,.16)','rgba(31,111,111,.01)',300),fill:true,tension:.22,pointRadius:0,pointHoverRadius:6,borderWidth:2.6},
-    {label:'No new trucks (dry-down)',data:r.dry,borderColor:'#94a3b8',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.15}]},
-    options:{interaction:{mode:'index',intersect:false},layout:{padding:{top:34}},
+    {label:'Avg pace (editable)',data:SIM.m.solid,borderColor:'#1f6f6f',backgroundColor:mkGrad('fcChart','rgba(31,111,111,.15)','rgba(31,111,111,.01)',300),fill:true,tension:.22,pointRadius:0,pointHoverRadius:6,borderWidth:2.6},
+    {label:'Last 6 h pace',data:SIM.b6.solid,borderColor:'#d47272',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.18},
+    {label:'Last 12 h pace',data:SIM.b12.solid,borderColor:'#e0a63e',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.18},
+    {label:'Last 24 h pace',data:SIM.b24.solid,borderColor:'#4ca882',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.18},
+    {label:'Crew on (right axis)',data:p.curve.slice(0,FD.H+1),yAxisID:'y2',stepped:true,borderColor:'rgba(96,136,168,.8)',backgroundColor:'rgba(143,179,204,.12)',fill:'origin',pointRadius:0,pointHoverRadius:4,borderWidth:1.4}]},
+    options:{interaction:{mode:'index',intersect:false},layout:{padding:{top:30}},
       onClick:CLICK,
       plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},tooltip:TT},
       scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:12}},
-        y:{...gO,min:0,ticks:{callback:v=>fmt(v/1000)+'K'}}}},
+        y:{...gO,min:0,ticks:{callback:v=>fmt(v/1000)+'K'}},
+        y2:{position:'right',min:0,max:maxC,grid:{display:false},ticks:{font:{size:8},stepSize:4,color:'#8fa7bb'}}}},
     plugins:[_fcMarks]};
   const ch2=mkChart('fcChart',cfg);
   if(ch2){ch2.$fcOwn=true;ch2.$fc=FD;try{ch2.update&&ch2.update('none');}catch(_){}}
 }
+/* ── panel de hora (click en el chart) ── */
+window.fcPinHide=function(){const p=$('fc-pin');if(p)p.classList.remove('on');
+  const ch=(typeof Chart!=='undefined'&&Chart.getChart)?Chart.getChart('fcChart'):null;
+  if(ch&&ch.$fc&&ch.$fc.pin!=null){ch.$fc.pin=null;try{ch.update('none');}catch(_){}}};
+function fcPinShow(i,F){
+  const p=$('fc-pin');if(!p)return;
+  const rows=(FC._proj&&FC._proj.rows)||[];
+  const on=rows.filter(r=>r.inc&&r.onAt&&r.onAt(i));
+  const dtr=(FC.pf&&FC.pf.dtr)||4, padDays=(FC.pf&&FC.pf.padDays)||1;
+  const crew=F.curve[i]||0;
+  const esc=FC_ESC.map(e=>{const v=F.SIM[e.k][i];const req=F.reqs[e.k];
+    return '<div class="fcp-row"><span class="dt" style="background:'+e.col+'"></span>'
+      +e.name+': <b>'+fmt(v)+'</b> lbs · need <b>'+req.toFixed(1)+'</b> '
+      +(crew>=req?'<b class="ok2">✓</b>':'<b class="bad2">short '+(req-crew).toFixed(1)+'</b>')+'</div>';}).join('');
+  const drv=on.length?on.map(r=>{const sc=fcScore(r,rows,dtr,padDays);
+    return '<div class="fcp-drv"><span class="fcr-nm" onclick="fcGotoDriver(\''+String(r.d).replace(/'/g,"\\'")+'\')">'+r.d+'</span>'
+      +'<span style="color:#8a97a6">'+r.c+'</span>'
+      +(r.nw?'<span class="fcr-new">NEW +12H</span>':'')
+      +'<span class="sc">'+sc+' · TR '+r.tp.toFixed(1)+'</span></div>';}).join('')
+    :'<div class="fcp-row" style="color:#b45309">No drivers projected this hour — roster gap</div>';
+  p.innerHTML='<div class="ph"><b>'+F.labs[i]+'</b>'
+    +'<span class="sb">crew on '+crew+' · supply '+fmt(F.sup[i])+' lbs/h</span>'
+    +'<span class="px" onclick="fcPinHide()">✕</span></div>'
+    +'<div class="pg"><div>'+esc+'</div>'
+    +'<div><div class="fc-grp" style="margin:0 0 6px">Who should be on at this hour</div>'+drv+'</div></div>';
+  p.classList.add('on');
+}
+/* ── tabla del truck roster aprendido ── */
+function _fcHM(hF){let hh=Math.floor(((hF%24)+24)%24),mm=Math.round((hF-Math.floor(hF))*60);
+  if(mm===60){mm=0;hh=(hh+1)%24;}
+  return ('0'+hh).slice(-2)+':'+('0'+mm).slice(-2);}
+function fcRosterTable(){
+  const host=$('fcr-body');if(!host)return;
+  const rows=((FC._proj&&FC._proj.rows)||[]).slice().sort((a,b)=>b.n-a.n);
+  const dtr=(FC.pf&&FC.pf.dtr)||4,padDays=(FC.pf&&FC.pf.padDays)||1;
+  const cnt=$('fcr-cnt');if(cnt)cnt.textContent=rows.filter(r=>r.inc).length+' of '+rows.length+' projecting';
+  if(!rows.length){host.innerHTML='<tr><td colspan="9" style="color:#b45309">No roster yet — paste GAS v9.4 (Code.gs) and hit Live sync.</td></tr>';return;}
+  host.innerHTML=rows.map(r=>{const sc=fcScore(r,rows,dtr,padDays);
+    const stale=!r.fresh;
+    return '<tr class="'+(r.inc?'':'exc')+'">'
+    +'<td><input type="checkbox" '+(r.inc?'checked':'')+(stale?' disabled':'')+' onchange="fcTogDrv(\''+encodeURIComponent(r.d)+'\')"></td>'
+    +'<td><span class="fcr-nm" onclick="fcGotoDriver(\''+String(r.d).replace(/'/g,"\\'")+'\')">'+r.d+'</span>'
+      +(r.nw?' <span class="fcr-new">NEW +12H</span>':'')+'</td>'
+    +'<td>'+(r.c||'—')+'</td>'
+    +'<td class="fcr-win">'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+'</td>'
+    +'<td>'+r.sp.toFixed(1)+' h</td>'
+    +'<td>'+r.tp.toFixed(2)+'</td>'
+    +'<td class="fcr-sc">'+sc+'</td>'
+    +'<td>'+r.days+'</td>'
+    +'<td style="color:'+(stale?'#c24545':'#8a97a6')+'">'+(r.last?r.last.slice(5).replace(' ',' · ')+':00':'—')+(stale?' · off pad':'')+'</td>'
+    +'</tr>';}).join('');}
 function renderFc(){
   const pane=$('p-fc');if(!pane)return;
   const lives=REGISTRY.filter(w=>yrOK(w)&&String(w.status)==='Live');
   if(!lives.length){pane.innerHTML='<div class="note" style="margin:14px">No live wells in this year — the forecast runs on active pads. Switch year or set a well to Live in the Registry.</div>';return;}
   if(!FC.id||!lives.some(w=>w.id===FC.id))FC.id=lives[0].id;
   const reg=REGISTRY.find(w=>w.id===FC.id)||{};
-  /* El crew board aterriza DESPUÉS del primer render (boot async): si este pozo aún no
-     tiene pad en STATUS, trae el feed y repinta — fix del 11/11/11 por fallback al daily. */
+  /* status fresco para el chip del board */
   if(CONFIG.API_URL&&!_fcPad(reg)&&Date.now()-(FC._stsAt||0)>30000){FC._stsAt=Date.now();
     apiStatus().then(s=>{if(s&&s.pads&&s.pads.length){STATUS=s;
       const at=document.querySelector('.tab.active');
       if(at&&at.dataset.tab==='fc'&&!(FC.mem&&FC.mem[FC.id]))renderFc();}}).catch(()=>{});}
-  /* El portfolio es SLIM (inventory:null): si el packet actual no trae inventario,
-     usa el snapshot local (peek, cualquier edad) y pide el workbook completo en background. */
+  /* slim → snapshot local → workbook completo (y pila vacía → force) */
   {const cw=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
    if(cw&&(cw.slim||!cw.inventory)){const warm=_lsSnapPeek(FC.id,reg.status);
      if(warm&&warm.daily&&warm.daily.length&&warm.inventory)RES_DATA[FC.id]={ok:true,w:warm};}}
   const _cw2=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
-  /* pila en 0 = celda vacía en el instante del snapshot (corte de turno), no un dato:
-     se re-pide FORZADO (salta el caché de 90 s) una vez por pozo */
   const _pEmpty=!!(_cw2&&_cw2.inventory&&_cw2.inventory.type==='pila'&&!(+_cw2.inventory.pila>0));
-  if(CONFIG.API_URL&&(!_cw2||_cw2.slim||!_cw2.inventory||_pEmpty)&&FC._wReq!==FC.id){FC._wReq=FC.id;
+  if(CONFIG.API_URL&&(!_cw2||_cw2.slim||!_cw2.inventory||_pEmpty||!_cw2.roster)&&FC._wReq!==FC.id){FC._wReq=FC.id;
     apiWell(FC.id,reg.status,_pEmpty).then(w2=>{if(w2&&w2.daily&&w2.daily.length){RES_DATA[FC.id]={ok:true,w:w2};
       const at=document.querySelector('.tab.active');
       if(at&&at.dataset.tab==='fc'&&FC.id===w2.__reqId&&!(FC.mem&&FC.mem[FC.id]))renderFc();}}).catch(()=>{});}
   const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;FC.pf=pf;FC.tg=fcStgT(reg);FC.lbsBox=pf.lbsBox;
   const sv=_fcStore(FC.id)||{};FC.hz=+sv.hz||FC.hz||48;
-  FC.shp=sv.shp||((pf.sh[0]===0)?'012':'618');
   const V=(k,d)=>sv[k]!=null?sv[k]:d;
-  const _pr=FC.shp==='012'?[0,12]:[6,18];
-  const _cu=new Date().getHours()+new Date().getMinutes()/60;
-  const _ord=_pr.slice().sort((a,b)=>((a-_cu+24)%24)-((b-_cu+24)%24));
-  const _nb1=String(_ord[0]).padStart(2,'0'),_nb2=String(_ord[1]).padStart(2,'0');
+  renderFcProj();
+  const crew0=(FC._proj&&FC._proj.curve[0])||0;
   const inp=(id,lb,unit,val,step)=>`<div class="fc-cell"><div class="fc-lb"><span>${lb}</span><span class="u">${unit}</span></div><input id="fc-${id}" class="fc-in" type="number" inputmode="decimal" step="${step||'any'}" value="${val}" oninput="fcInput()"></div>`;
   const kpi=(id,t)=>`<div class="card kpi fck" id="${id}"><div class="card-t">${t}</div><div class="v">—</div><div class="sb">—</div></div>`;
   pane.innerHTML=`
@@ -4177,50 +4287,54 @@ function renderFc(){
         <button id="fch24" class="seg-btn${FC.hz===24?' seg-on':''}" onclick="fcHz(24)">24 h</button>
         <button id="fch48" class="seg-btn${FC.hz===48?' seg-on':''}" onclick="fcHz(48)">48 h</button>
         <button id="fch72" class="seg-btn${FC.hz===72?' seg-on':''}" onclick="fcHz(72)">72 h</button></div></div>
-      <div class="fld"><label>Shift schedule <span style="color:#b6c0ca;font-weight:600">(+1 h ramp)</span></label><div class="seg-ctrl">
-        <button id="fcs618" class="seg-btn${FC.shp!=='012'?' seg-on':''}" onclick="fcShp('618')">06 &amp; 18</button>
-        <button id="fcs012" class="seg-btn${FC.shp==='012'?' seg-on':''}" onclick="fcShp('012')">00 &amp; 12</button></div></div>
-      <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver statuses and reset the assumptions to live data"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
+      <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver board and relearn the roster"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
       <button class="rbtn ghost" id="fc-reset" onclick="fcReset()" disabled title="Already at the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
-      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')):pf.invType==='pila'?(pf.pilaT>0?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')+' · bellydump'):'sandpile cell EMPTY at last pull (shift change) — re-pulling live · enter lbs if it persists'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'} · shifts ${String(pf.sh[0]).padStart(2,'0')}/${String(pf.sh[1]).padStart(2,'0')}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
+      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')):pf.invType==='pila'?(pf.pilaT>0?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')+' · bellydump'):'sandpile cell EMPTY at last pull (shift change) — re-pulling live · enter lbs if it persists'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
     </div>
-    <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· hourly projection · crew LEVELS per shift · every field editable, prefilled live</span></div>
+    <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· learned truck roster drives the crew curve · 6/12/24 h + avg pace projections</span></div>
     <div class="fc-gwrap mb">
       <div class="fc-gauge" id="fc-gauge"></div>
       <div>
-        <div class="fc-grp">On location &amp; burn</div>
+        <div class="fc-grp">On location &amp; burn
+          <span class="fc-src ${pf.padOk?'live':'fb'}">${pf.padOk?('board'+(pf.brdAt?' '+pf.brdAt+':00':'')+' — '+pf.brdOn+' on duty · roster projects '+crew0+' now'+(Math.abs(pf.brdOn-crew0)>2?' — CHECK ROSTER':'')):'no live board for this pad'}</span></div>
         <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
           ${inp('inv','Sand on location','lbs',V('inv',pf.inv),1000)}
-          ${inp('spd','Frac pace','stages/day',V('spd',pf.spd),0.1)}
+          ${inp('spd','Frac pace (avg line)','stages/day',V('spd',pf.spd),0.1)}
           ${inp('tps','Sand per stage','tons',V('tps',pf.tps),1)}
           ${inp('bump','Loads in motion','active w/ load',V('bump',pf.bump),1)}
           ${FC.belly?'':inp('emp','Empty boxes','on location',V('emp',pf.empty),1)}
         </div>
-        <div class="fc-grp">Crew levels — per shift (totals, not +)
-          <span class="fc-src ${pf.padOk?'live':'fb'}">${pf.padOk?('crew board'+(pf.brdAt?' '+pf.brdAt+':00':'')+' — '
-    +(pf.src==='sheet'
-      ?(pf.brdA+' on duty · day crew '+pf.dayN+' · night crew '+pf.nightN+(pf.covN?' · covering '+pf.covN+' (both shifts)':''))
-      :(pf.brdA+' active · '+pf.brdR+' resting'+(pf.cov?(' · '+pf.cov+' covering (both shifts)'):'')+((pf.pkNext||pf.pkNow)?(' · shift peaks '+(pf.pkNext||'—')+' next / '+(pf.pkNow||'—')+' current'):'')))
-  ):'no live board for this pad — crew from daily log'}</span></div>
+        <div class="fc-grp">Supply per driver</div>
         <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-          ${inp('dnow','Crew now','on duty now',V('dnow',pf.dNow),1)}
-          ${inp('dn1','Next shift crew','enters '+_nb1+':00 (resting now)',V('dn1',pf.dNext),1)}
-          ${inp('dn2','Following shift crew','enters '+_nb2+':00 (mirrors now)',V('dn2',pf.dFollow),1)}
           ${inp('tr','Turn rate per driver','loads/day',V('tr',pf.tr),0.1)}
           ${inp('load','Average load','lbs',V('load',pf.avgLoad),500)}
         </div>
       </div>
     </div>
+    <div class="card${FC.rOpen?' open':''}" id="fc-roster">
+      <div class="rhead" onclick="fcRosterTog()">
+        <svg class="ico chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="m9 5 7 7-7 7"/></svg>
+        <div class="card-t" style="margin:0">Projected truck roster — learned from this pad</div>
+        <span class="sb" id="fcr-cnt" style="margin-left:auto"></span></div>
+      <div class="rbody">
+        <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
+          <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
+        </tr></thead><tbody id="fcr-body"></tbody></table></div>
+        <div class="sb" style="margin-top:6px">Window = mean first→last load per shift (gaps ≥ 6 h split shifts, night wrap handled) · NEW = first day on pad, activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
+      </div></div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${kpi('fck-cov','Coverage (no trucks)')}
-      ${kpi('fck-run','Runout')}
+      ${kpi('fck-run','Runout (worst pace)')}
       ${kpi('fck-48','Inventory ahead')}
       ${kpi('fck-req','Drivers to break even')}
       ${kpi('fck-net','Net right now')}
     </div>
-    <div class="card mb"><div class="card-t">Pounds on location — crew levels stepping at each shift (+1 h ramp)</div>
-      <div class="sb" style="margin-bottom:6px">Solid = projected with shift plan · dashed = nobody else loads · ▲▼ = crew level change · red band = frac waiting on sand · amber dash = 48 h coverage target</div>
-      <div class="ch ch-l"><canvas id="fcChart"></canvas></div></div>`;
+    <div class="card mb"><div class="card-t">Pounds on location — roster crew curve × four frac paces</div>
+      <div class="sb" style="margin-bottom:4px">Solid teal = avg pace (editable above) · dashed red/amber/green = pace of the last 6 / 12 / 24 h from Stages · grey steps (right axis) = crew on per the learned roster · red band = frac waiting on sand at 6 h pace · amber dash = 48 h coverage target · click any hour for the detail panel</div>
+      <div class="fc-esc" id="fc-esc"></div>
+      <div class="ch ch-l"><canvas id="fcChart"></canvas></div>
+      <div id="fc-pin"></div></div>`;
+  fcRosterTable();
   fcCalc();_fcRstBtn();
 }
 /* ════════════════════════════════════════════════════════════

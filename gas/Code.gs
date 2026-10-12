@@ -1,4 +1,10 @@
-/** MEDS · PropX Live API — Code.gs v9.3.3. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.4. PEGAR TAL CUAL → Nueva versión.
+ *  v9.4 TRUCK ROSTER APRENDIDO: getWell publica roster[] por driver con su ventana de
+ *       turno REAL aprendida de los Delivered del pozo — los loads se segmentan en turnos
+ *       por huecos ≥6 h (maneja turnos nocturnos que cruzan medianoche), y de ahí salen
+ *       hora media de arranque (media circular), duración media, TR medio en pumping
+ *       days, días trabajados y último load. Drivers nuevos (<2 turnos) van marcados
+ *       nw:true con fs = su primer load (regla operativa: activación + 12 h).
  *  v9.3.3 INVENTARIO REAL, NO LA ÚLTIMA FILA: el inventario publicado es el de la última
  *       etapa cuya captura de pila/cajas SÍ está escrita (por display: celda vacía ≠ 0
  *       escrito). Las etapas recién cerradas sin captura todavía ya no publican ceros.
@@ -102,7 +108,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.3.3';
+const API_VERSION='v9.4';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -401,7 +407,7 @@ function getWell(id){
   const L=readTab(ss,reg.sheet_name||CFG.tabs.loads,'Load #');
   const _sheetNames=ss.getSheets().map(function(x){return x.getName();});
   const ix=L?colmap(L.H,['Load #','Load ID','Carrier Name','Truck #','Driver Name','Product','Stage#','At Terminal','In Transit','At Staging','At Dest.','Delivered','Terminal','Mileage','Load Weight']):{};
-  const byDay={},drvByDay={},tonsByDay={},maxStageByDay={},revByDay={},cycDay={},byTerm={},byTermDay={},cycDayT={},byCarrier={},byProd={},byDriver={},driversAll=new Set(),cyc={},byHourDay={};
+  const byDay={},drvByDay={},tonsByDay={},maxStageByDay={},revByDay={},cycDay={},byTerm={},byTermDay={},cycDayT={},byCarrier={},byProd={},byDriver={},driversAll=new Set(),cyc={},byHourDay={},rosterEv={};
   let aMoves=0,aRev=0,aCost=0; const aByDay={},aRevByDay={},aEvents=[];
   const partDay={}; let gMinNo=9e15,gMaxNo=-9e15;
   const rateMixDay={}; // {fecha: {"17.76":{loads,tons,revenue}, "19.00":{...}}} — qué tarifa cobró cada carga
@@ -498,7 +504,8 @@ function getWell(id){
     if(dDel&&dv){const _hh=dv.getHours();
       const HD=byHourDay[dDel]=byHourDay[dDel]||{l:Array(24).fill(0),rv:Array(24).fill(0),fs:Array(24).fill(0),tn:Array(24).fill(0),dr:{},te:Array(24).fill(0),ten:Array(24).fill(0),trh:Array(24).fill(0),trn:Array(24).fill(0),de:Array(24).fill(0),den:Array(24).fill(0)};
       HD.l[_hh]++; HD.rv[_hh]+=revL; HD.fs[_hh]+=fscL; HD.tn[_hh]+=t;
-      if(drv){(HD.dr[_hh]=HD.dr[_hh]||{})[drv]=1;}
+      if(drv){(HD.dr[_hh]=HD.dr[_hh]||{})[drv]=1;
+        (rosterEv[drv]=rosterEv[drv]||[]).push(_absH(dDel)+_hh);} // v9.4: evento driver×hora
       if(aT&&iT){const m=(iT-aT)/6e4; if(m>0&&m<1200){HD.te[_hh]+=m;HD.ten[_hh]++;}}
       {const eol=aS||aD; if(iT&&eol){const m=(eol-iT)/6e4; if(m>0&&m<1200){HD.trh[_hh]+=m;HD.trn[_hh]++;}}}
       {let un=0; if(aD&&dv){const m=(dv-aD)/6e4; if(m>0&&m<1200)un+=m;} if(aS&&aD){const sw=(aD-aS)/6e4; if(sw>0&&sw<1200)un+=sw;} if(un>0){HD.de[_hh]+=un;HD.den[_hh]++;}}
@@ -658,6 +665,7 @@ function getWell(id){
     downtimes:Object.entries(dCat).map(([k,v])=>({category:k,minutes:+v.toFixed(1)})).sort((a,b)=>b.minutes-a.minutes),
     cycleTimes:Object.entries(cyc).map(([k,v])=>({terminal:k,load:avg2(v.load),transit:avg2(v.transit),unload:avg2(v.unload),full:avg2(v.full)})),
     stages, inventory,
+    roster:_rosterBuild(rosterEv,byDriver,new Set(Object.keys(stagesByDay||{}))), // v9.4
     assets:{ moves:aMoves, revenue:Math.round(aRev), cost:Math.round(aCost), margin:Math.round(aRev-aCost),
       events:aEvents.sort((a,b)=>String(b.date).localeCompare(String(a.date))) },
     downtime_open_events:dtOpen,
@@ -668,6 +676,45 @@ function getWell(id){
     statusByHour:hours.map(h=>({hour:h,statuses:statusByHour[h],active:actHr[h]||0}))
   };
 }
+
+// ---------- v9.4 · Truck roster aprendido ----------
+function _absH(d){const m=String(d||'').match(/(\d{4})-(\d{2})-(\d{2})/);
+  return m?Date.UTC(+m[1],+m[2]-1,+m[3])/3600000:0;}
+/* Segmenta los loads de cada driver en TURNOS por huecos >=6 h y resume:
+   aS = hora media de arranque (media circular) · sp = duración media (clamp 4–17 h)
+   tp = TR medio en pumping days (loads/día calendario con etapas) · nw = <2 turnos */
+function _rosterBuild(rosterEv,byDriver,pumpSet){
+  const out=[];
+  Object.keys(rosterEv).forEach(function(drv){
+    const ev=rosterEv[drv].slice().sort(function(a,b){return a-b;});
+    if(!ev.length)return;
+    const shifts=[];let s=ev[0],e=ev[0];
+    for(let i=1;i<ev.length;i++){
+      if(ev[i]-e>=6){shifts.push([s,e]);s=ev[i];}
+      e=ev[i];}
+    shifts.push([s,e]);
+    const use=shifts.slice(-10);
+    let vx=0,vy=0,spSum=0;
+    use.forEach(function(sh){
+      const st=((sh[0]%24)+24)%24;
+      const a=st/24*2*Math.PI; vx+=Math.cos(a); vy+=Math.sin(a);
+      spSum+=Math.min(17,Math.max(4,(sh[1]-sh[0])+1.5));});
+    let aS=Math.atan2(vy,vx)/(2*Math.PI)*24; if(aS<0)aS+=24;
+    const sp=spSum/use.length;
+    const D=byDriver[drv]||{name:drv,dates:{},loads:ev.length,carriers:{}};
+    const dates=Object.keys(D.dates||{});
+    let pl=0,pdd=0;
+    dates.forEach(function(dd){if(pumpSet.has(dd)){pl+=D.dates[dd];pdd++;}});
+    const cars=Object.keys(D.carriers||{}).sort(function(a,b){return D.carriers[b]-D.carriers[a];});
+    const fsH=ev[0],lastH=ev[ev.length-1];
+    const hTo=function(hA){const dMs=Math.floor(hA/24)*86400000;const dt=new Date(dMs);
+      const p=function(n){return ('0'+n).slice(-2);};
+      return dt.getUTCFullYear()+'-'+p(dt.getUTCMonth()+1)+'-'+p(dt.getUTCDate())+' '+p(((hA%24)+24)%24);};
+    out.push({d:D.name||drv,c:cars[0]||'',n:ev.length,sh:use.length,
+      aS:+aS.toFixed(1),sp:+sp.toFixed(1),
+      tp:pdd?+(pl/pdd).toFixed(2):0,days:dates.length,pd:pdd,
+      fs:hTo(fsH),last:hTo(lastH),nw:shifts.length<2});});
+  return out.sort(function(a,b){return b.n-a.n;});}
 
 // ---------- Status Live (?action=status · todos los pads del Hub) ----------
 // Normaliza para matching de pads: minúsculas, sin acentos, guiones/puntuación→espacio, espacios colapsados.
