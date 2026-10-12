@@ -1199,7 +1199,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.103';
+const VBUILD='2026-10-12.104';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -4457,7 +4457,8 @@ function fcCalc(){
       ?('<b>'+holdU+' unique</b> across the day (shifts of ~'+medSp.toFixed(0)+' h) = <b>'+holdN+'</b> active at once · at '+eK.name.toLowerCase())
       :('<b>'+holdN+' active at once</b> right now · at '+eK.name.toLowerCase()+' · roster now '+crew0+' · day needs <b>'+holdU+' unique</b>'))
     +'<br>stable at GOAL: <b>'+stShift+'/shift · '+stUniq+' unique/day</b>'
-    +(dDrv2?(' · design '+dDrv2+(dsgNet!=null&&dsgNet>=0?(goalJ!=null?' back at '+fmtT(goalJ):' once GOAL is back'):' NOT yet ('+fmt(dsgNet)+' /h)')):'');
+    +(dDrv2?(' · design '+(dayView?(dDrv2+'/day'):(Math.max(1,Math.round(dDrv2*medSp/24))+' at once ('+dDrv2+'/day)'))
+      +(dsgNet!=null&&dsgNet>=0?(goalJ!=null?' back at '+fmtT(goalJ):' once GOAL is back'):' NOT yet ('+fmt(dsgNet)+' /h)')):'');
   const steady=Math.round(crew0*p.perDrvH);
   const netK=steady-Math.round(B[K]);
   set('fck-net',(netK>=0?'+':'')+fmt(netK)+' lbs/h',netK>=0?'okk':'bad');
