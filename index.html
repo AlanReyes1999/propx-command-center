@@ -220,8 +220,14 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fcr-sc{font-weight:800;font-variant-numeric:tabular-nums}
 .fcr-win{font-variant-numeric:tabular-nums;color:#2E4057}
 /* gauge 3D tilt */
-.fc-gauge{perspective:600px}
-.fc-gauge .fc-gsvg{transition:transform .25s ease;transform:rotateX(var(--gx,0deg)) rotateY(var(--gy,0deg))}
+.fc-gauge{perspective:700px}
+.fc-gstage{position:relative;transform-style:preserve-3d;transition:transform .22s ease;transform:rotateX(var(--gx,0deg)) rotateY(var(--gy,0deg))}
+.fc-gstage .fc-gsvg{position:relative;z-index:2;transform:translateZ(16px)}
+.fc-gsh{position:absolute;left:8%;right:8%;bottom:2px;height:18px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(18,38,58,.26),rgba(18,38,58,0) 68%);transform:translateZ(-18px) scale(var(--gs,1));filter:blur(3px)}
+.fc-gshine{position:absolute;inset:4px;z-index:3;pointer-events:none;border-radius:18px;transform:translateZ(26px);background:radial-gradient(130px 110px at var(--mx,32%) var(--my,22%),rgba(255,255,255,.4),rgba(255,255,255,0) 60%);mix-blend-mode:soft-light}
+#fcTip{position:fixed;z-index:9999;max-width:300px;background:rgba(18,38,58,.94);color:#eaf2f8;border:1px solid rgba(188,211,226,.35);border-radius:10px;padding:9px 11px;font:600 10px/1.55 'Plus Jakarta Sans';letter-spacing:.01em;box-shadow:0 10px 28px rgba(18,38,58,.35);pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .14s,transform .14s;left:0;top:0}
+#fcTip.on{opacity:1;transform:none}
+#fcTip b{color:#fff;font-weight:800}
 /* coverage board */
 #fc-gantt{margin:4px 0 12px}
 .fg-head{display:flex;align-items:center;gap:10px;font:700 9px/1.4 'Plus Jakarta Sans';letter-spacing:.06em;color:#8a97a6;text-transform:uppercase;margin-bottom:6px}
@@ -1181,7 +1187,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.89';
+const VBUILD='2026-10-12.90';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -4002,7 +4008,8 @@ function fcPrefill(id){
     if(b==='a'||/DELIVERED/i.test(st2))brdOn+=(+pad.brk[st2]||0);});
   const brdAt=(STATUS&&STATUS.latest)?String(STATUS.latest).slice(11,13):'';
   const dtr=+T.turn_rate_target||4;
-  const padDays=dl.filter(d=>(+d.loads||0)>0).length||1;
+  const opD=dl.filter(d=>(+d.stages_day||0)>0).length; /* días operativos del pozo */
+  const padDays=opD||dl.filter(d=>(+d.loads||0)>0).length||1;
   return {inv:Math.round(inv),spd:+spd.toFixed(1),tps:+tps.toFixed(1),tr:+tr.toFixed(2),
     avgLoad,bump:brdOn,cycH:+cycH.toFixed(1),belly:belly||invType==='pila',
     hasInv:!!(w&&w.inventory),hasW:!!w,slim:!!(w&&w.slim),invType,boxes,empty:emptyB,invStg,invStale,
@@ -4112,48 +4119,73 @@ function _fcGrains(x0,x1,y0,y1,n){const o=[];for(let i=0;i<n;i++){
   o.push('<circle class="grain" style="animation-delay:'+(i*35)+'ms" cx="'+gx+'" cy="'+gy+'" r="2" fill="rgba(255,255,255,.5)"/>');}
   return o.join('');}
 /* Skeleton CAJAS: silo de llenas (MIN 4 · GOAL 6 stg) + columna de vacías con alertas */
-function _fcSkBoxes(tg){const W=180,H2=196,bx=14,bw=96,ty=18,by=H2-22,ih=by-ty,ex=126,ew=34;
+function _fcSkBoxes(tg){const W=180,H2=196,cx=60,rx=44,ry=9,ty=30,by=162,ih=by-ty,ex=146,erx=16,ery=4.5;
   let tk='';[10,20,30].forEach(v=>{const y=by-ih*Math.min(1,v/40);
-    tk+='<line x1="'+(ex+ew)+'" x2="'+(ex+ew+4)+'" y1="'+y+'" y2="'+y+'" stroke="#b6c0ca" stroke-width="1.1"/>'
-      +'<text x="'+(ex+ew+5)+'" y="'+(y+2.5)+'" font-size="6.2" font-weight="700" fill="#9aa7b4" font-family="Plus Jakarta Sans">'+v+'</text>';});
+    tk+='<line x1="'+(ex+erx)+'" x2="'+(ex+erx+3)+'" y1="'+y+'" y2="'+y+'" stroke="#b6c0ca" stroke-width="1.1"/>'
+      +'<text x="'+(ex+erx+4)+'" y="'+(y+2.4)+'" font-size="6" font-weight="700" fill="#9aa7b4" font-family="Plus Jakarta Sans">'+v+'</text>';});
   let stk='';for(let s2=1;s2<tg.goal;s2++){const y=by-ih*s2/tg.goal;
-    stk+='<line x1="'+bx+'" x2="'+(bx+5)+'" y1="'+y+'" y2="'+y+'" stroke="rgba(18,38,58,.18)" stroke-width="1"/>';}
-  return '<svg class="fc-gsvg" width="'+W+'" height="'+H2+'" viewBox="0 0 '+W+' '+H2+'">'
-    +'<defs><clipPath id="fcClipF"><rect x="'+bx+'" y="'+ty+'" width="'+bw+'" height="'+ih+'" rx="13"/></clipPath>'
-    +'<clipPath id="fcClipE"><rect x="'+ex+'" y="'+ty+'" width="'+ew+'" height="'+ih+'" rx="10"/></clipPath>'
+    stk+='<line x1="'+(cx-rx)+'" x2="'+(cx-rx+5)+'" y1="'+y+'" y2="'+y+'" stroke="rgba(18,38,58,.18)" stroke-width="1"/>';}
+  const body=(x,r,ryy)=>'M'+(x-r)+' '+ty+' V'+by+' A'+r+' '+ryy+' 0 0 0 '+(x+r)+' '+by+' V'+ty;
+  return '<div class="fc-gstage"><div class="fc-gsh"></div>'
+    +'<svg class="fc-gsvg" width="'+W+'" height="'+H2+'" viewBox="0 0 '+W+' '+H2+'">'
+    +'<defs>'
+    +'<clipPath id="fcClipF"><path d="'+body(cx,rx,ry)+' Z"/></clipPath>'
+    +'<clipPath id="fcClipE"><path d="'+body(ex,erx,ery)+' Z"/></clipPath>'
     +'<pattern id="fcHatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#f3f6f9"/><line x1="0" y1="0" x2="0" y2="7" stroke="#d7e1ea" stroke-width="2.4"/></pattern>'
-    +'<linearGradient id="fcGradF" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2f7a68"/><stop offset=".5" stop-color="#3d8d79"/><stop offset="1" stop-color="#26695a"/></linearGradient></defs>'
-    +'<rect x="'+bx+'" y="'+ty+'" width="'+bw+'" height="'+ih+'" rx="13" fill="#F1F5F9" stroke="#dfe7ee" stroke-width="1.5"/>'
+    +'<linearGradient id="fcGradF" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#255f51"/><stop offset=".35" stop-color="#3d8d79"/><stop offset=".62" stop-color="#48997f"/><stop offset="1" stop-color="#1f5a4c"/></linearGradient>'
+    +'<radialGradient id="fcPgF" cx=".35" cy=".4" r="1.1"><stop offset="0" stop-color="#6fb39b"/><stop offset="1" stop-color="#2f7a68"/></radialGradient>'
+    +'</defs>'
+    /* silo FULL: contenedor de vidrio */
+    +'<path d="'+body(cx,rx,ry)+'" fill="#F2F6F9" stroke="#dfe7ee" stroke-width="1.5"/>'
     +'<g clip-path="url(#fcClipF)">'
-    +'<rect id="fcGH" x="'+bx+'" y="'+ty+'" width="'+bw+'" height="'+ih+'" fill="url(#fcHatch)" opacity=".55"/>'
-    +'<rect id="fcGF" class="fc-gfill" x="'+bx+'" y="'+by+'" width="'+bw+'" height="'+(ih+6)+'" fill="url(#fcGradF)"/>'
-    +'<g id="fcWg" style="transform:translateY('+by+'px)"><path id="fcWv" d="M-56 0 Q-42 -4 -28 0 T0 0 T28 0 T56 0 T84 0 T112 0 T140 0 T168 0 T196 0 V8 H-56 Z" fill="rgba(255,255,255,.3)"/></g>'
-    +_fcGrains(bx+10,bx+bw-10,ty+12,by-10,12)+'</g>'+stk
-    +'<line id="fcMinL" x1="'+(bx-5)+'" x2="'+(bx+bw+5)+'" y1="0" y2="0" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
-    +'<text id="fcMinT" x="'+(bx+bw-2)+'" y="0" text-anchor="end" font-size="7.5" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+tg.min+'</text>'
-    +'<line x1="'+(bx-5)+'" x2="'+(bx+bw+5)+'" y1="'+ty+'" y2="'+ty+'" stroke="#c99a3f" stroke-width="1.4" stroke-dasharray="3 4"/>'
-    +'<text x="'+(bx+2)+'" y="'+(ty-5)+'" font-size="7.5" font-weight="800" fill="#c99a3f" font-family="Plus Jakarta Sans">GOAL '+tg.goal+'</text>'
-    +'<rect x="'+ex+'" y="'+ty+'" width="'+ew+'" height="'+ih+'" rx="10" fill="#F1F5F9" stroke="#dfe7ee" stroke-width="1.5"/>'
-    +'<g clip-path="url(#fcClipE)"><rect id="fcEF" x="'+ex+'" y="'+by+'" width="'+ew+'" height="'+(ih+6)+'" fill="#4ca882"/></g>'+tk
-    +'<text id="fcFn" x="'+(bx+bw/2)+'" y="'+(H2-7)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">FULL</text>'
-    +'<text id="fcEn" x="'+(ex+ew/2)+'" y="'+(H2-7)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">EMPTY</text>'
-    +'</svg>';}
-function _fcSkPila(tg){const W=150,H2=196,bx=14,bw=W-28,ty=22,by=H2-24;
-  return '<svg class="fc-gsvg" width="'+W+'" height="'+H2+'" viewBox="0 0 '+W+' '+H2+'">'
+    +'<rect id="fcGH" x="'+(cx-rx)+'" y="'+ty+'" width="'+(rx*2)+'" height="'+ih+'" fill="url(#fcHatch)" opacity=".5"/>'
+    +'<rect id="fcGF" class="fc-gfill" x="'+(cx-rx)+'" y="'+by+'" width="'+(rx*2)+'" height="'+(ih+ry+6)+'" fill="url(#fcGradF)"/>'
+    +_fcGrains(cx-rx+12,cx+rx-12,ty+16,by-10,12)
+    +'<rect x="'+(cx-rx+9)+'" y="'+(ty+6)+'" width="7" height="'+(ih-14)+'" rx="3.5" fill="rgba(255,255,255,.22)"/>'
+    +'</g>'
+    +'<ellipse id="fcGFs" cx="'+cx+'" cy="'+by+'" rx="'+(rx-3)+'" ry="7.5" fill="url(#fcPgF)" stroke="rgba(255,255,255,.4)" stroke-width="1" class="fc-gfill"/>'
+    +stk
+    +'<ellipse cx="'+cx+'" cy="'+ty+'" rx="'+rx+'" ry="'+ry+'" fill="rgba(231,237,243,.55)" stroke="#dfe7ee" stroke-width="1.4"/>'
+    /* aro GOAL en la boca + aro MIN móvil */
+    +'<ellipse cx="'+cx+'" cy="'+ty+'" rx="'+(rx+6)+'" ry="'+(ry+3)+'" fill="none" stroke="#c99a3f" stroke-width="1.5" stroke-dasharray="3 4"/>'
+    +'<text x="'+cx+'" y="'+(ty-13)+'" text-anchor="middle" font-size="7.5" font-weight="800" fill="#c99a3f" font-family="Plus Jakarta Sans">GOAL '+tg.goal+'</text>'
+    +'<ellipse id="fcMinL" cx="'+cx+'" cy="0" rx="'+(rx+6)+'" ry="'+(ry+2.5)+'" fill="none" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
+    +'<text id="fcMinT" x="'+cx+'" y="0" text-anchor="middle" font-size="7.5" font-weight="800" fill="#c24545" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="Plus Jakarta Sans">MIN '+tg.min+'</text>'
+    /* tubo EMPTY */
+    +'<path d="'+body(ex,erx,ery)+'" fill="#F2F6F9" stroke="#dfe7ee" stroke-width="1.5"/>'
+    +'<g clip-path="url(#fcClipE)">'
+    +'<rect id="fcEF" x="'+(ex-erx)+'" y="'+by+'" width="'+(erx*2)+'" height="'+(ih+ery+6)+'" fill="#4ca882"/>'
+    +'<rect x="'+(ex-erx+3)+'" y="'+(ty+6)+'" width="4" height="'+(ih-14)+'" rx="2" fill="rgba(255,255,255,.25)"/>'
+    +'</g>'
+    +'<ellipse id="fcEFs" cx="'+ex+'" cy="'+by+'" rx="'+(erx-2.5)+'" ry="3.6" fill="rgba(255,255,255,.32)"/>'
+    +'<ellipse cx="'+ex+'" cy="'+ty+'" rx="'+erx+'" ry="'+ery+'" fill="rgba(231,237,243,.55)" stroke="#dfe7ee" stroke-width="1.2"/>'
+    +tk
+    +'<text id="fcFn" x="'+cx+'" y="'+(H2-6)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">FULL</text>'
+    +'<text id="fcEn" x="'+ex+'" y="'+(H2-6)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">EMPTY</text>'
+    +'</svg><div class="fc-gshine"></div></div>';}
+function _fcSkPila(tg){const W=150,H2=196,bx=16,bw=W-32,cx=W/2,by=160,apex=34;
+  const cone='M'+bx+' '+by+' L'+cx+' '+apex+' L'+(bx+bw)+' '+by;
+  return '<div class="fc-gstage"><div class="fc-gsh"></div>'
+    +'<svg class="fc-gsvg" width="'+W+'" height="'+H2+'" viewBox="0 0 '+W+' '+H2+'">'
     +'<defs><pattern id="fcHatchP" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="none"/><line x1="0" y1="0" x2="0" y2="7" stroke="#d7e1ea" stroke-width="2.2"/></pattern>'
     +'<radialGradient id="fcPg" cx=".38" cy=".3" r="1"><stop offset="0" stop-color="#f0c268"/><stop offset=".55" stop-color="#e0a63e"/><stop offset="1" stop-color="#c9922f"/></radialGradient>'
-    +'<clipPath id="fcPClip"><path d="M'+bx+' '+by+' Q'+(W/2)+' '+(ty-8)+' '+(bx+bw)+' '+by+' Z"/></clipPath></defs>'
-    +'<ellipse cx="'+(W/2)+'" cy="'+(by+5)+'" rx="'+(bw/2+8)+'" ry="7" fill="rgba(18,38,58,.10)"/>'
+    +'<clipPath id="fcPClip"><path d="'+cone+' Z"/></clipPath></defs>'
+    /* ghost TARGET: cono completo + base, con hatch de lo que falta */
     +'<g clip-path="url(#fcPClip)"><rect x="0" y="0" width="'+W+'" height="'+H2+'" fill="url(#fcHatchP)" opacity=".5"/></g>'
-    +'<path d="M'+bx+' '+by+' Q'+(W/2)+' '+(ty-8)+' '+(bx+bw)+' '+by+' Z" fill="none" stroke="#c6d2dc" stroke-width="1.4" stroke-dasharray="4 4"/>'
-    +'<text x="'+(W/2)+'" y="'+(ty+2)+'" text-anchor="middle" font-size="7.5" font-weight="800" fill="#9aa7b4" font-family="Plus Jakarta Sans">TARGET</text>'
-    +'<g id="fcPGo"><g id="fcPG"><path id="fcPP" d="M'+bx+' '+by+' Q'+(W/2)+' '+(ty-8)+' '+(bx+bw)+' '+by+' Z" fill="url(#fcPg)"/>'
-    +'<path d="M'+(bx+16)+' '+(by-13)+' Q'+(W/2)+' '+(ty+18)+' '+(bx+bw-16)+' '+(by-13)+'" stroke="rgba(255,255,255,.38)" stroke-width="5" fill="none" stroke-linecap="round"/>'
-    +_fcGrains(bx+16,bx+bw-16,by-66,by-8,12)+'</g></g>'
-    +'<line x1="2" x2="'+(W-2)+'" y1="'+by+'" y2="'+by+'" stroke="#dfe7ee" stroke-width="2"/>'
-    +'<line id="fcMinL" x1="6" x2="'+(W-6)+'" y1="0" y2="0" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
-    +'<text id="fcMinT" x="'+(W-6)+'" y="0" text-anchor="end" font-size="7.5" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+tg.min+' STG</text>'
-    +'</svg>';}
+    +'<path d="'+cone+'" fill="none" stroke="#c6d2dc" stroke-width="1.4" stroke-dasharray="4 4"/>'
+    +'<ellipse cx="'+cx+'" cy="'+by+'" rx="'+(bw/2+5)+'" ry="9" fill="none" stroke="#c6d2dc" stroke-width="1.2" stroke-dasharray="4 4"/>'
+    +'<text x="'+cx+'" y="'+(apex-7)+'" text-anchor="middle" font-size="7.5" font-weight="800" fill="#9aa7b4" font-family="Plus Jakarta Sans">TARGET</text>'
+    /* pila real: base elíptica + cono con cara iluminada */
+    +'<g id="fcPGo"><g id="fcPG">'
+    +'<ellipse id="fcPB" cx="'+cx+'" cy="'+by+'" rx="'+(bw/2-4)+'" ry="8.5" fill="#b8842b"/>'
+    +'<path id="fcPP" d="'+cone+' Z" fill="url(#fcPg)"/>'
+    +'<path d="M'+(bx+14)+' '+(by-10)+' Q'+(cx-6)+' '+(apex+26)+' '+(cx+2)+' '+(apex+10)+'" stroke="rgba(255,255,255,.38)" stroke-width="5" fill="none" stroke-linecap="round"/>'
+    +_fcGrains(bx+16,bx+bw-16,by-62,by-8,12)
+    +'</g></g>'
+    +'<line x1="2" x2="'+(W-2)+'" y1="'+(by+9)+'" y2="'+(by+9)+'" stroke="#dfe7ee" stroke-width="2"/>'
+    +'<ellipse id="fcMinL" cx="'+cx+'" cy="0" rx="'+(bw/2+7)+'" ry="7" fill="none" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
+    +'<text id="fcMinT" x="'+(W-4)+'" y="0" text-anchor="end" font-size="7.5" font-weight="800" fill="#c24545" stroke="#fff" stroke-width="3" paint-order="stroke" font-family="Plus Jakarta Sans">MIN '+tg.min+' STG</text>'
+    +'</svg><div class="fc-gshine"></div></div>';}
 function fcGaugePaint(){
   const host=$('fc-gauge');if(!host)return;
   const g2=k=>_fcN(($('fc-'+k)||{}).value,0);
@@ -4187,36 +4219,43 @@ function fcGaugePaint(){
       const s=Math.max(0.12,Math.min(1.08,gg.pct/100));
       const pg=$('fcPG');if(pg&&pg.style)pg.style.transform='scale('+s.toFixed(3)+')';
       const pp=$('fcPP');if(pp&&pp.setAttribute)pp.setAttribute('fill',col);
-      /* ápice visual de la curva Q (t=.5): y=93 → alto útil 79px; MIN usa la MISMA escala
-         que el scale() de la pila para que crucen exactamente en pct===minPct */
-      const by=172,ih=79,minY=by-ih*Math.min(1,gg.minPct/100);
+      /* cono: base 160, ápice 34 → alto útil 126; el aro MIN usa la MISMA escala
+         que el scale() de la pila para cruzar exactamente en pct===minPct */
+      const by=160,ihP=126,minY=by-ihP*Math.min(1,gg.minPct/100);
       const ml=$('fcMinL'),mt=$('fcMinT');
-      if(ml&&ml.setAttribute){ml.setAttribute('y1',minY);ml.setAttribute('y2',minY);}
-      if(mt&&mt.setAttribute)mt.setAttribute('y',minY-4);
+      if(ml&&ml.setAttribute)ml.setAttribute('cy',minY);
+      if(mt&&mt.setAttribute)mt.setAttribute('y',minY-9);
     }else{
-      const ty=18,by=174,ih=by-ty;
-      const fr=Math.max(0.015,Math.min(1,gg.stgCov/tg.goal));
-      const gf=$('fcGF');if(gf&&gf.setAttribute){gf.setAttribute('y',by-ih*fr);gf.setAttribute('height',ih*fr+6);}
-      const gh2=$('fcGH');if(gh2&&gh2.setAttribute)gh2.setAttribute('height',Math.max(0,ih-ih*fr));
-      const wg=$('fcWg');if(wg&&wg.style)wg.style.transform='translateY('+(by-ih*fr)+'px)';
+      const ty=30,by=162,ih=by-ty;
+      const fr=Math.max(0.02,Math.min(1,gg.stgCov/tg.goal));
+      const yF=by-ih*fr;
+      const gf=$('fcGF');if(gf&&gf.setAttribute){gf.setAttribute('y',yF);gf.setAttribute('height',by-yF+16);}
+      const gs2=$('fcGFs');if(gs2&&gs2.setAttribute)gs2.setAttribute('cy',yF);
+      const gh2=$('fcGH');if(gh2&&gh2.setAttribute)gh2.setAttribute('height',Math.max(0,yF-ty));
       const minY=by-ih*Math.min(1,gg.minPct/100);
       const ml=$('fcMinL'),mt=$('fcMinT');
-      if(ml&&ml.setAttribute){ml.setAttribute('y1',minY);ml.setAttribute('y2',minY);}
-      if(mt&&mt.setAttribute)mt.setAttribute('y',minY-4);
-      const efr=Math.min(1,emp/40);
-      const ef=$('fcEF');if(ef&&ef.setAttribute){ef.setAttribute('y',by-ih*efr);ef.setAttribute('height',ih*efr+6);ef.setAttribute('fill',es.c);
+      if(ml&&ml.setAttribute)ml.setAttribute('cy',minY);
+      if(mt&&mt.setAttribute)mt.setAttribute('y',minY+2.5);
+      const efr=Math.min(1,emp/40),yE=by-ih*efr;
+      const ef=$('fcEF');if(ef&&ef.setAttribute){ef.setAttribute('y',yE);ef.setAttribute('height',by-yE+12);ef.setAttribute('fill',es.c);
         if(ef.classList)ef.classList.toggle('fc-epulse',es.k==='crit');}
+      const es2=$('fcEFs');if(es2&&es2.setAttribute)es2.setAttribute('cy',yE);
       const fn=$('fcFn');if(fn)fn.textContent='FULL '+fmt(Math.round(lbs/Math.max(1,FC.lbsBox||47000)));
       const en=$('fcEn');if(en)en.textContent='EMPTY '+emp;
     }
   }catch(_){host._sk=null;}
-  /* pseudo-3D: tilt suave con el mouse (bind una sola vez por host) */
+  /* 3D real: el escenario (.fc-gstage) rota con el mouse; la sombra y el brillo
+     viven en capas translateZ distintas → parallax + specular */
   try{if(!host._tilt&&host.addEventListener){host._tilt=1;
     host.addEventListener('mousemove',function(ev2){const r2=host.getBoundingClientRect();
       const nx=(ev2.clientX-r2.left)/r2.width-0.5, ny=(ev2.clientY-r2.top)/r2.height-0.5;
-      host.style.setProperty('--gy',(nx*10).toFixed(1)+'deg');
-      host.style.setProperty('--gx',(-ny*8).toFixed(1)+'deg');});
-    host.addEventListener('mouseleave',function(){host.style.setProperty('--gx','0deg');host.style.setProperty('--gy','0deg');});}}catch(_t){}
+      host.style.setProperty('--gy',(nx*12).toFixed(1)+'deg');
+      host.style.setProperty('--gx',(-ny*9).toFixed(1)+'deg');
+      host.style.setProperty('--mx',((nx+0.5)*100).toFixed(1)+'%');
+      host.style.setProperty('--my',((ny+0.5)*100).toFixed(1)+'%');
+      host.style.setProperty('--gs',(1-ny*0.08).toFixed(3));});
+    host.addEventListener('mouseleave',function(){['--gx','--gy','--gs'].forEach(function(k){host.style.setProperty(k,k==='--gs'?'1':'0deg');});
+      host.style.setProperty('--mx','32%');host.style.setProperty('--my','22%');});}}catch(_t){}
 }
 const FC_ESC=[
   {k:'m', name:'Avg pace',      col:'#1f6f6f'},
@@ -4301,8 +4340,9 @@ function fcCalc(){
   const kc=$('fck-cov');if(kc)kc.querySelector('.sb').textContent='at '+eK.name.toLowerCase()+' burn '+fmt(Math.round(B[K]))+' lbs/h';
   set('fck-run',rK.runS!=null?fmtT(rK.runS):'No runout ✓',rK.runS!=null?'bad':'okk');
   const sb=$('fck-run');if(sb)sb.querySelector('.sb').textContent=(rK.runS!=null?('at '+eK.name.toLowerCase()):'at '+eK.name.toLowerCase()+' — holds')+' · worst: '+(worst!=null?(wn.name.toLowerCase()+' → '+fmtT(worst)):'none');
-  set('fck-48',fmt(FC.hz>=48?rK.inv48:rK.inv24)+' lbs','');
-  const k48=$('fck-48');if(k48)k48.querySelector('.sb').textContent=eK.name+' @ '+(FC.hz>=48?'48':'24')+' h · avg → '+fmt(FC.hz>=48?SIM.m.inv48:SIM.m.inv24)+' lbs';
+  const invEnd=k2=>{const s3=SIM[k2].solid;return s3[Math.min(FC.hz,s3.length-1)];};
+  set('fck-48',fmt(invEnd(K))+' lbs','');
+  const k48=$('fck-48');if(k48)k48.querySelector('.sb').textContent=eK.name+' @ '+FC.hz+' h · avg → '+fmt(invEnd('m'))+' lbs';
   const crew0=p.curve[0]||0;
   set('fck-req',rK.reqDrv?rK.reqDrv.toFixed(1):'—',(crew0>=rK.reqDrv)?'okk':'bad');
   const kr=$('fck-req');if(kr)kr.querySelector('.sb').textContent='at '+eK.name.toLowerCase()+' · roster now '+crew0+' · worst needs '+(SIM[worstK].reqDrv||0).toFixed(1);
@@ -4444,11 +4484,11 @@ function fcGantt(){
   const heat=G.curve.map((v,t)=>{
     const col=v>=G.peak?'#4ca882':v>=G.med?'#9fd4bb':v>G.low?'#ecd58f':'#eaa5a5';
     const lo=(v<=G.low&&G.low<G.med)?' lo':'';
-    return '<div class="fg-cell'+lo+'" style="background:'+col+'" title="'+hl(t)+' · '+v+' drivers projected"></div>';}).join('');
+    return '<div class="fg-cell'+lo+'" style="background:'+col+'" data-tip="'+encodeURIComponent(hl(t)+' — <b>'+v+' drivers</b> projected')+'"></div>';}).join('');
   const truck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16V7h11v9M13 10h5l3 3.5V16h-3"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>';
   const lanes=G.rows.map((r,ri)=>{
     const bars=r.segs.map(sg=>{const l=sg[0]/24*100,w=Math.max(3,(sg[1]-sg[0])/24*100);
-      return '<div class="fg-bar '+(r.band==='fcw-g'?'bg-g':r.band==='fcw-y'?'bg-y':'bg-r')+'" style="left:'+l.toFixed(1)+'%;width:'+w.toFixed(1)+'%;animation-delay:'+(ri*55)+'ms" title="'+r.d+' · '+hl(sg[0])+'–'+hl(sg[1])+' · '+r.sp.toFixed(1)+' h avg">'+truck+'</div>';}).join('');
+      return '<div class="fg-bar '+(r.band==='fcw-g'?'bg-g':r.band==='fcw-y'?'bg-y':'bg-r')+'" style="left:'+l.toFixed(1)+'%;width:'+w.toFixed(1)+'%;animation-delay:'+(ri*55)+'ms" data-tip="'+encodeURIComponent('<b>'+r.d+'</b>\nShift '+hl(sg[0])+' – '+hl(sg[1])+' · avg <b>'+r.sp.toFixed(1)+' h</b>')+'">'+truck+'</div>';}).join('');
     return '<div class="fg-row"><span class="fg-nm" data-d="'+String(r.d).replace(/"/g,'&quot;')+'" onclick="fcGotoDriver(this.dataset.d)">'+r.d+(r.nw?' <span class="fcr-new">NEW</span>':'')+'</span><div class="fg-lane">'+bars+'</div></div>';}).join('');
   const reinf=G.reinf.map(x=>'<span class="fg-chip rf">Reinforce '+hl(x[0])+'–'+hl(x[1])+' · dips to '+x[2]+' drv</span>').join('');
   const bd=(FC.pf&&FC.pf.padOk)?+FC.pf.brdOn:null;
@@ -4459,6 +4499,26 @@ function fcGantt(){
     +'<div class="fg-row fg-ribr"><span class="fg-nm fg-ribt" title="Projected crew per hour — green peak · yellow mid · red reinforcement window">Crew / hour</span><div class="fg-ribbon">'+heat+'</div></div>'
     +'<div class="fg-grid">'+lanes+'</div>'
     +'<div class="fg-axis"><span>'+hl(0)+'</span><span>'+hl(6)+'</span><span>'+hl(12)+'</span><span>'+hl(18)+'</span><span>+24 h</span></div>';}
+/* ── tooltip flotante propio (no se corta, misma info en toda la fila) ── */
+function _fcTipEl(){if(!document.getElementById)return null;
+  let t=document.getElementById('fcTip');
+  if(!t&&document.body&&document.createElement){t=document.createElement('div');t.id='fcTip';document.body.appendChild(t);}
+  return t;}
+function _fcTipBind(host){if(!host||host._tipB||!host.addEventListener)return;host._tipB=1;
+  const mv=function(ev){const t=_fcTipEl();if(!t||!t.classList.contains('on'))return;
+    const vw=window.innerWidth||1200,vh=window.innerHeight||800;
+    let x=ev.clientX+14,y=ev.clientY+14;
+    const r=t.getBoundingClientRect();
+    if(x+r.width>vw-8)x=Math.max(8,ev.clientX-r.width-12);
+    if(y+r.height>vh-8)y=Math.max(8,ev.clientY-r.height-12);
+    t.style.left=x+'px';t.style.top=y+'px';};
+  host.addEventListener('mouseover',function(ev){const n=ev.target&&ev.target.closest?ev.target.closest('[data-tip]'):null;
+    const t=_fcTipEl();if(!t)return;
+    if(n&&host.contains(n)){try{t.innerHTML=decodeURIComponent(n.dataset.tip).replace(/\n/g,'<br>');}catch(_){t.textContent='';}
+      t.classList.add('on');mv(ev);}
+    else t.classList.remove('on');});
+  host.addEventListener('mousemove',mv);
+  host.addEventListener('mouseleave',function(){const t=_fcTipEl();if(t)t.classList.remove('on');});}
 /* ── tabla del truck roster aprendido ── */
 function _fcHM(hF){let hh=Math.floor(((hF%24)+24)%24),mm=Math.round((hF-Math.floor(hF))*60);
   if(mm===60){mm=0;hh=(hh+1)%24;}
@@ -4476,12 +4536,21 @@ function fcRosterTable(){
     :'<tr><td colspan="9" style="color:#b45309">No roster yet — paste GAS v9.4 (Code.gs) and hit Live sync.</td></tr>';return;}
   host.innerHTML=rows.map(r=>{const sc=fcScore(r,rows,dtr,padDays);
     const stale=!r.fresh;
-    return '<tr class="'+(r.inc?'':'exc')+'">'
+    const wb2=fcHrsBand(r.sp);
+    const audit=(r.shd&&r.shd.length)
+      ?('Learned from '+(r.pw?'pumping-day':'all')+' closed shifts:\n'+r.shd.map(s2=>'• '+s2[0]+' — start '+_fcHM(s2[1])+' · '+s2[2]+' h').join('\n'))
+      :'No shift log yet — projecting defaults';
+    const tip=encodeURIComponent('<b>'+r.d+'</b>'+(r.c?' — '+r.c:'')
+      +'\nWork window <b>'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+'</b> · avg <b>'+r.sp.toFixed(1)+' h</b> ('+wb2.t+')'
+      +(r.nw?'\nNEW — activation + 12 h rule':'')
+      +(r.pw?'':'\nall-days fallback — no closed pump shifts yet')
+      +'\n'+audit);
+    return '<tr class="'+(r.inc?'':'exc')+'" data-tip="'+tip+'">'
     +'<td><input type="checkbox" '+(r.inc?'checked':'')+(stale?' disabled':'')+' onchange="fcTogDrv(\''+encodeURIComponent(r.d)+'\')"></td>'
     +'<td><span class="fcr-nm" onclick="fcGotoDriver(\''+String(r.d).replace(/'/g,"\\'")+'\')">'+r.d+'</span>'
       +(r.nw?' <span class="fcr-new">NEW +12H</span>':'')+'</td>'
     +'<td>'+(r.c||'—')+'</td>'
-    +'<td class="fcr-win" title="'+(r.shd&&r.shd.length?('learned from '+(r.pw?'pumping-day':'all')+' shifts: '+r.shd.map(s2=>s2[0]+' '+_fcHM(s2[1])+'×'+s2[2]+'h').join(' · ')):'no shift log yet')+'">'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+(r.pw?'':' <span style="color:#b45309;font-size:8px">all-days</span>')+'</td>'
+    +'<td class="fcr-win">'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+(r.pw?'':' <span style="color:#b45309;font-size:8px">all-days</span>')+'</td>'
     +'<td><span class="fcw '+fcHrsBand(r.sp).cls+'">'+r.sp.toFixed(1)+' h · '+fcHrsBand(r.sp).t+'</span></td>'
     +'<td>'+r.tp.toFixed(2)+'</td>'
     +'<td class="fcr-sc">'+sc+'</td>'
@@ -4572,7 +4641,7 @@ function renderFc(){
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
           <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
         </tr></thead><tbody id="fcr-body"></tbody></table></div>
-        <div class="sb" style="margin-top:6px">Window = mean first→last load per CLOSED shift on pumping days — prefill days, today's partial day and the still-open shift never count · crew floor = the pad's median actives per hour (pump days, today excluded) · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
+        <div class="sb" style="margin-top:6px">Window = mean first→last load per CLOSED shift on pumping days — prefill days, today's partial day and the still-open shift never count · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · crew floor = the pad's median actives per hour (pump days, today excluded) · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
       </div></div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${kpi('fck-cov','Coverage (no trucks)')}
@@ -4593,7 +4662,7 @@ function renderFc(){
           <span class="fc-lt${FC.lay.t48?' on':''}" id="fcl-t48" onclick="fcLay('t48')">Goal target</span></div></div>
       <div class="ch ch-l"><canvas id="fcChart"></canvas></div>
       <div id="fc-pin"></div></div>`;
-  fcRosterTable();fcGantt();
+  fcRosterTable();fcGantt();_fcTipBind($('fc-roster'));
   fcCalc();_fcRstBtn();
 }
 /* ════════════════════════════════════════════════════════════

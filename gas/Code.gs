@@ -1,4 +1,7 @@
-/** MEDS · PropX Live API — Code.gs v9.4.2. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.4.3. PEGAR TAL CUAL → Nueva versión.
+ *  v9.4.3 MÉTRICAS OPERATIVAS: loads (n) y días (days) del roster cuentan SOLO días
+ *  operativos — desde la primera etapa del pozo en adelante; el prefill queda fuera.
+ *  Un pozo que sigue en prefill (sin etapas) cuenta su prefill tal cual.
  *  v9.4.2 TURNOS CERRADOS: además del filtro de pumping days, la ventana ya NO toma el día
  *  actual del dato (turnos truncados a medias) ni el turno aún abierto (fin a <3 h del último
  *  load del pad) — el stub de hoy no arrastra la media de horas hacia abajo.
@@ -115,7 +118,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.4.2';
+const API_VERSION='v9.4.3';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -695,6 +698,8 @@ function _absH(d){const m=String(d||'').match(/(\d{4})-(\d{2})-(\d{2})/);
 function _rosterBuild(rosterEv,byDriver,pumpSet){
   const out=[];
   let gMax=0;Object.keys(rosterEv).forEach(function(d2){rosterEv[d2].forEach(function(h2){if(h2>gMax)gMax=h2;});});
+  /* v9.4.3: primer día operativo = primera fecha con etapas; null = pozo aún en prefill */
+  var startDay=null;pumpSet.forEach(function(dd){if(!startDay||dd<startDay)startDay=dd;});
   Object.keys(rosterEv).forEach(function(drv){
     const ev=rosterEv[drv].slice().sort(function(a,b){return a-b;});
     if(!ev.length)return;
@@ -723,8 +728,10 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
     const sp=spSum/use.length;
     const D=byDriver[drv]||{name:drv,dates:{},loads:ev.length,carriers:{}};
     const dates=Object.keys(D.dates||{});
-    let pl=0,pdd=0;
-    dates.forEach(function(dd){if(pumpSet.has(dd)){pl+=D.dates[dd];pdd++;}});
+    let pl=0,pdd=0,ol=0,odd=0;
+    dates.forEach(function(dd){if(pumpSet.has(dd)){pl+=D.dates[dd];pdd++;}
+      if(!startDay||dd>=startDay){ol+=(+D.dates[dd]||0);odd++;}});
+    if(!dates.length){ol=ev.length;odd=0;}
     const cars=Object.keys(D.carriers||{}).sort(function(a,b){return D.carriers[b]-D.carriers[a];});
     const fsH=ev[0],lastH=ev[ev.length-1];
     const hTo=function(hA){const dMs=Math.floor(hA/24)*86400000;const dt=new Date(dMs);
@@ -732,9 +739,9 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
       return dt.getUTCFullYear()+'-'+p(dt.getUTCMonth()+1)+'-'+p(dt.getUTCDate())+' '+p(((hA%24)+24)%24);};
     const shd=use.slice(-4).map(function(sh){
       return [dayOf(sh[0]).slice(5),+(((sh[0]%24)+24)%24).toFixed(1),+Math.min(17,Math.max(4,(sh[1]-sh[0])+1.5)).toFixed(1)];});
-    out.push({d:D.name||drv,c:cars[0]||'',n:ev.length,sh:use.length,
+    out.push({d:D.name||drv,c:cars[0]||'',n:ol,sh:use.length,
       aS:+aS.toFixed(1),sp:+sp.toFixed(1),
-      tp:pdd?+(pl/pdd).toFixed(2):0,days:dates.length,pd:pdd,
+      tp:pdd?+(pl/pdd).toFixed(2):0,days:odd,pd:pdd,
       fs:hTo(fsH),last:hTo(lastH),nw:shifts.length<2,shd:shd,
       pw:pumpShifts.length>=2});});
   return out.sort(function(a,b){return b.n-a.n;});}
