@@ -1,4 +1,7 @@
-/** MEDS · PropX Live API — Code.gs v9.3. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.3.1. PEGAR TAL CUAL → Nueva versión.
+ *  v9.3.1 CERO MANUAL: si la hoja status del Hub aún no trae columna shift, el API detecta
+ *       el IMPORTRANGE de esa hoja, abre el STATUS_LOG del BOARD y lo lee DIRECTO (con su
+ *       columna Shift del StatusTracker v2). No hay que tocar ninguna fórmula del Hub.
  *  v9.3 CREW POR TURNO: si el Status Log trae columna "shift" (DAY/NIGHT/COVERING por
  *       driver-fila), cada pad publica sbrk = {DAY:{status:n},NIGHT:{...},COVER:{...}}
  *       del último snapshot — el Forecast arma los niveles de crew por turno EXACTOS
@@ -89,7 +92,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.3';
+const API_VERSION='v9.3.1';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -654,12 +657,46 @@ function getWell(id){
 // "26. (BAYSWATER) - Far Country" y "Bayswater - Far" → ambos contienen "bayswater far".
 function _mnorm(s){return String(s||'').toLowerCase()
   .replace(/[().,#/\\_-]+/g,' ').replace(/\s+/g,' ').trim();}
+// v9.3.1 — localiza el spreadsheet del BOARD desde el IMPORTRANGE de la hoja status del Hub
+// y lee su STATUS_LOG directo (headers Timestamp/Date/Hour/Pad/Status/Count/Shift del
+// StatusTracker v2). Devuelve null si no hay IMPORTRANGE, no hay STATUS_LOG o no trae Shift.
+function _statusDirect(hub){
+  const sh=hub.getSheetByName(CFG.statusSheet); if(!sh)return null;
+  const R=Math.min(4,sh.getMaxRows()), C=Math.min(4,sh.getMaxColumns());
+  const fml=sh.getRange(1,1,R,C).getFormulas();
+  let id=null;
+  for(let r=0;r<fml.length&&!id;r++)for(let c=0;c<fml[r].length&&!id;c++){
+    const m=String(fml[r][c]||'').match(/IMPORTRANGE\s*\(\s*"([^"]+)"/i);
+    if(m){const mm=m[1].match(/[-\w]{25,}/); if(mm)id=mm[0];}
+  }
+  if(!id)return null;
+  const bs=SpreadsheetApp.openById(id);
+  const bsh=bs.getSheetByName('STATUS_LOG'); if(!bsh)return null;
+  const v=bsh.getDataRange().getValues(); if(!v.length)return null;
+  let hr=-1;
+  for(let i=0;i<Math.min(v.length,5);i++)
+    if(v[i].some(function(c){return String(c).trim().toLowerCase()==='status';})){hr=i;break;}
+  if(hr<0)return null;
+  const H=v[hr].map(function(x){return String(x).trim().toLowerCase();});
+  const pick=function(){for(var i=0;i<arguments.length;i++){var j=H.indexOf(arguments[i]);if(j>=0)return j;}return -1;};
+  const li={date_iso:pick('date','date_iso'),hour:pick('hour'),well:pick('pad','well'),
+            status:pick('status'),count:pick('count')};
+  if(li.date_iso<0||li.hour<0||li.well<0||li.status<0||li.count<0)return null;
+  if(pick('shift')<0)return null; // el board tampoco trae turno todavia -> seguir con el Hub
+  const rows=v.slice(hr+1).filter(function(r){return r.some(function(c){return c!=='';});});
+  return {SL:{H:v[hr].map(function(x){return String(x).trim();}),rows:rows},li:li};
+}
 function getStatus(days){
   days=Math.max(1,Math.min(180,+days||45));
   const hub=SpreadsheetApp.getActive();
-  const SL=readTab(hub,CFG.statusSheet,'status');
+  let SL=readTab(hub,CFG.statusSheet,'status');
   if(!SL) return {generated:new Date().toISOString(), latest:null, days:days, pads:[], error:'Status Log vacío o sin header "status"'};
-  const li=colmap(SL.H,['date_iso','hour','well','status','count']);
+  let li=colmap(SL.H,['date_iso','hour','well','status','count']);
+  /* v9.3.1 CERO MANUAL: sin columna shift en el Hub -> leer el STATUS_LOG del board directo */
+  if(!SL.H.some(function(hh){return /^shift/i.test(String(hh).trim());})){
+    try{const dd=_statusDirect(hub); if(dd){SL=dd.SL; li=dd.li;}}
+    catch(eD){Logger.log('statusDirect: '+eD);}
+  }
   const cutISO=Utilities.formatDate(new Date(Date.now()-days*86400000),Session.getScriptTimeZone(),'yyyy-MM-dd');
   const _nrm=s=>String(s||'').toUpperCase().trim();
   const isAct=s=>{const u=_nrm(s);return CFG.activeStatuses.some(function(k){return u.indexOf(k)>=0;});};
