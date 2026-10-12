@@ -1187,7 +1187,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.94';
+const VBUILD='2026-10-12.95';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -4590,9 +4590,14 @@ function fcRosterTable(){
   host.innerHTML=rows.map(r=>{const sc=fcScore(r,rows,dtr,padDays);
     const stale=!r.fresh;
     const wb2=fcHrsBand(r.sp);
-    const audit=(r.shd&&r.shd.length)
-      ?('Learned from '+(r.pw?'pumping-day':'all')+' closed shifts:\n'+r.shd.map(s2=>'• '+s2[0]+' — start '+_fcHM(s2[1])+' · '+s2[2]+' h').join('\n'))
-      :'No shift log yet — projecting defaults';
+    let audit='No shift log yet — projecting defaults';
+    if(r.shd&&r.shd.length){
+      const perDay={};r.shd.forEach(s2=>{perDay[s2[0]]=(perDay[s2[0]]||0)+(+s2[2]||0);});
+      const pdK=Object.keys(perDay).sort();
+      audit='Learned from '+(r.pw?'pumping-day':'all')+' closed shifts:\n'
+        +r.shd.map(s2=>'• '+s2[0]+' — start '+_fcHM(s2[1])+' · '+s2[2]+' h').join('\n')
+        +'\nPer-day total: '+pdK.map(k2=>k2+' → '+perDay[k2].toFixed(1)+' h').join(' · ')
+        +(pdK.length<r.shd.length?'  (split shifts summed)':'');}
     const tip=encodeURIComponent('<b>'+r.d+'</b>'+(r.c?' — '+r.c:'')
       +'\nWork window <b>'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+'</b> · avg <b>'+r.sp.toFixed(1)+' h</b> ('+wb2.t+')'
       +(r.nw?'\nNEW — activation + 12 h rule':'')
@@ -4694,7 +4699,7 @@ function renderFc(){
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
           <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
         </tr></thead><tbody id="fcr-body"></tbody></table></div>
-        <div class="sb" style="margin-top:6px">Window = mean first→last load per CLOSED shift on pumping days — prefill days, today's partial day and the still-open shift never count · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
+        <div class="sb" style="margin-top:6px">Window = first start → TOTAL hours per day on pumping days (split shifts on the same day are summed) — prefill days, today's partial day and the still-open shift never count · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
       </div></div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${kpi('fck-cov','Coverage (no trucks)')}

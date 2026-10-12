@@ -1,4 +1,8 @@
-/** MEDS · PropX Live API — Code.gs v9.4.3. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.4.4. PEGAR TAL CUAL → Nueva versión.
+ *  v9.4.4 HORAS POR DÍA: si un driver trabaja VARIOS bloques el mismo día (split por
+ *  huecos ≥6 h — típico en cajas/Fasken esperando swaps), los bloques se SUMAN y la
+ *  media de horas es por DÍA trabajado, no por bloque; el arranque (aS) es el primer
+ *  bloque de cada día. Los bloques individuales siguen publicados en shd para auditar.
  *  v9.4.3 MÉTRICAS OPERATIVAS: loads (n) y días (days) del roster cuentan SOLO días
  *  operativos — desde la primera etapa del pozo en adelante; el prefill queda fuera.
  *  Un pozo que sigue en prefill (sin etapas) cuenta su prefill tal cual.
@@ -118,7 +122,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.4.3';
+const API_VERSION='v9.4.4';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -719,13 +723,18 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
     const pumpShifts=closed.filter(function(sh){return pumpSet.has(dayOf(sh[0]));});
     const base=(pumpShifts.length>=2)?pumpShifts:(closed.length>=2?closed:shifts);
     const use=base.slice(-6);
+    /* v9.4.4: agrupar por DÍA — split shifts del mismo día se suman; la media es por día */
+    const byDayS={};use.forEach(function(sh){const dk=dayOf(sh[0]);
+      (byDayS[dk]=byDayS[dk]||[]).push(sh);});
+    const dayKs=Object.keys(byDayS).sort();
     let vx=0,vy=0,spSum=0;
-    use.forEach(function(sh){
-      const st=((sh[0]%24)+24)%24;
+    dayKs.forEach(function(dk){const list=byDayS[dk].slice().sort(function(a2,b2){return a2[0]-b2[0];});
+      const st=((list[0][0]%24)+24)%24;            // arranque = PRIMER bloque del día
       const a=st/24*2*Math.PI; vx+=Math.cos(a); vy+=Math.sin(a);
-      spSum+=Math.min(17,Math.max(4,(sh[1]-sh[0])+1.5));});
+      let hrs=0;list.forEach(function(sh){hrs+=Math.min(17,Math.max(4,(sh[1]-sh[0])+1.5));});
+      spSum+=Math.min(20,hrs);});
     let aS=Math.atan2(vy,vx)/(2*Math.PI)*24; if(aS<0)aS+=24;
-    const sp=spSum/use.length;
+    const sp=spSum/Math.max(1,dayKs.length);
     const D=byDriver[drv]||{name:drv,dates:{},loads:ev.length,carriers:{}};
     const dates=Object.keys(D.dates||{});
     let pl=0,pdd=0,ol=0,odd=0;
