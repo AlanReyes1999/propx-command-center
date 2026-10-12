@@ -1199,7 +1199,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.104';
+const VBUILD='2026-10-12.105';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -1291,9 +1291,9 @@ async function _apiWellNet(id,status,force,sig){
       return _S(jw);}
   }catch(e){console.warn('well:',e);blog('wellFetch',false,e);return null;}
 }
-async function apiStatus(){
+async function apiStatus(force){
   if(!CONFIG.API_URL) return DEMO_STS;
-  try{const j=await fetchJSON(CONFIG.API_URL+'?action=status&days=60');
+  try{const j=await fetchJSON(CONFIG.API_URL+'?action=status&days=60'+(force?'&fresh=1':''));
     if(!(j&&Array.isArray(j.pads)))return DEMO_STS;
     if(j.pads.length&&!j.pads[0].ts){ /* deployment v5/v6.3: adaptar timeline→serie */
       j.pads=j.pads.map(p=>({well:p.well,well_id:p.well_id,reg_status:p.status||null,live:true,
@@ -3626,7 +3626,7 @@ let REFRESH_AT=Date.now()+((CONFIG.REFRESH_MIN||5)*60000);
 setInterval(function(){const el=$('sts-cd');if(!el)return;const ms=Math.max(0,REFRESH_AT-Date.now());
   el.textContent=('0'+Math.floor(ms/60000)).slice(-2)+':'+('0'+Math.floor(ms/1000)%60).slice(-2);},1000);
 window.stsHours=function(){SF.h0=Math.max(0,Math.min(23,+$('sts-h0').value||0));SF.h1=Math.max(SF.h0,Math.min(23,+$('sts-h1').value===0?0:+$('sts-h1').value||23));renderStatus(true);};
-window.stsRefresh=async function(){try{STATUS=await apiStatus();REFRESH_AT=Date.now()+((CONFIG.REFRESH_MIN||5)*60000);renderStatus();}catch(e){console.warn(e);}};
+window.stsRefresh=async function(){try{STATUS=await apiStatus(true);REFRESH_AT=Date.now()+((CONFIG.REFRESH_MIN||5)*60000);renderStatus();}catch(e){console.warn(e);}};
 window.stsSnap=async function(btn){const m=$('sts-snapmsg');if(m)m.textContent='ejecutando…';
   try{const j=await fetchJSON(CONFIG.API_URL+'?action=snapshot');
     if(m)m.textContent=j&&j.ok?('✓ snapshot '+(j.time||'').slice(11,16)):('✗ '+String(j&&j.error||'error').slice(0,90));
@@ -4106,7 +4106,7 @@ window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.di
   const id=FC.id; /* .91: sella el pozo que pidió el sync — si cambias de pad en vuelo, nada se cruza */
   const reg=REGISTRY.find(w=>w.id===id)||{};
   FC_PEND[id]=1;
-  Promise.all([apiWell(id,reg.status,true).catch(()=>null),apiStatus().catch(()=>null)])
+  Promise.all([apiWell(id,reg.status,true).catch(()=>null),apiStatus(true).catch(()=>null)])
   .then(rr=>{delete FC_PEND[id];const w0=rr[0];const tid=(w0&&w0.__reqId)||id;
     if(w0&&w0.daily&&String(tid)===String(id))_resPut(id,w0);
     if(rr[1])STATUS=rr[1];
@@ -4894,7 +4894,9 @@ document.querySelectorAll('.rng').forEach(ch=>ch.onclick=()=>{
     else{$('w-d0').value=addD(tI,-d+1);$('w-d1').value=tI;}}
   STRIP_END=tI;
   renderPozo();});
-$('btn-refresh').onclick=()=>refreshLive(true);
+{const _br=$('btn-refresh');
+ _br.title='Refresh live data — status + current well straight from the workbook (cache-busting). Shift+click = full page reload.';
+ _br.onclick=(e)=>{if(e&&e.shiftKey){location.reload();return;}refreshLive(true);};}
 
 function setT(id,v){try{const e=$(id);if(e)e.textContent=v;}catch(_){}}
 function renderHint(){
@@ -5189,7 +5191,7 @@ async function refreshLive(manual){
       /* v75: status + pozo EN PARALELO · manual = fresh del workbook también en lives (verdad, no snapshot) */
       const reg=REGISTRY.find(w=>w.id===CURRENT_ID)||{};
       const _wcl=String(reg.status).toLowerCase()==='closed';
-      const _pSt=apiStatus().catch(e=>{_rfErr=_rfErr||e;return null;});
+      const _pSt=apiStatus(manual?true:undefined).catch(e=>{_rfErr=_rfErr||e;return null;});
       const _pW=(manual||!_wcl)?apiWell(CURRENT_ID,reg.status,manual?true:undefined).catch(e=>{_rfErr=_rfErr||e;return null;}):Promise.resolve(null);
       const _rr=await Promise.all([_pSt,_pW]);
       if(_rr[0])STATUS=_rr[0];
