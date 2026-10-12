@@ -1187,7 +1187,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.90';
+const VBUILD='2026-10-12.91';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -1956,7 +1956,9 @@ function buildM(){
   let DR;
   if(typeof DRIVER_DAYS!=='undefined'&&DRIVER_DAYS&&DRIVER_DAYS.length){
     DR=DRIVER_DAYS.map(d=>{const daily=ISO.map(x=>+(d.dates&&d.dates[x])||0);const tot=daily.reduce((s,v)=>s+v,0);const days=daily.filter(v=>v>0).length;
-      const row=[d.driver,(d.carrier||'—').toUpperCase(),tot,days,days?+(tot/days).toFixed(1):0].concat(daily);
+      let _pl=0,_pdd=0;daily.forEach((v,i)=>{if(v>0&&(+ST[i]||0)>0){_pl+=v;_pdd++;}});
+      const _tr=_pdd?+(_pl/_pdd).toFixed(1):(days?+(tot/days).toFixed(1):0);
+      const row=[d.driver,(d.carrier||'—').toUpperCase(),tot,days,_tr].concat(daily);
       row._rev=+d.revenue||0;row._fsc=+d.fsc||0; // GAS v9.1: facturado exacto por driver (pozo completo)
       return row;}).filter(d=>d[2]>0);
   }else{
@@ -2125,7 +2127,10 @@ function buildM(){
       }
     }
   }catch(e){console.warn('[hora]',e);HR=null;}
-  const trAll=+(totL/Math.max(1,Tt.reduce((s,v)=>s+v,0))).toFixed(2);
+  /* .91: TR del range SOLO con días pumping (ST>0); un range/pozo sin etapas cae a todos */
+  const _trI=[];for(let i=0;i<n;i++){if(Tt[i]>0&&(+ST[i]||0)>0)_trI.push(i);}
+  const _trF=_trI.length?_trI:L.map((_,i)=>i).filter(i=>Tt[i]>0);
+  const trAll=+(_trF.reduce((s,i)=>s+L[i],0)/Math.max(1,_trF.reduce((s,i)=>s+Tt[i],0))).toFixed(2);
   const runI=runIdx;
   const bestI=runI.length?runI.reduce((b,i)=>L[i]>L[b]?i:b,runI[0]):0;
   const DTR=+T.turn_rate_target||3.27;
@@ -3891,11 +3896,13 @@ function fcRosterProj(w,now,H){
 /* Patrón histórico de actividad: mediana de drivers activos por hora-del-día
    sobre PUMP DAYS (días con etapas), excluyendo el día actual (parcial). */
 function fcHistHour(w,now){
-  const stD={};(((w&&w.stages)||[])).forEach(s2=>{if(s2&&s2.day&&(+s2.used_tons>0||+s2.stage>0))stD[s2.day]=1;});
+  /* .91: operativo = desde la PRIMERA etapa en adelante (aunque la captura de Stages
+     vaya atrasada un día, la actividad real de ese día cuenta); prefill y hoy fuera */
+  let startOp=null;(((w&&w.stages)||[])).forEach(s2=>{if(s2&&s2.day&&(+s2.used_tons>0||+s2.stage>0)){if(!startOp||s2.day<startOp)startOp=s2.day;}});
   const p2=n=>('0'+n).slice(-2);const dN=new Date(now);
   const today=dN.getFullYear()+'-'+p2(dN.getMonth()+1)+'-'+p2(dN.getDate());
   const byH=Array.from({length:24},()=>[]);let any=false;
-  ((w&&w.hourly)||[]).forEach(d=>{if(!d||!stD[d.date]||d.date===today)return;
+  ((w&&w.hourly)||[]).forEach(d=>{if(!d||!startOp||d.date<startOp||d.date===today)return;
     for(let h2=0;h2<24;h2++){const v=(d.dr&&+d.dr[h2])||0;byH[h2].push(v);if(v>0)any=true;}});
   if(!any)return null;
   return byH.map(a=>{if(!a.length)return 0;const q=a.slice().sort((x,y)=>x-y);return q[Math.floor(q.length/2)];});}
@@ -3997,7 +4004,9 @@ function fcPrefill(id){
   const ut=stg.filter(s=>+s.used_tons>0).slice(-8);
   const tps=ut.length?ut.reduce((s,x)=>s+(+x.used_tons||0),0)/ut.length:((+T.total_tons&&+T.total_stages)?T.total_tons/T.total_stages:170);
   let L2=0,D2=0;dl.forEach(d=>{if(+d.drivers>0){L2+=(+d.loads||0);D2+=(+d.drivers||0);}});
-  const tr=D2?(L2/D2):(+T.turn_rate_target||4);
+  /* .91: TR medio SOLO de días pumping; pozo aún en prefill → todos sus días */
+  let Lp=0,Dp=0;dl.forEach(d=>{if(+d.drivers>0&&(+d.stages_day||0)>0){Lp+=(+d.loads||0);Dp+=(+d.drivers||0);}});
+  const tr=Dp?(Lp/Dp):(D2?(L2/D2):(+T.turn_rate_target||4));
   let tons=0,lds=0;dl.forEach(d=>{tons+=(+d.tons||0);lds+=(+d.loads||0);});
   const avgLoad=lds?Math.round(tons*2000/lds):lbsBox;
   const cd=(w&&w.cycleDaily)||[];const lastC=cd.slice(-3);
@@ -4043,12 +4052,14 @@ function _fcSave(){if(!FC.id)return;const o={};const pfB=FC.pf||{};
 window.fcHz=function(hv){FC.hz=hv;setSegAct(['fch24','fch48','fch72'],'fch'+hv);_fcSave();renderFcProj();fcCalc();};
 window.fcWell=function(id){FC.id=id;FC._wReq=null;renderFc();};
 window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.disabled=true;}
-  const reg=REGISTRY.find(w=>w.id===FC.id)||{};
-  Promise.all([apiWell(FC.id,reg.status,true).catch(()=>null),apiStatus().catch(()=>null)])
-  .then(rr=>{if(rr[0]&&rr[0].daily)RES_DATA[FC.id]={ok:true,w:rr[0]};
+  const id=FC.id; /* .91: sella el pozo que pidió el sync — si cambias de pad en vuelo, nada se cruza */
+  const reg=REGISTRY.find(w=>w.id===id)||{};
+  Promise.all([apiWell(id,reg.status,true).catch(()=>null),apiStatus().catch(()=>null)])
+  .then(rr=>{const w0=rr[0];const tid=(w0&&w0.__reqId)||id;
+    if(w0&&w0.daily&&String(tid)===String(id))RES_DATA[id]={ok:true,w:w0};
     if(rr[1])STATUS=rr[1];
-    if(FC.mem)delete FC.mem[FC.id];
-    renderFc();
+    if(FC.mem)delete FC.mem[id];
+    if(FC.id===id)renderFc();
   }).finally(()=>{const b2=$('fc-sync');if(b2){b2.classList.remove('busy');b2.disabled=false;}});};
 let _fcT=null;window.fcInput=function(){clearTimeout(_fcT);_fcT=setTimeout(function(){_fcSave();fcCalc();},160);};
 window.fcLay=function(k){FC.lay[k]=FC.lay[k]?0:1;_fcSave();
@@ -4078,6 +4089,12 @@ function renderFcProj(){ /* recalcula curva + burns con el estado actual */
   FC._proj=fcRosterProj(pf.w,now,Math.max(72,FC.hz));
   if(!FC._proj.has){ /* GAS sin roster aún → curva plana con el board */
     const lvl=pf.brdOn||0;FC._proj={curve:new Array(FC.hz+1).fill(lvl),rows:[],has:false};}
+  /* .91: la hora 0 es DATO (board activo ahora), no proyección — se ancla al live status
+     salvo que haya exclusiones manuales (entonces manda tu simulación) */
+  FC._proj.c0raw=FC._proj.curve[0];
+  const _manual=Object.keys(FC.exc[FC.id]||{}).length>0;
+  if(FC._proj.has&&!_manual&&pf.padOk&&(+pf.brdOn||0)>FC._proj.curve[0]){
+    FC._proj.curve[0]=+pf.brdOn;FC._proj.liveNow=true;}
   const bm=null; /* media editable se lee en fcCalc de los inputs */
   FC._burn={b6:fcBurnWin(pf.w,6,now),b12:fcBurnWin(pf.w,12,now),b24:fcBurnWin(pf.w,24,now)};
 }
@@ -4575,7 +4592,7 @@ function renderFc(){
   const _cw2=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
   const _pEmpty=!!(_cw2&&_cw2.inventory&&_cw2.inventory.type==='pila'&&!(+_cw2.inventory.pila>0));
   if(CONFIG.API_URL&&(!_cw2||_cw2.slim||!_cw2.inventory||_pEmpty||!_cw2.roster)&&FC._wReq!==FC.id){FC._wReq=FC.id;
-    apiWell(FC.id,reg.status,_pEmpty).then(w2=>{if(w2&&w2.daily&&w2.daily.length){RES_DATA[FC.id]={ok:true,w:w2};
+    apiWell(FC.id,reg.status,_pEmpty).then(w2=>{if(w2&&w2.daily&&w2.daily.length&&w2.__reqId){RES_DATA[w2.__reqId]={ok:true,w:w2};
       const at=document.querySelector('.tab.active');
       if(at&&at.dataset.tab==='fc'&&FC.id===w2.__reqId&&!_fcTyped(FC.id))renderFc();}}).catch(()=>{if(FC._wReq===FC.id)FC._wReq=null;});}
   /* prefetch en segundo plano del resto de pads vivos → cambiar de pozo es instantáneo */
@@ -4585,7 +4602,7 @@ function renderFc(){
       if(cc&&!cc.slim&&cc.inventory&&cc.roster)return;
       FC._pre[w3.id]=1;
       setTimeout(function(){apiWell(w3.id,w3.status).then(function(wf){
-        if(wf&&wf.daily&&wf.daily.length){RES_DATA[w3.id]={ok:true,w:wf};
+        if(wf&&wf.daily&&wf.daily.length){RES_DATA[(wf.__reqId||w3.id)]={ok:true,w:wf};
           const at2=document.querySelector('.tab.active');
           if(at2&&at2.dataset.tab==='fc'&&FC.id===w3.id&&!_fcTyped(FC.id))renderFc();}
       }).catch(function(){delete FC._pre[w3.id];});},400);});}
@@ -4616,7 +4633,7 @@ function renderFc(){
       <div class="fc-gauge" id="fc-gauge"></div>
       <div>
         <div class="fc-grp">On location &amp; burn
-          <span class="fc-src ${pf.padOk?'live':'fb'}">${pf.padOk?('board'+(pf.brdAt?' '+pf.brdAt+':00':'')+' — '+pf.brdOn+' on duty · roster'+((FC._proj&&FC._proj.blend)?' ∪ hour pattern':'')+' projects '+crew0+' now'+(Math.abs(pf.brdOn-crew0)>2?' — CHECK ROSTER':'')):'no live board for this pad'}</span></div>
+          <span class="fc-src ${pf.padOk?'live':'fb'}">${pf.padOk?('board'+(pf.brdAt?' '+pf.brdAt+':00':'')+' — '+pf.brdOn+' on duty · roster'+((FC._proj&&FC._proj.blend)?' ∪ hour pattern':'')+((FC._proj&&FC._proj.liveNow)?' · now = board':'')+' projects '+crew0+' now'+(Math.abs(pf.brdOn-((FC._proj&&FC._proj.c0raw!=null)?FC._proj.c0raw:crew0))>2?' — ROSTER LEARNING BEHIND':'')):'no live board for this pad'}</span></div>
         <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
           ${inp('inv','Sand on location','lbs',V('inv',pf.inv),1000)}
           ${inp('spd','Frac pace (avg line)','stages/day',V('spd',pf.spd),0.1)}
@@ -4641,7 +4658,7 @@ function renderFc(){
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
           <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
         </tr></thead><tbody id="fcr-body"></tbody></table></div>
-        <div class="sb" style="margin-top:6px">Window = mean first→last load per CLOSED shift on pumping days — prefill days, today's partial day and the still-open shift never count · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · crew floor = the pad's median actives per hour (pump days, today excluded) · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
+        <div class="sb" style="margin-top:6px">Window = mean first→last load per CLOSED shift on pumping days — prefill days, today's partial day and the still-open shift never count · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
       </div></div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${kpi('fck-cov','Coverage (no trucks)')}
