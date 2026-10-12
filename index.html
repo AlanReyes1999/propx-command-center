@@ -1197,7 +1197,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.100';
+const VBUILD='2026-10-12.101';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -1250,7 +1250,23 @@ function _lsSnapPut(id,w,status){ if(w&&w.slim)return; // el paquete del Resumen
           const w=(o.t||0)-(_isClosed(o.st)?6e8:0);
           if(w<oldT){oldT=w;old=k;}}}
       if(old){localStorage.removeItem(old);localStorage.setItem(_lsSnapKey(id),rec);}}catch(__){}}}
-async function apiWell(id,status,force,sig){
+/* escritura canónica de un packet con su hora de llegada (SWR usa .at) */
+function _resPut(id,w,at){RES_DATA[id]={ok:true,w:w,at:(at!=null?at:Date.now())};return RES_DATA[id];}
+/* Cola de red: máx 2 getWell a la vez; el pozo en pantalla (Forecast o Well Detail)
+   y los force (Live sync) entran AL FRENTE — más pads nunca ahogan lo visible. */
+const _WQ={q:[],act:0,MAX:2};
+function _wqPump(){while(_WQ.act<_WQ.MAX&&_WQ.q.length){const t=_WQ.q.shift();
+  if(t.sig&&t.sig.aborted){t.rej(Object.assign(new Error('aborted'),{name:'AbortError'}));continue;}
+  _WQ.act++;_apiWellNet(t.id,t.status,t.force,t.sig).then(
+    w=>{_WQ.act--;try{t.res(w);}finally{_wqPump();}},
+    e=>{_WQ.act--;try{t.rej(e);}finally{_wqPump();}});}}
+function apiWell(id,status,force,sig){
+  const prio=!!force
+    ||(typeof FC!=='undefined'&&FC&&FC.id===id)
+    ||(typeof CURRENT_ID!=='undefined'&&CURRENT_ID===id);
+  return new Promise((res,rej)=>{const t={id,status,force,sig,res,rej};
+    if(prio)_WQ.q.unshift(t);else _WQ.q.push(t);_wqPump();});}
+async function _apiWellNet(id,status,force,sig){
   if(!CONFIG.API_URL) return null;
   const _S=w=>{if(w&&typeof w==='object')w.__reqId=id;return w;}; // sella de qué pozo es este payload
   try{
@@ -1804,7 +1820,7 @@ async function loadWell(id){
     const w=await apiWell(id,reg.status,false,_sig);
     if(!vivo()){blog('well(descartado·cambio)',true);return;}
     if(w&&Array.isArray(w.daily)&&applyWell(w)){
-      RES_DATA[id]={ok:true,w:w};
+      _resPut(id,w);
       // Si ya estaba pintado y el dato es idéntico, no se repinta: cero parpadeo.
       const _sig2=x=>x?((x.totals&&x.totals.loads)+'|'+(x.totals&&x.totals.revenue)+'|'+x.daily.length):'';
       const _changed=!painted||(_sig2(w)!==_sig2(warm));
@@ -3864,6 +3880,10 @@ function stsPresetInit(S){const lD=keyDate(S.latest);SF.d0=keyDate(keyShift(S.la
    Todo editable; la simulación corre 100% en el navegador.
    ════════════════════════════════════════════════════════════ */
 let FC={id:null,hz:48,mem:{},exc:{},rOpen:false,lay:{hist:1,crew:1,bands:1,t48:1,cd:1,dm:0},kpiEsc:'m'};
+const FC_PEND={}; /* id → request de workbook EN VUELO (la verdad del spinner) */
+function _fcAt(id){const r2=RES_DATA[id];if(!(r2&&r2.at))return null;
+  const d2=new Date(r2.at);const p2=n2=>('0'+n2).slice(-2);
+  return p2(d2.getHours())+':'+p2(d2.getMinutes())+':'+p2(d2.getSeconds());}
 function _fcN(v,d){v=parseFloat(v);return isFinite(v)?v:d;}
 function fcIsBelly(reg){return /belly/i.test(String(reg&&reg.equipment||''))
   ||/^(BW\b|BAYSWATER)/i.test(String(reg&&reg.customer||''))
@@ -4083,13 +4103,14 @@ window.fcWell=function(id){FC.id=id;FC._wReq=null;renderFc();};
 window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.disabled=true;}
   const id=FC.id; /* .91: sella el pozo que pidió el sync — si cambias de pad en vuelo, nada se cruza */
   const reg=REGISTRY.find(w=>w.id===id)||{};
+  FC_PEND[id]=1;
   Promise.all([apiWell(id,reg.status,true).catch(()=>null),apiStatus().catch(()=>null)])
-  .then(rr=>{const w0=rr[0];const tid=(w0&&w0.__reqId)||id;
-    if(w0&&w0.daily&&String(tid)===String(id))RES_DATA[id]={ok:true,w:w0};
+  .then(rr=>{delete FC_PEND[id];const w0=rr[0];const tid=(w0&&w0.__reqId)||id;
+    if(w0&&w0.daily&&String(tid)===String(id))_resPut(id,w0);
     if(rr[1])STATUS=rr[1];
     if(FC.mem)delete FC.mem[id];
     if(FC.id===id)renderFc();
-  }).finally(()=>{const b2=$('fc-sync');if(b2){b2.classList.remove('busy');b2.disabled=false;}});};
+  }).finally(()=>{delete FC_PEND[id];const b2=$('fc-sync');if(b2){b2.classList.remove('busy');b2.disabled=false;}});};
 let _fcT=null;window.fcInput=function(){clearTimeout(_fcT);_fcT=setTimeout(function(){_fcSave();fcCalc();},160);};
 window.fcLay=function(k){FC.lay[k]=FC.lay[k]?0:1;_fcSave();
   const b=$('fcl-'+k);if(b)b.classList.toggle('on',!!FC.lay[k]);fcCalc();};
@@ -4259,6 +4280,9 @@ function fcGaugePaint(){
   try{
     if(FC.loading&&!(lbs>0)){const pL=$('fcPct');if(pL)pL.textContent='…';
       const sL=$('fcSub');if(sL)sL.innerHTML='SYNCING WORKBOOK<br>pulling inventory &amp; roster…';}
+    else if(!FC.loading&&FC.pf&&FC.pf.hasW&&!FC.pf.hasInv&&!(lbs>0)){
+      const pL=$('fcPct');if(pL)pL.textContent='—';
+      const sL=$('fcSub');if(sL)sL.innerHTML='NO INVENTORY ROW IN STAGES<br>enter lbs on location to project';}
     else _fcTw($('fcPct'),Math.round(gg.pct),v=>Math.round(v)+'%');
     const col=gg.state==='ok'?'#4ca882':gg.state==='mid'?'#e0a63e':'#d47272';
     if(belly){
@@ -4665,25 +4689,29 @@ function renderFc(){
   /* slim → snapshot local → workbook completo (y pila vacía → force) */
   {const cw=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
    if(cw&&(cw.slim||!cw.inventory)){const warm=_lsSnapPeek(FC.id,reg.status);
-     if(warm&&warm.daily&&warm.daily.length&&warm.inventory)RES_DATA[FC.id]={ok:true,w:warm};}}
+     if(warm&&warm.daily&&warm.daily.length&&warm.inventory)_resPut(FC.id,warm,0);}}
   const _cw2=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
   const _pEmpty=!!(_cw2&&_cw2.inventory&&_cw2.inventory.type==='pila'&&!(+_cw2.inventory.pila>0));
-  if(CONFIG.API_URL&&(!_cw2||_cw2.slim||!_cw2.inventory||_pEmpty||!_cw2.roster)&&FC._wReq!==FC.id){FC._wReq=FC.id;
-    apiWell(FC.id,reg.status,_pEmpty).then(w2=>{if(w2&&w2.daily&&w2.daily.length&&w2.__reqId){RES_DATA[w2.__reqId]={ok:true,w:w2};
-      const at=document.querySelector('.tab.active');
-      if(at&&at.dataset.tab==='fc'&&FC.id===w2.__reqId&&!_fcTyped(FC.id))renderFc();}}).catch(()=>{if(FC._wReq===FC.id)FC._wReq=null;});}
+  const _stale=!RES_DATA[FC.id]||!(RES_DATA[FC.id].at>Date.now()-75e3);
+  if(CONFIG.API_URL&&!FC_PEND[FC.id]&&((!_cw2||_cw2.slim||!_cw2.inventory||_pEmpty||!_cw2.roster)||_stale)){
+    const rid=FC.id;FC_PEND[rid]=1;
+    apiWell(rid,reg.status,_pEmpty).then(w2=>{delete FC_PEND[rid];
+      if(w2&&w2.daily&&w2.daily.length&&w2.__reqId){_resPut(w2.__reqId,w2);
+        const at=document.querySelector('.tab.active');
+        if(at&&at.dataset.tab==='fc'&&FC.id===w2.__reqId&&!_fcTyped(FC.id))renderFc();}})
+    .catch(()=>{delete FC_PEND[rid];});}
   /* prefetch en segundo plano del resto de pads vivos → cambiar de pozo es instantáneo */
   if(CONFIG.API_URL){FC._pre=FC._pre||{};
     lives.forEach(function(w3){if(w3.id===FC.id||FC._pre[w3.id])return;
       const cc=RES_DATA[w3.id]&&RES_DATA[w3.id].ok&&RES_DATA[w3.id].w;
       if(cc&&!cc.slim&&cc.inventory&&cc.roster)return;
-      FC._pre[w3.id]=1;
-      setTimeout(function(){apiWell(w3.id,w3.status).then(function(wf){
-        if(wf&&wf.daily&&wf.daily.length){RES_DATA[(wf.__reqId||w3.id)]={ok:true,w:wf};
+      FC._pre[w3.id]=1;FC_PEND[w3.id]=1;
+      apiWell(w3.id,w3.status).then(function(wf){delete FC_PEND[w3.id];
+        if(wf&&wf.daily&&wf.daily.length){_resPut((wf.__reqId||w3.id),wf);
           const at2=document.querySelector('.tab.active');
           if(at2&&at2.dataset.tab==='fc'&&FC.id===w3.id&&!_fcTyped(FC.id))renderFc();}
-      }).catch(function(){delete FC._pre[w3.id];});},400);});}
-  FC.loading=!!(CONFIG.API_URL&&FC._wReq===FC.id&&(!_cw2||_cw2.slim||!_cw2.inventory));
+      }).catch(function(){delete FC._pre[w3.id];delete FC_PEND[w3.id];});});}
+  FC.loading=!!(CONFIG.API_URL&&FC_PEND[FC.id]&&(!_cw2||_cw2.slim));
   const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;FC.pf=pf;FC.tg=fcStgT(reg);FC.lbsBox=pf.lbsBox;
   const sv=_fcStore(FC.id)||{};FC.hz=+sv.hz||FC.hz||48;
   if(sv.lay)FC.lay=Object.assign({hist:1,crew:1,bands:1,t48:1,cd:1,dm:0},sv.lay);
@@ -4710,7 +4738,7 @@ function renderFc(){
       <div class="fc-gauge" id="fc-gauge"></div>
       <div>
         <div class="fc-grp">On location &amp; burn
-          <span class="fc-src ${pf.padOk?'live':'fb'}">${pf.padOk?('board'+(pf.brdAt?' '+pf.brdAt+':00':'')+' — '+pf.brdOn+' on duty · roster'+((FC._proj&&FC._proj.blend)?' ∪ hour pattern':'')+((FC._proj&&FC._proj.liveNow)?' · now = board':'')+' projects '+crew0+' now'+(Math.abs(pf.brdOn-((FC._proj&&FC._proj.c0raw!=null)?FC._proj.c0raw:crew0))>2?' — ROSTER LEARNING BEHIND':'')):'no live board for this pad'}</span></div>
+          <span class="fc-src ${pf.padOk?'live':'fb'}">${pf.padOk?('board'+(pf.brdAt?' '+pf.brdAt+':00':'')+' — '+pf.brdOn+' on duty · roster'+((FC._proj&&FC._proj.blend)?' ∪ hour pattern':'')+((FC._proj&&FC._proj.liveNow)?' · now = board':'')+' projects '+crew0+' now'+(Math.abs(pf.brdOn-((FC._proj&&FC._proj.c0raw!=null)?FC._proj.c0raw:crew0))>2?' — ROSTER LEARNING BEHIND':'')+(_fcAt(FC.id)?' · data '+_fcAt(FC.id):'')+(FC_PEND[FC.id]?' · refreshing…':'')):'no live board for this pad'}</span></div>
         <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
           ${inp('inv','Sand on location','lbs',V('inv',pf.inv),1000)}
           ${inp('spd','Frac pace (avg line)','stages/day',V('spd',pf.spd),0.1)}
@@ -5236,7 +5264,7 @@ async function init(){
     var _t0=Date.now(); var _bootEp=WELL_EPOCH;
     try{const warm=_lsSnapPeek(CURRENT_ID);
       if(warm&&warm.daily&&warm.daily.length){warm.__src={mode:'local',at:(warm.snapshot&&warm.snapshot.at)||null};
-        if(applyWell(warm)!==false){RES_DATA[CURRENT_ID]={ok:true,w:warm};blog('warm(local)',true);}}}catch(_){}
+        if(applyWell(warm)!==false){_resPut(CURRENT_ID,warm,0);blog('warm(local)',true);}}}catch(_){}
     const wellP=CONFIG.API_URL?apiWell(CURRENT_ID,reg0.status):Promise.resolve(null);
     /* v73: el status NO bloquea el primer pintado — aterriza y repinta si su tab está activo */
     apiStatus().then(function(s){ if(s)STATUS=s;
@@ -5250,7 +5278,7 @@ async function init(){
       const wErr=(w&&w.error)?String(w.error):'';
       blog('well('+(w?(wErr?'error':'daily:'+((w.daily&&w.daily.length)||0)):'null')+')',!!w&&!wErr,wErr);
       if(wErr){API_STATE={mode:'error',reason:'The script answered on ?action=well&id='+CURRENT_ID+': "'+wErr.slice(0,220)+'". Typical causes: (1) the spreadsheet_id in Registry is not the right workbook, (2) your account has no access to that file (the script runs as you and uses openById), (3) a tab/column name in the workbook does not match what Code.gs expects.'};}
-      else if(w){if(w.daily&&w.daily.length)RES_DATA[CURRENT_ID]={ok:true,w:w};let applied=false;
+      else if(w){if(w.daily&&w.daily.length)_resPut(CURRENT_ID,w);let applied=false;
         try{applied=applyWell(w)!==false;blog('applyWell',applied,applied?'':'invalid structure');}catch(e){blog('applyWell',false,e);console.error('applyWell:',e);apiFail(new Error('The well JSON is not in the expected shape ('+(e.message||e)+').'));applied=false;}
         if(!applied&&API_STATE.mode!=='error')API_STATE={mode:'error',reason:'Registry connected ✓ but ?action=well&id='+CURRENT_ID+' answered without the expected structure. Make sure the GAS deployment is on the latest version (Deploy → Manage deployments → New version) and the well workbook has the Loads Report tab with the standard header.'};}
       else if(API_STATE.mode==='live'){API_STATE={mode:'error',reason:'Registry connected ✓ but ?action=well&id='+CURRENT_ID+' did not answer valid JSON. Try that URL in your browser; if it fails, check spreadsheet_id in Registry and that Code.gs is v6 (New version).'};}
