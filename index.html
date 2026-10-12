@@ -306,6 +306,8 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
   .fc-gwrap{gap:10px}
 }
 .fck .v{font-size:21px}
+.fc-hvp{font:700 8px/1 'Plus Jakarta Sans';letter-spacing:.04em;padding:3px 7px;border-radius:999px;background:#eef2f6;color:#8a97a6;cursor:pointer;text-transform:uppercase}
+.fc-hvp.on{background:#1C3D54;color:#fff}
 .fck.bad{background:#fdf2f2;border-color:#f3c9c9}
 .fck.bad .v{color:#c24545}
 .fck.okk{background:#f2faf5;border-color:#cfe8d9}
@@ -1197,7 +1199,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.102';
+const VBUILD='2026-10-12.103';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -4097,7 +4099,7 @@ function _fcSave(){if(!FC.id)return;const o={};const pfB=FC.pf||{};
     const diff=(isFinite(cur)&&isFinite(base))?Math.abs(cur-base)>1e-9
       :String(el.value==null?'':el.value)!==String(pfB[mapS[k]]==null?'':pfB[mapS[k]]);
     if(diff)o[k]=el.value;});
-  o.hz=FC.hz;o.lay=Object.assign({},FC.lay);o.kpiEsc=FC.kpiEsc;FC.mem=FC.mem||{};FC.mem[FC.id]=o;_fcRstBtn();}
+  o.hz=FC.hz;o.lay=Object.assign({},FC.lay);o.kpiEsc=FC.kpiEsc;o.holdV=FC.holdV||'shift';FC.mem=FC.mem||{};FC.mem[FC.id]=o;_fcRstBtn();}
 window.fcHz=function(hv){FC.hz=hv;setSegAct(['fch24','fch48','fch72'],'fch'+hv);_fcSave();renderFcProj();fcCalc();};
 window.fcWell=function(id){FC.id=id;FC._wReq=null;renderFc();};
 window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.disabled=true;}
@@ -4115,6 +4117,10 @@ let _fcT=null;window.fcInput=function(){clearTimeout(_fcT);_fcT=setTimeout(funct
 window.fcLay=function(k){FC.lay[k]=FC.lay[k]?0:1;_fcSave();
   const b=$('fcl-'+k);if(b)b.classList.toggle('on',!!FC.lay[k]);fcCalc();};
 window.fcKpi=function(k){FC.kpiEsc=k;_fcSave();fcCalc();};
+window.fcHoldV=function(k){FC.holdV=(k==='day')?'day':'shift';_fcSave();fcCalc();
+  const a2=$('fchv-s'),b2=$('fchv-d');
+  if(a2&&a2.classList)a2.classList.toggle('on',FC.holdV!=='day');
+  if(b2&&b2.classList)b2.classList.toggle('on',FC.holdV==='day');};
 window.fcTogDrv=function(nm){nm=decodeURIComponent(nm);const E=FC.exc[FC.id]=FC.exc[FC.id]||{};
   if(E[nm])delete E[nm];else E[nm]=1;
   renderFcProj();fcRosterTable();fcGantt();fcCalc();_fcRstBtn();};
@@ -4433,12 +4439,25 @@ function fcCalc(){
   /* .92: número REAL a sostener (entero) + punto de regreso al crew de diseño:
      cuando la pila cruza su GOAL puedes soltar refuerzos; si el crew de diseño
      no cubre el burn de este pace, se dice tal cual. */
+  /* .103: la card distingue SIMULTÁNEOS (activos a la vez, ahora, al pace anclado)
+     de ÚNICOS del día (los turnos medios del pad cubren sp/24 del día c/u),
+     y cita el estado ESTABLE al recuperar la META (avg pace de diseño). */
   const holdN=rK.reqDrv?Math.ceil(rK.reqDrv-1e-9):0;
+  const _incR=((FC._proj&&FC._proj.rows)||[]).filter(r2=>r2.inc).map(r2=>+r2.sp||0).filter(v2=>v2>0).sort((x2,y2)=>x2-y2);
+  const medSp=Math.min(16,Math.max(6,_incR.length?_incR[Math.floor(_incR.length/2)]:12));
+  const uniq=h2=>Math.ceil(h2*24/medSp-1e-9);
+  const holdU=holdN?uniq(holdN):0;
+  const stShift=SIM.m.reqDrv?Math.ceil(SIM.m.reqDrv-1e-9):0;
+  const stUniq=stShift?uniq(stShift):0;
   const dDrv2=+((FC.pf&&FC.pf.w&&FC.pf.w.targets&&FC.pf.w.targets.drivers_day))||0;
   const dsgNet=dDrv2?Math.round(dDrv2*p.perDrvH-B[K]):null;
-  set('fck-req',holdN?String(holdN):'—',(crew0>=holdN)?'okk':'bad');
-  const kr=$('fck-req');if(kr)kr.querySelector('.sb').textContent='keep active until stable · at '+eK.name.toLowerCase()+' · roster now '+crew0
-    +(dDrv2?(' · back to design '+dDrv2+(dsgNet!=null&&dsgNet>=0?(goalJ!=null?' at '+fmtT(goalJ)+' (GOAL back)':' once GOAL is back'):' NOT yet — design crew runs '+fmt(dsgNet)+' /h at this pace')):'');
+  const dayView=FC.holdV==='day';
+  set('fck-req',holdN?String(dayView?holdU:holdN):'—',(crew0>=holdN)?'okk':'bad');
+  const kr=$('fck-req');if(kr)kr.querySelector('.sb').innerHTML=(dayView
+      ?('<b>'+holdU+' unique</b> across the day (shifts of ~'+medSp.toFixed(0)+' h) = <b>'+holdN+'</b> active at once · at '+eK.name.toLowerCase())
+      :('<b>'+holdN+' active at once</b> right now · at '+eK.name.toLowerCase()+' · roster now '+crew0+' · day needs <b>'+holdU+' unique</b>'))
+    +'<br>stable at GOAL: <b>'+stShift+'/shift · '+stUniq+' unique/day</b>'
+    +(dDrv2?(' · design '+dDrv2+(dsgNet!=null&&dsgNet>=0?(goalJ!=null?' back at '+fmtT(goalJ):' once GOAL is back'):' NOT yet ('+fmt(dsgNet)+' /h)')):'');
   const steady=Math.round(crew0*p.perDrvH);
   const netK=steady-Math.round(B[K]);
   set('fck-net',(netK>=0?'+':'')+fmt(netK)+' lbs/h',netK>=0?'okk':'bad');
@@ -4716,6 +4735,7 @@ function renderFc(){
   const sv=_fcStore(FC.id)||{};FC.hz=+sv.hz||FC.hz||48;
   if(sv.lay)FC.lay=Object.assign({hist:1,crew:1,bands:1,t48:1,cd:1,dm:0},sv.lay);
   if(sv.kpiEsc)FC.kpiEsc=sv.kpiEsc;
+  FC.holdV=(sv.holdV==='day')?'day':'shift';
   const V=(k,d)=>sv[k]!=null?sv[k]:d;
   renderFcProj();
   const crew0=(FC._proj&&FC._proj.curve[0])||0;
@@ -4769,7 +4789,11 @@ function renderFc(){
       ${kpi('fck-cov','Coverage (no trucks)')}
       ${kpi('fck-run','Runout (worst pace)')}
       ${kpi('fck-48','Inventory ahead')}
-      ${kpi('fck-req','Drivers to hold')}
+      <div class="card kpi fck" id="fck-req"><div class="card-t" style="display:flex;align-items:center;gap:6px">Drivers to hold
+        <span style="margin-left:auto;display:inline-flex;gap:3px">
+          <span id="fchv-s" class="fc-hvp${FC.holdV!=='day'?' on':''}" onclick="fcHoldV('shift')" title="Trucks that must be ACTIVE at the same time, right now">active now</span>
+          <span id="fchv-d" class="fc-hvp${FC.holdV==='day'?' on':''}" onclick="fcHoldV('day')" title="UNIQUE drivers to assign across the day's shifts">per day</span>
+        </span></div><div class="v">—</div><div class="sb">—</div></div>
       ${kpi('fck-net','Net right now')}
     </div>
     <div class="card mb"><div class="card-t">Pounds on location — roster crew curve × four frac paces</div>
