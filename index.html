@@ -1187,7 +1187,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.93';
+const VBUILD='2026-10-12.94';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3853,7 +3853,7 @@ function stsPresetInit(S){const lD=keyDate(S.latest);SF.d0=keyDate(keyShift(S.la
    · burn = stages/día × tons/stage (prefill del ritmo real reciente)
    Todo editable; la simulación corre 100% en el navegador.
    ════════════════════════════════════════════════════════════ */
-let FC={id:null,hz:48,mem:{},exc:{},rOpen:false,lay:{hist:1,crew:1,bands:1,t48:1,cd:1},kpiEsc:'m'};
+let FC={id:null,hz:48,mem:{},exc:{},rOpen:false,lay:{hist:1,crew:1,bands:1,t48:1,cd:1,dm:0},kpiEsc:'m'};
 function _fcN(v,d){v=parseFloat(v);return isFinite(v)?v:d;}
 function fcIsBelly(reg){return /belly/i.test(String(reg&&reg.equipment||''))
   ||/^(BW\b|BAYSWATER)/i.test(String(reg&&reg.customer||''))
@@ -4304,7 +4304,7 @@ const _fcMarks={id:'fcMarks',afterDraw(ch){try{
   /* .93: un indicador por CADA subida/bajada real del crew — muestra el DELTA
      (+2 si suben dos, −1 si baja uno); tramos estables no marcan nada.
      Filas alternas cuando los cambios vienen pegados para que no se encimen. */
-  if(!o.lay||o.lay.cd||o.lay.crew){const cf=o.crewFull||[],cd2=o.cdDir||[];
+  if(o.lay&&o.lay.dm){const cf=o.crewFull||[],cd2=o.cdDir||[];
     let lastX=-99,row=0;
     for(let i3=1;i3<cf.length;i3++){const d3=cd2[i3];if(!d3)continue;
       const x=xs.getPixelForValue(i3);if(x<xs.left||x>xs.right)continue;
@@ -4645,7 +4645,7 @@ function renderFc(){
   FC.loading=!!(CONFIG.API_URL&&FC._wReq===FC.id&&(!_cw2||_cw2.slim||!_cw2.inventory));
   const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;FC.pf=pf;FC.tg=fcStgT(reg);FC.lbsBox=pf.lbsBox;
   const sv=_fcStore(FC.id)||{};FC.hz=+sv.hz||FC.hz||48;
-  if(sv.lay)FC.lay=Object.assign({hist:1,crew:1,bands:1,t48:1,cd:1},sv.lay);
+  if(sv.lay)FC.lay=Object.assign({hist:1,crew:1,bands:1,t48:1,cd:1,dm:0},sv.lay);
   if(sv.kpiEsc)FC.kpiEsc=sv.kpiEsc;
   const V=(k,d)=>sv[k]!=null?sv[k]:d;
   renderFcProj();
@@ -4704,7 +4704,7 @@ function renderFc(){
       ${kpi('fck-net','Net right now')}
     </div>
     <div class="card mb"><div class="card-t">Pounds on location — roster crew curve × four frac paces</div>
-      <div class="sb" style="margin-bottom:4px">Navy = ACTUAL last 12 h (rebuilt from hourly deliveries − stage burn) · solid teal = avg pace (editable) · dashed red/amber/green = last 6 / 12 / 24 h pace · grey area = crew (past = live board ACTIVES → projected roster) · Crew Δ = one candle + ▲▼ delta per crew rise/drop (stable hours stay clean, on by default) · click a pace chip to anchor the KPIs · legend toggles each line · click any hour for the detail panel</div>
+      <div class="sb" style="margin-bottom:4px">Navy = ACTUAL last 12 h (rebuilt from hourly deliveries − stage burn) · solid teal = avg pace (editable) · dashed red/amber/green = last 6 / 12 / 24 h pace · grey area = crew (past = live board ACTIVES → projected roster) · Crew Δ = one candle per crew rise/drop (stable hours stay clean) · Δ marks layer adds the ▲▼ +N/−N labels · click a pace chip to anchor the KPIs · legend toggles each line · click any hour for the detail panel</div>
       <div id="fc-alert"></div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px">
         <div class="fc-esc" id="fc-esc" style="margin:0"></div>
@@ -4712,6 +4712,7 @@ function renderFc(){
           <span class="fc-lt${FC.lay.hist?' on':''}" id="fcl-hist" onclick="fcLay('hist')">Actual 12 h</span>
           <span class="fc-lt${FC.lay.crew?' on':''}" id="fcl-crew" onclick="fcLay('crew')">Crew</span>
           <span class="fc-lt${FC.lay.cd?' on':''}" id="fcl-cd" onclick="fcLay('cd')" title="One candle per real crew change — green up, red down, nothing while stable">Crew Δ</span>
+          <span class="fc-lt${FC.lay.dm?' on':''}" id="fcl-dm" onclick="fcLay('dm')" title="▲/▼ labels with the exact delta on every crew rise/drop">Δ marks</span>
           <span class="fc-lt${FC.lay.bands?' on':''}" id="fcl-bands" onclick="fcLay('bands')">NPT bands</span>
           <span class="fc-lt${FC.lay.t48?' on':''}" id="fcl-t48" onclick="fcLay('t48')">Goal target</span></div></div>
       <div class="ch ch-l"><canvas id="fcChart"></canvas></div>
