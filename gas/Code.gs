@@ -1,4 +1,9 @@
-/** MEDS · PropX Live API — Code.gs v9.3.1. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.3.2. PEGAR TAL CUAL → Nueva versión.
+ *  v9.3.2 RÁPIDO Y TOLERANTE: (1) probe barato — antes de leer el STATUS_LOG completo del
+ *       board solo mira la columna G de sus últimas filas; sin turnos ahí, no lee nada más
+ *       y cachea el resultado 5 min (el ?action=status vuelve a su velocidad normal).
+ *       (2) El STATUS_LOG del board puede venir SIN fila de encabezados (layout fijo
+ *       Timestamp/Date/Hour/Pad/Status/Count/Shift): se detecta y se lee igual.
  *  v9.3.1 CERO MANUAL: si la hoja status del Hub aún no trae columna shift, el API detecta
  *       el IMPORTRANGE de esa hoja, abre el STATUS_LOG del BOARD y lo lee DIRECTO (con su
  *       columna Shift del StatusTracker v2). No hay que tocar ninguna fórmula del Hub.
@@ -92,7 +97,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.3.1';
+const API_VERSION='v9.3.2';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -662,6 +667,9 @@ function _mnorm(s){return String(s||'').toLowerCase()
 // StatusTracker v2). Devuelve null si no hay IMPORTRANGE, no hay STATUS_LOG o no trae Shift.
 function _statusDirect(hub){
   const sh=hub.getSheetByName(CFG.statusSheet); if(!sh)return null;
+  // probe negativo cacheado 5 min: no reabrir el board en cada ?action=status
+  let cache=null; try{cache=CacheService.getScriptCache();}catch(_c){}
+  if(cache&&cache.get('fpcc_sd_no')==='1')return null;
   const R=Math.min(4,sh.getMaxRows()), C=Math.min(4,sh.getMaxColumns());
   const fml=sh.getRange(1,1,R,C).getFormulas();
   let id=null;
@@ -669,22 +677,40 @@ function _statusDirect(hub){
     const m=String(fml[r][c]||'').match(/IMPORTRANGE\s*\(\s*"([^"]+)"/i);
     if(m){const mm=m[1].match(/[-\w]{25,}/); if(mm)id=mm[0];}
   }
-  if(!id)return null;
+  const NO=function(){if(cache)try{cache.put('fpcc_sd_no','1',300);}catch(_e){} return null;};
+  if(!id)return NO();
   const bs=SpreadsheetApp.openById(id);
-  const bsh=bs.getSheetByName('STATUS_LOG'); if(!bsh)return null;
-  const v=bsh.getDataRange().getValues(); if(!v.length)return null;
+  const bsh=bs.getSheetByName('STATUS_LOG'); if(!bsh)return NO();
+  const lastR=bsh.getLastRow(); if(lastR<2)return NO();
+  // PROBE BARATO: ¿las últimas filas traen turno en la columna G? (sin leer el log completo)
+  const pn=Math.min(60,lastR);
+  const tail=bsh.getRange(lastR-pn+1,7,pn,1).getValues();
+  const isShift=function(x){const u=String(x==null?'':x).trim().toUpperCase();
+    return !!u&&(u.indexOf('DAY')>=0||u.indexOf('NIGHT')>=0||u.indexOf('COVE')>=0||u==='SHIFT');};
+  if(!tail.some(function(r){return isShift(r[0]);}))return NO();
+  const v=bsh.getDataRange().getValues(); if(!v.length)return NO();
   let hr=-1;
   for(let i=0;i<Math.min(v.length,5);i++)
     if(v[i].some(function(c){return String(c).trim().toLowerCase()==='status';})){hr=i;break;}
-  if(hr<0)return null;
-  const H=v[hr].map(function(x){return String(x).trim().toLowerCase();});
-  const pick=function(){for(var i=0;i<arguments.length;i++){var j=H.indexOf(arguments[i]);if(j>=0)return j;}return -1;};
-  const li={date_iso:pick('date','date_iso'),hour:pick('hour'),well:pick('pad','well'),
-            status:pick('status'),count:pick('count')};
-  if(li.date_iso<0||li.hour<0||li.well<0||li.status<0||li.count<0)return null;
-  if(pick('shift')<0)return null; // el board tampoco trae turno todavia -> seguir con el Hub
-  const rows=v.slice(hr+1).filter(function(r){return r.some(function(c){return c!=='';});});
-  return {SL:{H:v[hr].map(function(x){return String(x).trim();}),rows:rows},li:li};
+  let H,li,rows;
+  if(hr>=0){
+    H=v[hr].map(function(x){return String(x).trim();});
+    const HL=H.map(function(x){return x.toLowerCase();});
+    const pick=function(){for(var i=0;i<arguments.length;i++){var j=HL.indexOf(arguments[i]);if(j>=0)return j;}return -1;};
+    li={date_iso:pick('date','date_iso'),hour:pick('hour'),well:pick('pad','well'),
+        status:pick('status'),count:pick('count')};
+    if(li.date_iso<0||li.hour<0||li.well<0||li.status<0||li.count<0)return NO();
+    if(pick('shift')<0)return NO();
+    rows=v.slice(hr+1);
+  }else{
+    // v9.3.2: log SIN fila de header (histórico limpiado a mano) → layout fijo del tracker:
+    // A Timestamp · B Date · C Hour · D Pad · E Status · F Count · G Shift
+    H=['Timestamp','Date','Hour','Pad','Status','Count','Shift'];
+    li={date_iso:1,hour:2,well:3,status:4,count:5};
+    rows=v;
+  }
+  rows=rows.filter(function(r){return r.some(function(c){return c!=='';})&&!/^SHIFT$/i.test(String(r[4]||'').trim());});
+  return {SL:{H:H,rows:rows},li:li};
 }
 function getStatus(days){
   days=Math.max(1,Math.min(180,+days||45));

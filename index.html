@@ -1099,7 +1099,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-11.83';
+const VBUILD='2026-10-11.84';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -4152,8 +4152,11 @@ function renderFc(){
    if(cw&&(cw.slim||!cw.inventory)){const warm=_lsSnapPeek(FC.id,reg.status);
      if(warm&&warm.daily&&warm.daily.length&&warm.inventory)RES_DATA[FC.id]={ok:true,w:warm};}}
   const _cw2=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
-  if(CONFIG.API_URL&&(!_cw2||_cw2.slim||!_cw2.inventory)&&FC._wReq!==FC.id){FC._wReq=FC.id;
-    apiWell(FC.id,reg.status).then(w2=>{if(w2&&w2.daily&&w2.daily.length){RES_DATA[FC.id]={ok:true,w:w2};
+  /* pila en 0 = celda vacía en el instante del snapshot (corte de turno), no un dato:
+     se re-pide FORZADO (salta el caché de 90 s) una vez por pozo */
+  const _pEmpty=!!(_cw2&&_cw2.inventory&&_cw2.inventory.type==='pila'&&!(+_cw2.inventory.pila>0));
+  if(CONFIG.API_URL&&(!_cw2||_cw2.slim||!_cw2.inventory||_pEmpty)&&FC._wReq!==FC.id){FC._wReq=FC.id;
+    apiWell(FC.id,reg.status,_pEmpty).then(w2=>{if(w2&&w2.daily&&w2.daily.length){RES_DATA[FC.id]={ok:true,w:w2};
       const at=document.querySelector('.tab.active');
       if(at&&at.dataset.tab==='fc'&&FC.id===w2.__reqId&&!(FC.mem&&FC.mem[FC.id]))renderFc();}}).catch(()=>{});}
   const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;FC.pf=pf;FC.tg=fcStgT(reg);FC.lbsBox=pf.lbsBox;
@@ -4179,7 +4182,7 @@ function renderFc(){
         <button id="fcs012" class="seg-btn${FC.shp==='012'?' seg-on':''}" onclick="fcShp('012')">00 &amp; 12</button></div></div>
       <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver statuses and reset the assumptions to live data"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
       <button class="rbtn ghost" id="fc-reset" onclick="fcReset()" disabled title="Already at the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
-      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'):pf.invType==='pila'?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+' · bellydump'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'} · shifts ${String(pf.sh[0]).padStart(2,'0')}/${String(pf.sh[1]).padStart(2,'0')}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
+      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'):pf.invType==='pila'?(pf.pilaT>0?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+' · bellydump'):'sandpile cell EMPTY at last pull (shift change) — re-pulling live · enter lbs if it persists'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'} · shifts ${String(pf.sh[0]).padStart(2,'0')}/${String(pf.sh[1]).padStart(2,'0')}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
     </div>
     <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· hourly projection · crew LEVELS per shift · every field editable, prefilled live</span></div>
     <div class="fc-gwrap mb">
