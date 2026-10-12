@@ -241,7 +241,6 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fg-row{display:grid;grid-template-columns:150px 1fr;align-items:center;gap:8px;padding:3px 0}
 .fg-nm{font:700 10px/1.2 'Plus Jakarta Sans';color:#2E4057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .fg-nm:hover{color:#1c5d8f}
-.fg-hot{position:absolute;top:4px;bottom:4px;width:2.5px;border-radius:2px;background:rgba(18,38,58,.35);pointer-events:none}
 .fg-lane{position:relative;height:16px;background:#f3f6f9;border-radius:8px;overflow:hidden}
 .fg-bar{position:absolute;top:2px;bottom:2px;border-radius:7px;display:flex;align-items:center;padding:0 5px;
   animation:growW .7s cubic-bezier(.25,.9,.3,1) backwards;min-width:14px}
@@ -1188,7 +1187,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.97';
+const VBUILD='2026-10-12.98';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -4556,10 +4555,19 @@ function fcGantt(){
   const lanes=G.rows.map((r,ri)=>{
     const bars=r.segs.map(sg=>{const l=sg[0]/24*100,w=Math.max(3,(sg[1]-sg[0])/24*100);
       const pkT=_fcPkHrs(r.hwA);
-      return '<div class="fg-bar '+(r.band==='fcw-g'?'bg-g':r.band==='fcw-y'?'bg-y':'bg-r')+'" style="left:'+l.toFixed(1)+'%;width:'+w.toFixed(1)+'%;animation-delay:'+(ri*55)+'ms" data-tip="'+encodeURIComponent('<b>'+r.d+'</b>\nShift '+hl(sg[0])+' – '+hl(sg[1])+' · avg <b>'+r.sp.toFixed(1)+' h</b>'+(pkT?'\nMost active: <b>'+pkT+'</b>':''))+'">'+truck+'</div>';}).join('');
-    let hots='';if(r.hwA)for(let t=0;t<24;t++){if(r.hwA[hhAt(t)]>=0.75)
-      hots+='<span class="fg-hot" style="left:'+(((t+0.5)/24)*100).toFixed(2)+'%"></span>';}
-    return '<div class="fg-row"><span class="fg-nm" data-d="'+String(r.d).replace(/"/g,'&quot;')+'" onclick="fcGotoDriver(this.dataset.d)">'+r.d+(r.nw?' <span class="fcr-new">NEW</span>':'')+'</span><div class="fg-lane">'+bars+hots+'</div></div>';}).join('');
+      /* .98: la barra es un degradado continuo de intensidad por hora —
+         verde se ENFATIZA donde más trabaja; amarillo/rojo se invierten:
+         el color de alerta grita en las horas donde el driver flojea. */
+      let sty='';
+      if(r.hwA){const base=r.band==='fcw-g'?'76,168,130':r.band==='fcw-y'?'224,166,62':'212,114,114';
+        const inv=r.band!=='fcw-g';const span=Math.max(1,sg[1]-sg[0]);const stops=[];
+        for(let t2=sg[0];t2<sg[1];t2++){const p2=r.hwA[hhAt(t2)]||0;
+          const a2=0.33+0.55*(inv?(1-p2):p2);
+          stops.push('rgba('+base+','+a2.toFixed(2)+') '+(((t2+0.5-sg[0])/span)*100).toFixed(1)+'%');}
+        if(stops.length===1)stops.push(stops[0].replace(/ [\d.]+%$/,' 100%'));
+        sty='background:linear-gradient(90deg,'+stops.join(',')+');box-shadow:inset 0 0 0 1px rgba('+base+',.38);';}
+      return '<div class="fg-bar '+(r.band==='fcw-g'?'bg-g':r.band==='fcw-y'?'bg-y':'bg-r')+'" style="'+sty+'left:'+l.toFixed(1)+'%;width:'+w.toFixed(1)+'%;animation-delay:'+(ri*55)+'ms" data-tip="'+encodeURIComponent('<b>'+r.d+'</b>\nShift '+hl(sg[0])+' – '+hl(sg[1])+' · avg <b>'+r.sp.toFixed(1)+' h</b>'+(pkT?'\nMost active: <b>'+pkT+'</b>':''))+'">'+truck+'</div>';}).join('');
+    return '<div class="fg-row"><span class="fg-nm" data-d="'+String(r.d).replace(/"/g,'&quot;')+'" onclick="fcGotoDriver(this.dataset.d)">'+r.d+(r.nw?' <span class="fcr-new">NEW</span>':'')+'</span><div class="fg-lane">'+bars+'</div></div>';}).join('');
   const reinf=G.reinf.map(x=>'<span class="fg-chip rf">Reinforce '+hl(x[0])+'–'+hl(x[1])+' · dips to '+x[2]+' drv</span>').join('');
   const bd=(FC.pf&&FC.pf.padOk)?+FC.pf.brdOn:null;
   const lvOk=bd!=null&&Math.abs(bd-(G.curve[0]||0))<=2;
@@ -4717,7 +4725,7 @@ function renderFc(){
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
           <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
         </tr></thead><tbody id="fcr-body"></tbody></table></div>
-        <div class="sb" style="margin-top:6px">Window = first start → TOTAL hours per day on pumping days (split shifts on the same day are summed) — prefill days, today's partial day and the still-open shift never count · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · projection weighs each driver by his real hour-by-hour activity map (dark ticks on his lane = most-active hours) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
+        <div class="sb" style="margin-top:6px">Window = first start → TOTAL hours per day on pumping days (split shifts on the same day are summed) — prefill days, today's partial day and the still-open shift never count · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · projection weighs each driver by his real hour-by-hour activity map (his lane shades STRONGER where he really works — yellow/red bars invert: the alert color burns where he fades) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
       </div></div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${kpi('fck-cov','Coverage (no trucks)')}
