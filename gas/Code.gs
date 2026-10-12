@@ -1,4 +1,12 @@
-/** MEDS · PropX Live API — Code.gs v9.6. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.7. PEGAR TAL CUAL → Nueva versión.
+ *  v9.7 HERENCIA ENTRE POZOS (cross-well): si un driver no tiene historia útil en
+ *  ESTE pozo (ni pump post día-1 ni prefill), su ventana/mapa horario se hereda del
+ *  pozo donde cargó más recientemente — pozos Live del registry + el último Closed —
+ *  vía una caché ligera de rosters (6 h), SIN abrir libros ajenos. Match por nombre
+ *  normalizado (acentos fuera) con desempate por carrier; datos de >14 días no se
+ *  heredan; sin cadenas (xwell no re-hereda). Todo auditable: src:'xwell' + pozo de
+ *  origen (xw) + su último load allá (xwL). Si nada aplica, la regla NEW de 12 h
+ *  sigue garantizando ventana a CUALQUIER driver — nadie queda sin proyección.
  *  v9.6 REGLAS DE APRENDIZAJE DE VENTANAS:
  *   · El DÍA 1 del pozo (downhole/arranque) nunca enseña — el aprendizaje pump
  *     empieza del día operativo 2 en adelante.
@@ -140,7 +148,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.6';
+const API_VERSION='v9.7';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -727,7 +735,23 @@ function getWell(id){
     downtimes:Object.entries(dCat).map(([k,v])=>({category:k,minutes:+v.toFixed(1)})).sort((a,b)=>b.minutes-a.minutes),
     cycleTimes:Object.entries(cyc).map(([k,v])=>({terminal:k,load:avg2(v.load),transit:avg2(v.transit),unload:avg2(v.unload),full:avg2(v.full)})),
     stages, inventory,
-    roster:_rosterBuild(rosterEv,byDriver,new Set(Object.keys(stagesByDay||{}))), // v9.4
+    roster:(function(){
+      let R=_rosterBuild(rosterEv,byDriver,new Set(Object.keys(stagesByDay||{})));
+      try{
+        _xrPut(id,R); /* roster LOCAL puro a la caché (6 h) — alimenta a los demás pozos */
+        if(R.some(function(r){return r.src!=='pump'&&r.src!=='prefill';})){
+          const reg=_regCached();const cands=[];let bc=null,bk='';
+          ((reg&&reg.wells)||[]).forEach(function(w){
+            const wid=String(w.well_id||'');if(!wid||wid===id)return;
+            const st=String(w.status||'').toLowerCase();
+            if(st==='live'){const xr=_xrGet(wid);if(xr)cands.push({id:wid,roster:xr});}
+            else if(st==='closed'){const e=_effISO(w.end_date||w.end||'');if(e&&e>bk){bk=e;bc=wid;}}});
+          if(bc){const xr=_xrGet(bc);if(xr)cands.push({id:bc,roster:xr});}
+          if(cands.length){let gm=0;Object.keys(rosterEv).forEach(function(d2){rosterEv[d2].forEach(function(h2){if(h2>gm)gm=h2;});});
+            R=_xwEnrich(R,cands,gm);}
+        }
+      }catch(_){}
+      return R;})(), // v9.7
     assets:{ moves:aMoves, revenue:Math.round(aRev), cost:Math.round(aCost), margin:Math.round(aRev-aCost),
       events:aEvents.sort((a,b)=>String(b.date).localeCompare(String(a.date))) },
     downtime_open_events:dtOpen,
@@ -742,6 +766,38 @@ function getWell(id){
 // ---------- v9.4 · Truck roster aprendido ----------
 function _absH(d){const m=String(d||'').match(/(\d{4})-(\d{2})-(\d{2})/);
   return m?Date.UTC(+m[1],+m[2]-1,+m[3])/3600000:0;}
+/* ── v9.7 · herencia entre pozos ── */
+function _nrm(n){return String(n||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z ]/g,' ').replace(/\s+/g,' ').trim();}
+function _lastH(s){const m=String(s||'').match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{1,2})/);
+  if(!m)return null;return Date.UTC(+m[1],+m[2]-1,+m[3])/3600000+(+m[4]);}
+/* Enriquecimiento PURO: roster local + rosters candidatos [{id,roster}] → hereda ventana/hw
+   del pozo con el last-load más reciente del driver (≤14 días), desempate por carrier. */
+function _xwEnrich(roster,cands,gMax){try{
+  const lim=(+gMax||0)-14*24;
+  const pool={};
+  (cands||[]).forEach(function(cw){const rid=cw&&cw.id;((cw&&cw.roster)||[]).forEach(function(d){
+    if(!(d&&d.d&&+d.sp>0&&(+d.sh||0)>=2))return;
+    if(d.src==='xwell')return;                       /* sin cadenas */
+    const lh=_lastH(d.last);if(lh==null||lh<lim)return;
+    const k=_nrm(d.d);(pool[k]=pool[k]||[]).push({aS:+d.aS,sp:+d.sp,hw:(typeof d.hw==='string'?d.hw:''),lh:lh,id:rid,c:String(d.c||''),last:d.last});});});
+  roster.forEach(function(r){
+    if(r.src==='pump'||r.src==='prefill')return;     /* lo local bueno manda */
+    const list=pool[_nrm(r.d)];if(!list||!list.length)return;
+    const lc=String(r.c||'');
+    list.sort(function(a,b){const cm=(b.c===lc?1:0)-(a.c===lc?1:0);return cm||(b.lh-a.lh);});
+    const hit=list[0];
+    r.aS=+hit.aS.toFixed(1);r.sp=+Math.min(16,Math.max(6,hit.sp)).toFixed(1);
+    if(hit.hw&&hit.hw.length===24)r.hw=hit.hw;
+    r.src='xwell';r.xw=hit.id;r.xwL=hit.last;r.pw=false;r.nw=false;});
+}catch(_){ }return roster;}
+function _xrPut(id,roster){try{
+  const slim=(roster||[]).filter(function(r){return r&&(+r.sh||0)>=2&&r.src!=='xwell'&&+r.sp>0;})
+    .map(function(r){return {d:r.d,c:r.c,aS:r.aS,sp:r.sp,sh:r.sh,hw:r.hw||'',last:r.last,src:r.src};});
+  if(slim.length)_cPut('xr:'+id,{at:new Date().toISOString(),roster:slim},21600);
+}catch(_){}}
+function _xrGet(id){const o=_cGet('xr:'+id);return (o&&o.roster)?o.roster:null;}
+function _regCached(){let r=_cGet('rg5');if(r)return r;
+  try{r=getRegistry();_cPut('rg5',r,600);return r;}catch(_){return null;}}
 /* Segmenta los loads de cada driver en TURNOS por huecos >=6 h y resume:
    aS = hora media de arranque (media circular) · sp = duración media (clamp 4–17 h)
    tp = TR medio en pumping days (loads/día calendario con etapas) · nw = <2 turnos
