@@ -219,6 +219,32 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fcr-new{font:800 8px/1 'Plus Jakarta Sans';background:#e8f1fb;color:#2b6a92;border-radius:999px;padding:3px 7px;letter-spacing:.06em}
 .fcr-sc{font-weight:800;font-variant-numeric:tabular-nums}
 .fcr-win{font-variant-numeric:tabular-nums;color:#2E4057}
+/* gauge 3D tilt */
+.fc-gauge{perspective:600px}
+.fc-gauge .fc-gsvg{transition:transform .25s ease;transform:rotateX(var(--gx,0deg)) rotateY(var(--gy,0deg))}
+/* coverage board */
+#fc-gantt{margin:4px 0 12px}
+.fg-head{display:flex;align-items:center;gap:10px;font:700 9px/1.4 'Plus Jakarta Sans';letter-spacing:.06em;color:#8a97a6;text-transform:uppercase;margin-bottom:6px}
+.fg-stats{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto;text-transform:none;letter-spacing:0}
+.fg-chip{font:700 9px/1 'Plus Jakarta Sans';padding:4px 9px;border-radius:999px;background:#f1f5f9;color:#475569}
+.fg-chip.rf{background:#fdecec;color:#b23b3b;animation:wpulse 1.6s ease-in-out infinite}
+.fg-ribbon{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;margin:0 0 8px}
+.fg-cell{height:14px;border-radius:4px;transition:transform .15s}
+.fg-cell:hover{transform:scaleY(1.25)}
+.fg-grid{position:relative}
+.fg-row{display:grid;grid-template-columns:150px 1fr;align-items:center;gap:8px;padding:3px 0}
+.fg-nm{font:700 10px/1.2 'Plus Jakarta Sans';color:#2E4057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.fg-nm:hover{color:#1c5d8f}
+.fg-lane{position:relative;height:16px;background:#f3f6f9;border-radius:8px;overflow:hidden}
+.fg-bar{position:absolute;top:2px;bottom:2px;border-radius:7px;display:flex;align-items:center;padding:0 5px;
+  animation:growW .7s cubic-bezier(.25,.9,.3,1) backwards;min-width:14px}
+@keyframes growW{from{transform:scaleX(0);transform-origin:left}to{transform:none}}
+.fg-bar svg{width:11px;height:11px;flex:0 0 auto;opacity:.85}
+.fg-bar.bg-g{background:linear-gradient(135deg,#bfe3d2,#9fd4bb);color:#1e5c3f}
+.fg-bar.bg-y{background:linear-gradient(135deg,#f3e3b5,#ecd58f);color:#7a5c14}
+.fg-bar.bg-r{background:linear-gradient(135deg,#f3c3c3,#eaa5a5);color:#7d2b2b}
+.fg-axis{display:flex;justify-content:space-between;font:600 8px/1 'Plus Jakarta Sans';color:#9aa7b4;margin-top:4px;padding-left:158px}
+@media(max-width:700px){.fg-row{grid-template-columns:96px 1fr}.fg-axis{padding-left:104px}}
 .fcw{font:800 9.5px/1 'Plus Jakarta Sans';padding:4px 8px;border-radius:999px;display:inline-block}
 .fcw-g{background:#E7F3EC;color:#2F7A45}
 .fcw-y{background:#faf3dc;color:#9a7b2d}
@@ -1147,7 +1173,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.87';
+const VBUILD='2026-10-12.88';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3835,7 +3861,7 @@ function fcRosterProj(w,now,H){
       let x=hh-aS;if(x<0)x+=24;return x<sp;};
     if(inc)for(let t=0;t<=H;t++)if(onAt(t))curve[t]++;
     rows.push({d:r.d,c:r.c||'',n:+r.n||0,aS,sp,tp:+r.tp||0,days:+r.days||0,pd:+r.pd||0,
-      nw:!!r.nw,fs:r.fs||'',last:r.last||'',fresh,inc,onAt});
+      nw:!!r.nw,fs:r.fs||'',last:r.last||'',fresh,inc,onAt,shd:r.shd||[],pw:r.pw!==false});
   });
   return {curve,rows,has:R.length>0};}
 /* Score del grid (misma fórmula, rango completo del pozo): TR 40 + Volumen 40 + Consistencia 20 */
@@ -3852,6 +3878,17 @@ function fcBurnWin(w,hrs,now){
     const o0=Math.max(t0,a),o1=Math.min(t1,now);
     if(o1>o0){tons+=(+s.used_tons)*(o1-o0)/(t1-t0);any=true;}});
   return any?tons*2000/hrs:null;}
+/* Picos/valles significativos de la curva de crew: extremos locales,
+   |Δ| ≥ 2 respecto al último marcado y separación ≥ 4 h */
+function fcPeaks(c){const out=[];if(!c||c.length<3)return out;
+  let lastI=-9,lastV=c[0];
+  for(let i=1;i<c.length-1;i++){
+    const isMax=c[i]>=c[i-1]&&c[i]>c[i+1];
+    const isMin=c[i]<=c[i-1]&&c[i]<c[i+1];
+    if(!isMax&&!isMin)continue;
+    if(Math.abs(c[i]-lastV)<2||i-lastI<4)continue;
+    out.push({i,v:c[i],up:isMax});lastI=i;lastV=c[i];}
+  return out;}
 /* Semáforo de horas medias por driver — regla Alan:
    11–14 h verde · 8–11 h y 14–16 h amarillo · <8 h o >16 h rojo */
 function fcHrsBand(sp){sp=+sp||0;
@@ -3967,7 +4004,7 @@ window.fcLay=function(k){FC.lay[k]=FC.lay[k]?0:1;_fcSave();
 window.fcKpi=function(k){FC.kpiEsc=k;_fcSave();fcCalc();};
 window.fcTogDrv=function(nm){nm=decodeURIComponent(nm);const E=FC.exc[FC.id]=FC.exc[FC.id]||{};
   if(E[nm])delete E[nm];else E[nm]=1;
-  renderFcProj();fcRosterTable();fcCalc();_fcRstBtn();};
+  renderFcProj();fcRosterTable();fcGantt();fcCalc();_fcRstBtn();};
 window.fcRosterTog=function(){FC.rOpen=!FC.rOpen;const c=$('fc-roster');if(c)c.classList.toggle('open',FC.rOpen);};
 /* salto al Driver Grid del pozo con la búsqueda puesta */
 window.fcGotoDriver=function(nm){try{
@@ -4030,36 +4067,47 @@ function _fcGrains(x0,x1,y0,y1,n){const o=[];for(let i=0;i<n;i++){
   o.push('<circle class="grain" style="animation-delay:'+(i*35)+'ms" cx="'+gx+'" cy="'+gy+'" r="2" fill="rgba(255,255,255,.5)"/>');}
   return o.join('');}
 /* Skeleton CAJAS: silo de llenas (MIN 4 · GOAL 6 stg) + columna de vacías con alertas */
-function _fcSkBoxes(tg){const W=170,H2=190,bx=14,bw=92,ty=16,by=H2-18,ih=by-ty,ex=126,ew=32;
+function _fcSkBoxes(tg){const W=180,H2=196,bx=14,bw=96,ty=18,by=H2-22,ih=by-ty,ex=126,ew=34;
   let tk='';[10,20,30].forEach(v=>{const y=by-ih*Math.min(1,v/40);
-    tk+='<line x1="'+(ex+ew)+'" x2="'+(ex+ew+5)+'" y1="'+y+'" y2="'+y+'" stroke="#b6c0ca" stroke-width="1.2"/>'
-      +'<text x="'+(ex+ew+7)+'" y="'+(y+2.5)+'" font-size="6.5" font-weight="700" fill="#9aa7b4" font-family="Plus Jakarta Sans">'+v+'</text>';});
+    tk+='<line x1="'+(ex+ew)+'" x2="'+(ex+ew+4)+'" y1="'+y+'" y2="'+y+'" stroke="#b6c0ca" stroke-width="1.1"/>'
+      +'<text x="'+(ex+ew+5)+'" y="'+(y+2.5)+'" font-size="6.2" font-weight="700" fill="#9aa7b4" font-family="Plus Jakarta Sans">'+v+'</text>';});
+  let stk='';for(let s2=1;s2<tg.goal;s2++){const y=by-ih*s2/tg.goal;
+    stk+='<line x1="'+bx+'" x2="'+(bx+5)+'" y1="'+y+'" y2="'+y+'" stroke="rgba(18,38,58,.18)" stroke-width="1"/>';}
   return '<svg class="fc-gsvg" width="'+W+'" height="'+H2+'" viewBox="0 0 '+W+' '+H2+'">'
-    +'<defs><clipPath id="fcClipF"><rect x="'+bx+'" y="'+ty+'" width="'+bw+'" height="'+ih+'" rx="14"/></clipPath>'
+    +'<defs><clipPath id="fcClipF"><rect x="'+bx+'" y="'+ty+'" width="'+bw+'" height="'+ih+'" rx="13"/></clipPath>'
     +'<clipPath id="fcClipE"><rect x="'+ex+'" y="'+ty+'" width="'+ew+'" height="'+ih+'" rx="10"/></clipPath>'
-    +'<linearGradient id="fcGradF" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f7a68" stop-opacity=".9"/><stop offset="1" stop-color="#2f7a68"/></linearGradient></defs>'
-    +'<rect x="'+bx+'" y="'+ty+'" width="'+bw+'" height="'+ih+'" rx="14" fill="#F1F5F9" stroke="#dfe7ee" stroke-width="1.5"/>'
-    +'<g clip-path="url(#fcClipF)"><rect id="fcGF" class="fc-gfill" x="0" y="'+by+'" width="'+W+'" height="'+(ih+6)+'" fill="url(#fcGradF)"/>'
+    +'<pattern id="fcHatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#f3f6f9"/><line x1="0" y1="0" x2="0" y2="7" stroke="#d7e1ea" stroke-width="2.4"/></pattern>'
+    +'<linearGradient id="fcGradF" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2f7a68"/><stop offset=".5" stop-color="#3d8d79"/><stop offset="1" stop-color="#26695a"/></linearGradient></defs>'
+    +'<rect x="'+bx+'" y="'+ty+'" width="'+bw+'" height="'+ih+'" rx="13" fill="#F1F5F9" stroke="#dfe7ee" stroke-width="1.5"/>'
+    +'<g clip-path="url(#fcClipF)">'
+    +'<rect id="fcGH" x="'+bx+'" y="'+ty+'" width="'+bw+'" height="'+ih+'" fill="url(#fcHatch)" opacity=".55"/>'
+    +'<rect id="fcGF" class="fc-gfill" x="'+bx+'" y="'+by+'" width="'+bw+'" height="'+(ih+6)+'" fill="url(#fcGradF)"/>'
     +'<g id="fcWg" style="transform:translateY('+by+'px)"><path id="fcWv" d="M-56 0 Q-42 -4 -28 0 T0 0 T28 0 T56 0 T84 0 T112 0 T140 0 T168 0 T196 0 V8 H-56 Z" fill="rgba(255,255,255,.3)"/></g>'
-    +_fcGrains(bx+8,bx+bw-8,ty+10,by-8,12)+'</g>'
+    +_fcGrains(bx+10,bx+bw-10,ty+12,by-10,12)+'</g>'+stk
     +'<line id="fcMinL" x1="'+(bx-5)+'" x2="'+(bx+bw+5)+'" y1="0" y2="0" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
-    +'<text id="fcMinT" x="'+(bx+bw+3)+'" y="0" text-anchor="end" font-size="8" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+tg.min+'</text>'
+    +'<text id="fcMinT" x="'+(bx+bw-2)+'" y="0" text-anchor="end" font-size="7.5" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+tg.min+'</text>'
     +'<line x1="'+(bx-5)+'" x2="'+(bx+bw+5)+'" y1="'+ty+'" y2="'+ty+'" stroke="#c99a3f" stroke-width="1.4" stroke-dasharray="3 4"/>'
-    +'<text x="'+bx+'" y="'+(ty-4)+'" font-size="8" font-weight="800" fill="#c99a3f" font-family="Plus Jakarta Sans">GOAL '+tg.goal+'</text>'
+    +'<text x="'+(bx+2)+'" y="'+(ty-5)+'" font-size="7.5" font-weight="800" fill="#c99a3f" font-family="Plus Jakarta Sans">GOAL '+tg.goal+'</text>'
     +'<rect x="'+ex+'" y="'+ty+'" width="'+ew+'" height="'+ih+'" rx="10" fill="#F1F5F9" stroke="#dfe7ee" stroke-width="1.5"/>'
-    +'<g clip-path="url(#fcClipE)"><rect id="fcEF" x="'+(ex-2)+'" y="'+by+'" width="'+(ew+4)+'" height="'+(ih+6)+'" fill="#4ca882"/></g>'+tk
-    +'<text id="fcFn" x="'+(bx+bw/2)+'" y="'+(H2-3)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">FULL</text>'
-    +'<text id="fcEn" x="'+(ex+ew/2)+'" y="'+(H2-3)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">EMPTY</text>'
+    +'<g clip-path="url(#fcClipE)"><rect id="fcEF" x="'+ex+'" y="'+by+'" width="'+ew+'" height="'+(ih+6)+'" fill="#4ca882"/></g>'+tk
+    +'<text id="fcFn" x="'+(bx+bw/2)+'" y="'+(H2-7)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">FULL</text>'
+    +'<text id="fcEn" x="'+(ex+ew/2)+'" y="'+(H2-7)+'" text-anchor="middle" font-size="8.5" font-weight="800" fill="#44566B" font-family="Plus Jakarta Sans">EMPTY</text>'
     +'</svg>';}
-/* Skeleton SANDPILE: la pila ESCALA con la arena (ancho+alto), MIN fijo como referencia */
-function _fcSkPila(tg){const W=150,H2=190,bx=14,bw=W-28,ty=22,by=H2-18;
+function _fcSkPila(tg){const W=150,H2=196,bx=14,bw=W-28,ty=22,by=H2-24;
   return '<svg class="fc-gsvg" width="'+W+'" height="'+H2+'" viewBox="0 0 '+W+' '+H2+'">'
-    +'<g id="fcPGo"><g id="fcPG"><path id="fcPP" d="M'+bx+' '+by+' Q'+(W/2)+' '+(ty-8)+' '+(bx+bw)+' '+by+' Z" fill="#e0a63e"/>'
-    +'<path d="M'+(bx+18)+' '+(by-14)+' Q'+(W/2)+' '+(ty+16)+' '+(bx+bw-18)+' '+(by-14)+'" stroke="rgba(255,255,255,.35)" stroke-width="5" fill="none" stroke-linecap="round"/>'
-    +_fcGrains(bx+16,bx+bw-16,by-70,by-8,12)+'</g></g>'
+    +'<defs><pattern id="fcHatchP" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="none"/><line x1="0" y1="0" x2="0" y2="7" stroke="#d7e1ea" stroke-width="2.2"/></pattern>'
+    +'<radialGradient id="fcPg" cx=".38" cy=".3" r="1"><stop offset="0" stop-color="#f0c268"/><stop offset=".55" stop-color="#e0a63e"/><stop offset="1" stop-color="#c9922f"/></radialGradient>'
+    +'<clipPath id="fcPClip"><path d="M'+bx+' '+by+' Q'+(W/2)+' '+(ty-8)+' '+(bx+bw)+' '+by+' Z"/></clipPath></defs>'
+    +'<ellipse cx="'+(W/2)+'" cy="'+(by+5)+'" rx="'+(bw/2+8)+'" ry="7" fill="rgba(18,38,58,.10)"/>'
+    +'<g clip-path="url(#fcPClip)"><rect x="0" y="0" width="'+W+'" height="'+H2+'" fill="url(#fcHatchP)" opacity=".5"/></g>'
+    +'<path d="M'+bx+' '+by+' Q'+(W/2)+' '+(ty-8)+' '+(bx+bw)+' '+by+' Z" fill="none" stroke="#c6d2dc" stroke-width="1.4" stroke-dasharray="4 4"/>'
+    +'<text x="'+(W/2)+'" y="'+(ty+2)+'" text-anchor="middle" font-size="7.5" font-weight="800" fill="#9aa7b4" font-family="Plus Jakarta Sans">TARGET</text>'
+    +'<g id="fcPGo"><g id="fcPG"><path id="fcPP" d="M'+bx+' '+by+' Q'+(W/2)+' '+(ty-8)+' '+(bx+bw)+' '+by+' Z" fill="url(#fcPg)"/>'
+    +'<path d="M'+(bx+16)+' '+(by-13)+' Q'+(W/2)+' '+(ty+18)+' '+(bx+bw-16)+' '+(by-13)+'" stroke="rgba(255,255,255,.38)" stroke-width="5" fill="none" stroke-linecap="round"/>'
+    +_fcGrains(bx+16,bx+bw-16,by-66,by-8,12)+'</g></g>'
     +'<line x1="2" x2="'+(W-2)+'" y1="'+by+'" y2="'+by+'" stroke="#dfe7ee" stroke-width="2"/>'
     +'<line id="fcMinL" x1="6" x2="'+(W-6)+'" y1="0" y2="0" stroke="#d47272" stroke-width="1.6" stroke-dasharray="5 4"/>'
-    +'<text id="fcMinT" x="'+(W-6)+'" y="0" text-anchor="end" font-size="8" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+tg.min+' STG</text>'
+    +'<text id="fcMinT" x="'+(W-6)+'" y="0" text-anchor="end" font-size="7.5" font-weight="800" fill="#c24545" font-family="Plus Jakarta Sans">MIN '+tg.min+' STG</text>'
     +'</svg>';}
 function fcGaugePaint(){
   const host=$('fc-gauge');if(!host)return;
@@ -4099,9 +4147,10 @@ function fcGaugePaint(){
       if(ml&&ml.setAttribute){ml.setAttribute('y1',minY);ml.setAttribute('y2',minY);}
       if(mt&&mt.setAttribute)mt.setAttribute('y',minY-4);
     }else{
-      const ty=16,by=172,ih=by-ty;
+      const ty=18,by=174,ih=by-ty;
       const fr=Math.max(0.015,Math.min(1,gg.stgCov/tg.goal));
       const gf=$('fcGF');if(gf&&gf.setAttribute){gf.setAttribute('y',by-ih*fr);gf.setAttribute('height',ih*fr+6);}
+      const gh2=$('fcGH');if(gh2&&gh2.setAttribute)gh2.setAttribute('height',Math.max(0,ih-ih*fr));
       const wg=$('fcWg');if(wg&&wg.style)wg.style.transform='translateY('+(by-ih*fr)+'px)';
       const minY=by-ih*Math.min(1,gg.minPct/100);
       const ml=$('fcMinL'),mt=$('fcMinT');
@@ -4114,6 +4163,13 @@ function fcGaugePaint(){
       const en=$('fcEn');if(en)en.textContent='EMPTY '+emp;
     }
   }catch(_){host._sk=null;}
+  /* pseudo-3D: tilt suave con el mouse (bind una sola vez por host) */
+  try{if(!host._tilt&&host.addEventListener){host._tilt=1;
+    host.addEventListener('mousemove',function(ev2){const r2=host.getBoundingClientRect();
+      const nx=(ev2.clientX-r2.left)/r2.width-0.5, ny=(ev2.clientY-r2.top)/r2.height-0.5;
+      host.style.setProperty('--gy',(nx*10).toFixed(1)+'deg');
+      host.style.setProperty('--gx',(-ny*8).toFixed(1)+'deg');});
+    host.addEventListener('mouseleave',function(){host.style.setProperty('--gx','0deg');host.style.setProperty('--gy','0deg');});}}catch(_t){}
 }
 const FC_ESC=[
   {k:'m', name:'Avg pace',      col:'#1f6f6f'},
@@ -4135,19 +4191,16 @@ const _fcMarks={id:'fcMarks',afterDraw(ch){try{
       if(on&&s==null)s=i;
       if((!on||i===o.H)&&s!=null){const x1=X(s),x2=X(i);
         ctx.fillRect(x1,ys.top,Math.max(2,x2-x1),ys.bottom-ys.top);s=null;}}}
-  /* cambios de la curva de crew proyectada */
-  if(!o.lay||o.lay.crew){let lastLbl=-9;
-  (o.curve||[]).forEach((v,i)=>{if(i===0||v===(o.curve[i-1]||0))return;
-    const x=X(i);
-    ctx.strokeStyle='rgba(58,124,165,.35)';ctx.setLineDash([3,4]);ctx.lineWidth=1;
-    ctx.beginPath();ctx.moveTo(x,ys.top+14);ctx.lineTo(x,ys.bottom);ctx.stroke();ctx.setLineDash([]);
-    if(i-lastLbl>=3){const up=v>(o.curve[i-1]||0);
-      ctx.fillStyle=up?'#2F7A45':'#c24545';
-      ctx.beginPath();
-      if(up){ctx.moveTo(x,ys.top+15);ctx.lineTo(x-4,ys.top+22);ctx.lineTo(x+4,ys.top+22);}
-      else{ctx.moveTo(x,ys.top+22);ctx.lineTo(x-4,ys.top+15);ctx.lineTo(x+4,ys.top+15);}
-      ctx.closePath();ctx.fill();
-      ctx.fillText(v+' drv',x,ys.top+33);lastLbl=i;}});}
+  /* picos y valles REALES de la curva (|Δ|≥2 desde el último marcado, espaciado ≥4 h) */
+  if(!o.lay||o.lay.crew){(fcPeaks(o.curve||[])).forEach(pk=>{const x=X(pk.i);
+    ctx.strokeStyle='rgba(58,124,165,.3)';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(x,ys.top+24);ctx.lineTo(x,ys.top+30);ctx.stroke();
+    ctx.fillStyle=pk.up?'#2F7A45':'#c24545';
+    ctx.beginPath();
+    if(pk.up){ctx.moveTo(x,ys.top+14);ctx.lineTo(x-4,ys.top+21);ctx.lineTo(x+4,ys.top+21);}
+    else{ctx.moveTo(x,ys.top+21);ctx.lineTo(x-4,ys.top+14);ctx.lineTo(x+4,ys.top+14);}
+    ctx.closePath();ctx.fill();
+    ctx.fillText(pk.v+' drv',x,ys.top+40);});}
   const vline=(i,col,lbl,dy)=>{if(i==null||i<0||i>o.H)return;const x=X(i);
     ctx.strokeStyle=col;ctx.setLineDash([5,4]);ctx.lineWidth=1.4;
     ctx.beginPath();ctx.moveTo(x,ys.top);ctx.lineTo(x,ys.bottom);ctx.stroke();
@@ -4228,7 +4281,7 @@ function fcCalc(){
   const maxC=Math.max(4,...crewFull.filter(v=>v!=null))+2;
   const FD={H:SIM.m.solid.length-1,iNow,red:SIM.b6.red,runWorst:worst,runWorstK:worst!=null?wn.name.toUpperCase():'',
     solid:SIM.m.solid,curve:p.curve,crewFull,labs,pin:null,histN:iNow,
-    SIM:{m:SIM.m.solid,b6:SIM.b6.solid,b12:SIM.b12.solid,b24:SIM.b24.solid},
+    SIM:{m:SIM.m.solid,b6:SIM.b6.solid,b12:SIM.b12.solid,b24:SIM.b24.solid},kpiK:K,
     B,sup:SIM.m.sup,reqs:{m:SIM.m.reqDrv,b6:SIM.b6.reqDrv,b12:SIM.b12.reqDrv,b24:SIM.b24.reqDrv},
     lay:Object.assign({},FC.lay)};
   const TT={callbacks:{
@@ -4237,13 +4290,13 @@ function fcCalc(){
     label:c=>{if(c.dataset.yAxisID==='y2')return c.raw!=null?(' Crew on: '+c.raw+' drivers'):null;
       return c.raw!=null?tipL(c,x=>fmt(x)+' lbs'):null;},
     afterBody:it=>{const F=it[0].chart.$fc||FD;const i=it[0].dataIndex;
-      if(i<F.iNow)return [sep,'Rebuilt from real hourly deliveries − stage burn','Crew on (board): '+(F.crewFull[i]!=null?F.crewFull[i]:'—')+' drivers'];
+      if(i<F.iNow)return [sep,'Actual, rebuilt from hourly deliveries','Crew (board): '+(F.crewFull[i]!=null?F.crewFull[i]:'—')+' drv'];
       const j=i-F.iNow;const crew=F.curve[j]||0;
-      const out=[sep,'Crew on: '+crew+' drivers · Supply: '+fmt(F.sup[j])+' lbs/h'];
-      FC_ESC.forEach(e=>{const req=F.reqs[e.k];
-        out.push((crew>=req?'✓ ':'✗ ')+e.name+': burn '+fmt(Math.round(F.B[e.k]))+' /h · need '+req.toFixed(1)+' drv');});
-      if(F.red[j])out.push('✗ NPT RISK at 6 h pace — frac waiting on sand');
-      out.push('Click for the hour detail + mini-roster');
+      const kk=F.kpiK||'m';const ee=FC_ESC.find(e2=>e2.k===kk)||FC_ESC[0];const req=F.reqs[kk];
+      const out=[sep,'Crew '+crew+' · supply '+fmt(F.sup[j])+' /h',
+        (crew>=req?'✓ ':'✗ ')+ee.name+': need '+req.toFixed(1)+' drv'+(crew>=req?'':' · short '+(req-crew).toFixed(1))];
+      if(F.red[j])out.push('✗ NPT at 6 h pace');
+      out.push('Click → full hour panel');
       return out;}}};
   const CLICK=(ev,els,chart)=>{try{const sx=chart.scales.x;if(!sx)return;
     const px=(ev&&ev.x!=null)?ev.x:(ev&&ev.native?ev.native.offsetX:null);if(px==null)return;
@@ -4272,10 +4325,11 @@ function fcCalc(){
     {label:'Last 6 h pace',data:proj('b6'),borderColor:'#d47272',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.3,cubicInterpolationMode:'monotone'},
     {label:'Last 12 h pace',data:proj('b12'),borderColor:'#e0a63e',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.3,cubicInterpolationMode:'monotone'},
     {label:'Last 24 h pace',data:proj('b24'),borderColor:'#4ca882',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.3,cubicInterpolationMode:'monotone'},
-    {label:'Crew on (right axis)',data:crewFull,yAxisID:'y2',stepped:'middle',borderColor:'rgba(96,136,168,.8)',backgroundColor:'rgba(143,179,204,.12)',fill:'origin',pointRadius:0,pointHoverRadius:4,borderWidth:1.4,hidden:!FC.lay.crew}]},
+    {label:'Crew on (right axis)',data:crewFull,yAxisID:'y2',tension:.35,cubicInterpolationMode:'monotone',borderColor:'rgba(96,136,168,.85)',backgroundColor:mkGrad('fcChart','rgba(120,156,186,.22)','rgba(120,156,186,.02)',300),fill:'origin',pointRadius:0,pointHoverRadius:4,borderWidth:1.8,borderJoinStyle:'round',hidden:!FC.lay.crew}]},
     options:{interaction:{mode:'index',intersect:false},layout:{padding:{top:30}},
       onClick:CLICK,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},tooltip:TT},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
+        tooltip:Object.assign({position:'nearest',backgroundColor:'rgba(18,38,58,.82)',titleFont:{size:11,weight:'800'},bodyFont:{size:9.5},padding:9,cornerRadius:10,caretSize:5,boxPadding:3,borderColor:'rgba(188,211,226,.4)',borderWidth:1},TT)},
       scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:14}},
         y:{...gO,min:0,ticks:{callback:v=>fmt(v/1000)+'K'}},
         y2:{position:'right',min:0,max:maxC,grid:{display:false},ticks:{font:{size:8},stepSize:4,color:'#8fa7bb'}}}},
@@ -4312,6 +4366,44 @@ function fcPinShow(i,F){
     +'<div><div class="fc-grp" style="margin:0 0 6px">Who should be on at this hour</div>'+drv+'</div></div>';
   p.classList.add('on');
 }
+/* ── COVERAGE BOARD: datos puros (testeable) ── */
+function fcGanttData(proj,H24){
+  H24=H24||24;const rows=[],curve=[];
+  const inc=((proj&&proj.rows)||[]).filter(r=>r.inc);
+  for(let t=0;t<H24;t++)curve.push((proj&&proj.curve&&proj.curve[t])||0);
+  inc.forEach(r=>{const segs=[];let s=null;
+    for(let t=0;t<=H24;t++){const on=t<H24&&r.onAt(t);
+      if(on&&s==null)s=t;
+      if(!on&&s!=null){segs.push([s,t]);s=null;}}
+    rows.push({d:r.d,c:r.c,sp:r.sp,nw:r.nw,band:fcHrsBand(r.sp).cls,segs});});
+  rows.sort((a,b)=>(a.segs[0]?a.segs[0][0]:99)-(b.segs[0]?b.segs[0][0]:99));
+  const peak=Math.max(0,...curve),low=Math.min(...curve);
+  const sorted=curve.slice().sort((a,b)=>a-b);const med=sorted[Math.floor(sorted.length/2)];
+  const reinf=[];let a=null;
+  for(let t=0;t<=H24;t++){const lowNow=t<H24&&curve[t]<med;
+    if(lowNow&&a==null)a=t;
+    if(!lowNow&&a!=null){if(t-a>=2)reinf.push([a,t,Math.min(...curve.slice(a,t))]);a=null;}}
+  return {rows,curve,peak,med,low,reinf:reinf.slice(0,3)};}
+function fcGantt(){
+  const host=$('fc-gantt');if(!host)return;
+  const G=fcGanttData(FC._proj,24);const now=Date.now();
+  if(!G.rows.length){host.innerHTML='';return;}
+  const hhAt=t=>new Date(now+t*36e5).getHours();
+  const hl=t=>('0'+hhAt(t)).slice(-2)+':00';
+  const heat=G.curve.map((v,t)=>{
+    const col=v>=G.peak?'#4ca882':v>=G.med?'#9fd4bb':v>G.low?'#ecd58f':'#eaa5a5';
+    return '<div class="fg-cell" style="background:'+col+'" title="'+hl(t)+' · '+v+' drivers on"></div>';}).join('');
+  const truck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16V7h11v9M13 10h5l3 3.5V16h-3"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>';
+  const lanes=G.rows.map((r,ri)=>{
+    const bars=r.segs.map(sg=>{const l=sg[0]/24*100,w=Math.max(3,(sg[1]-sg[0])/24*100);
+      return '<div class="fg-bar '+(r.band==='fcw-g'?'bg-g':r.band==='fcw-y'?'bg-y':'bg-r')+'" style="left:'+l.toFixed(1)+'%;width:'+w.toFixed(1)+'%;animation-delay:'+(ri*55)+'ms" title="'+r.d+' · '+hl(sg[0])+'–'+hl(sg[1])+' · '+r.sp.toFixed(1)+' h avg">'+truck+'</div>';}).join('');
+    return '<div class="fg-row"><span class="fg-nm" data-d="'+String(r.d).replace(/"/g,'&quot;')+'" onclick="fcGotoDriver(this.dataset.d)">'+r.d+(r.nw?' <span class="fcr-new">NEW</span>':'')+'</span><div class="fg-lane">'+bars+'</div></div>';}).join('');
+  const reinf=G.reinf.map(x=>'<span class="fg-chip rf">Reinforce '+hl(x[0])+'–'+hl(x[1])+' · dips to '+x[2]+' drv</span>').join('');
+  host.innerHTML='<div class="fg-head">Coverage next 24 h'
+    +'<span class="fg-stats"><span class="fg-chip">peak '+G.peak+' drv</span><span class="fg-chip">median '+G.med+'</span><span class="fg-chip">low '+G.low+'</span>'+reinf+'</span></div>'
+    +'<div class="fg-ribbon">'+heat+'</div>'
+    +'<div class="fg-grid">'+lanes+'</div>'
+    +'<div class="fg-axis"><span>'+hl(0)+'</span><span>'+hl(6)+'</span><span>'+hl(12)+'</span><span>'+hl(18)+'</span><span>+24 h</span></div>';}
 /* ── tabla del truck roster aprendido ── */
 function _fcHM(hF){let hh=Math.floor(((hF%24)+24)%24),mm=Math.round((hF-Math.floor(hF))*60);
   if(mm===60){mm=0;hh=(hh+1)%24;}
@@ -4332,7 +4424,7 @@ function fcRosterTable(){
     +'<td><span class="fcr-nm" onclick="fcGotoDriver(\''+String(r.d).replace(/'/g,"\\'")+'\')">'+r.d+'</span>'
       +(r.nw?' <span class="fcr-new">NEW +12H</span>':'')+'</td>'
     +'<td>'+(r.c||'—')+'</td>'
-    +'<td class="fcr-win">'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+'</td>'
+    +'<td class="fcr-win" title="'+(r.shd&&r.shd.length?('learned from '+(r.pw?'pumping-day':'all')+' shifts: '+r.shd.map(s2=>s2[0]+' '+_fcHM(s2[1])+'×'+s2[2]+'h').join(' · ')):'no shift log yet')+'">'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+(r.pw?'':' <span style="color:#b45309;font-size:8px">all-days</span>')+'</td>'
     +'<td><span class="fcw '+fcHrsBand(r.sp).cls+'">'+r.sp.toFixed(1)+' h · '+fcHrsBand(r.sp).t+'</span></td>'
     +'<td>'+r.tp.toFixed(2)+'</td>'
     +'<td class="fcr-sc">'+sc+'</td>'
@@ -4407,6 +4499,7 @@ function renderFc(){
         <div class="card-t" style="margin:0">Projected truck roster — learned from this pad</div>
         <span class="sb" id="fcr-cnt" style="margin-left:auto"></span></div>
       <div class="rbody">
+        <div id="fc-gantt"></div>
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
           <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
         </tr></thead><tbody id="fcr-body"></tbody></table></div>
@@ -4431,7 +4524,7 @@ function renderFc(){
           <span class="fc-lt${FC.lay.t48?' on':''}" id="fcl-t48" onclick="fcLay('t48')">48 h target</span></div></div>
       <div class="ch ch-l"><canvas id="fcChart"></canvas></div>
       <div id="fc-pin"></div></div>`;
-  fcRosterTable();
+  fcRosterTable();fcGantt();
   fcCalc();_fcRstBtn();
 }
 /* ════════════════════════════════════════════════════════════

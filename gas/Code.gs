@@ -1,4 +1,8 @@
-/** MEDS · PropX Live API — Code.gs v9.4. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.4.1. PEGAR TAL CUAL → Nueva versión.
+ *  v9.4.1 VENTANAS SOLO DE PUMPING DAYS: la ventana media de cada driver se aprende de sus
+ *       turnos en días CON etapas (el prefill ya no diluye las horas); si un driver no
+ *       tiene turnos en días pump, cae a todos. Publica shd[] (últimos ≤4 turnos usados:
+ *       [día, hora inicio, horas]) para auditar la matriz driver por driver.
  *  v9.4 TRUCK ROSTER APRENDIDO: getWell publica roster[] por driver con su ventana de
  *       turno REAL aprendida de los Delivered del pozo — los loads se segmentan en turnos
  *       por huecos ≥6 h (maneja turnos nocturnos que cruzan medianoche), y de ahí salen
@@ -108,7 +112,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.4';
+const API_VERSION='v9.4.1';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -693,7 +697,13 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
       if(ev[i]-e>=6){shifts.push([s,e]);s=ev[i];}
       e=ev[i];}
     shifts.push([s,e]);
-    const use=shifts.slice(-10);
+    /* v9.4.1: la ventana se aprende de los turnos de PUMPING DAYS (prefill fuera) */
+    const dayOf=function(hA){const dMs=Math.floor(hA/24)*86400000;const dt=new Date(dMs);
+      const p=function(n){return ('0'+n).slice(-2);};
+      return dt.getUTCFullYear()+'-'+p(dt.getUTCMonth()+1)+'-'+p(dt.getUTCDate());};
+    const pumpShifts=shifts.filter(function(sh){return pumpSet.has(dayOf(sh[0]));});
+    const base=(pumpShifts.length>=2)?pumpShifts:shifts;
+    const use=base.slice(-6);
     let vx=0,vy=0,spSum=0;
     use.forEach(function(sh){
       const st=((sh[0]%24)+24)%24;
@@ -710,10 +720,13 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
     const hTo=function(hA){const dMs=Math.floor(hA/24)*86400000;const dt=new Date(dMs);
       const p=function(n){return ('0'+n).slice(-2);};
       return dt.getUTCFullYear()+'-'+p(dt.getUTCMonth()+1)+'-'+p(dt.getUTCDate())+' '+p(((hA%24)+24)%24);};
+    const shd=use.slice(-4).map(function(sh){
+      return [dayOf(sh[0]).slice(5),+(((sh[0]%24)+24)%24).toFixed(1),+Math.min(17,Math.max(4,(sh[1]-sh[0])+1.5)).toFixed(1)];});
     out.push({d:D.name||drv,c:cars[0]||'',n:ev.length,sh:use.length,
       aS:+aS.toFixed(1),sp:+sp.toFixed(1),
       tp:pdd?+(pl/pdd).toFixed(2):0,days:dates.length,pd:pdd,
-      fs:hTo(fsH),last:hTo(lastH),nw:shifts.length<2});});
+      fs:hTo(fsH),last:hTo(lastH),nw:shifts.length<2,shd:shd,
+      pw:pumpShifts.length>=2});});
   return out.sort(function(a,b){return b.n-a.n;});}
 
 // ---------- Status Live (?action=status · todos los pads del Hub) ----------
