@@ -241,6 +241,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fg-row{display:grid;grid-template-columns:150px 1fr;align-items:center;gap:8px;padding:3px 0}
 .fg-nm{font:700 10px/1.2 'Plus Jakarta Sans';color:#2E4057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .fg-nm:hover{color:#1c5d8f}
+.fg-hot{position:absolute;top:4px;bottom:4px;width:2.5px;border-radius:2px;background:rgba(18,38,58,.35);pointer-events:none}
 .fg-lane{position:relative;height:16px;background:#f3f6f9;border-radius:8px;overflow:hidden}
 .fg-bar{position:absolute;top:2px;bottom:2px;border-radius:7px;display:flex;align-items:center;padding:0 5px;
   animation:growW .7s cubic-bezier(.25,.9,.3,1) backwards;min-width:14px}
@@ -1187,7 +1188,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.95';
+const VBUILD='2026-10-12.96';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3865,23 +3866,35 @@ function fcIsBelly(reg){return /belly/i.test(String(reg&&reg.equipment||''))
 function _fcTS(day,hm){if(!day)return null;const m=String(hm||'').match(/^(\d{1,2}):(\d{2})/);
   const d=new Date(day+'T00:00:00');if(isNaN(d))return null;
   return d.getTime()+(m?(+m[1]*36e5+ +m[2]*6e4):0);}
+/* Rangos 'más activo' (p ≥ 0.75) del mapa horario de un driver → 'HH–HH · HH–HH' */
+function _fcPkHrs(hwA){if(!hwA)return '';const out=[];let a0=null;
+  for(let h3=0;h3<=24;h3++){const on=h3<24&&hwA[h3]>=0.75;
+    if(on&&a0==null)a0=h3;
+    if(!on&&a0!=null){out.push(('0'+a0).slice(-2)+'–'+('0'+(h3%24)).slice(-2));a0=null;}}
+  return out.join(' · ');}
 function fcRosterProj(w,now,H){
   const R=(w&&w.roster)||[];const exc=FC.exc[FC.id]||{};
-  const curve=new Array(H+1).fill(0);
+  const curve=new Array(H+1).fill(0);const curveF=new Array(H+1).fill(0);
   const rows=[];const RECENT=36*36e5;
   R.forEach(r=>{
     const lastTS=_fcTS((r.last||'').slice(0,10),(r.last||'').slice(11,13)+':00');
     const fresh=lastTS!=null&&(now-lastTS)<=RECENT;
     const inc=fresh&&!exc[r.d];
-    let aS=+r.aS||0,sp=Math.min(17,Math.max(4,+r.sp||12));
+    let aS=+r.aS||0,sp=Math.min(20,Math.max(4,+r.sp||12));
     if(r.nw){const f=_fcTS((r.fs||'').slice(0,10),(r.fs||'').slice(11,13)+':00');
       if(f!=null){aS=new Date(f).getHours();sp=12;}}
-    const onAt=t=>{const hh=new Date(now+t*36e5).getHours()+new Date(now+t*36e5).getMinutes()/60;
-      let x=hh-aS;if(x<0)x+=24;return x<sp;};
-    if(inc)for(let t=0;t<=H;t++)if(onAt(t))curve[t]++;
+    /* .96: si el GAS publica su mapa horario (hw), cada hora pesa lo que el driver
+       realmente trabaja esa hora; sin hw (o driver NEW) manda la ventana rectangular */
+    const hwA=(!r.nw&&typeof r.hw==='string'&&r.hw.length===24)?r.hw.split('').map(c3=>(+c3||0)/9):null;
+    const pres=t=>{const d4=new Date(now+t*36e5);const hh=d4.getHours()+d4.getMinutes()/60;
+      if(!hwA){let x=hh-aS;if(x<0)x+=24;return x<sp?1:0;}
+      return hwA[d4.getHours()]||0;};
+    const onAt=t=>pres(t)>=0.5;
+    if(inc)for(let t=0;t<=H;t++)curveF[t]+=pres(t);
     rows.push({d:r.d,c:r.c||'',n:+r.n||0,aS,sp,tp:+r.tp||0,days:+r.days||0,pd:+r.pd||0,
-      nw:!!r.nw,fs:r.fs||'',last:r.last||'',fresh,inc,onAt,shd:r.shd||[],pw:r.pw!==false});
+      nw:!!r.nw,fs:r.fs||'',last:r.last||'',fresh,inc,onAt,hwA,shd:r.shd||[],pw:r.pw!==false});
   });
+  for(let t=0;t<=H;t++)curve[t]=Math.round(curveF[t]);
   /* piso histórico: las ventanas medias comprimen la cobertura; si el patrón real
      del pad (mediana de activos por hora en pump days) es mayor, la curva sube a él,
      escalado por exclusiones y SIEMPRE ≤ drivers proyectando. */
@@ -4519,7 +4532,7 @@ function fcGanttData(proj,H24){
     for(let t=0;t<=H24;t++){const on=t<H24&&r.onAt(t);
       if(on&&s==null)s=t;
       if(!on&&s!=null){segs.push([s,t]);s=null;}}
-    rows.push({d:r.d,c:r.c,sp:r.sp,nw:r.nw,band:fcHrsBand(r.sp).cls,segs});});
+    rows.push({d:r.d,c:r.c,sp:r.sp,nw:r.nw,hwA:r.hwA,band:fcHrsBand(r.sp).cls,segs});});
   rows.sort((a,b)=>(a.segs[0]?a.segs[0][0]:99)-(b.segs[0]?b.segs[0][0]:99));
   const peak=Math.max(0,...curve),low=Math.min(...curve);
   const sorted=curve.slice().sort((a,b)=>a-b);const med=sorted[Math.floor(sorted.length/2)];
@@ -4541,8 +4554,11 @@ function fcGantt(){
   const truck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16V7h11v9M13 10h5l3 3.5V16h-3"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>';
   const lanes=G.rows.map((r,ri)=>{
     const bars=r.segs.map(sg=>{const l=sg[0]/24*100,w=Math.max(3,(sg[1]-sg[0])/24*100);
-      return '<div class="fg-bar '+(r.band==='fcw-g'?'bg-g':r.band==='fcw-y'?'bg-y':'bg-r')+'" style="left:'+l.toFixed(1)+'%;width:'+w.toFixed(1)+'%;animation-delay:'+(ri*55)+'ms" data-tip="'+encodeURIComponent('<b>'+r.d+'</b>\nShift '+hl(sg[0])+' – '+hl(sg[1])+' · avg <b>'+r.sp.toFixed(1)+' h</b>')+'">'+truck+'</div>';}).join('');
-    return '<div class="fg-row"><span class="fg-nm" data-d="'+String(r.d).replace(/"/g,'&quot;')+'" onclick="fcGotoDriver(this.dataset.d)">'+r.d+(r.nw?' <span class="fcr-new">NEW</span>':'')+'</span><div class="fg-lane">'+bars+'</div></div>';}).join('');
+      const pkT=_fcPkHrs(r.hwA);
+      return '<div class="fg-bar '+(r.band==='fcw-g'?'bg-g':r.band==='fcw-y'?'bg-y':'bg-r')+'" style="left:'+l.toFixed(1)+'%;width:'+w.toFixed(1)+'%;animation-delay:'+(ri*55)+'ms" data-tip="'+encodeURIComponent('<b>'+r.d+'</b>\nShift '+hl(sg[0])+' – '+hl(sg[1])+' · avg <b>'+r.sp.toFixed(1)+' h</b>'+(pkT?'\nMost active: <b>'+pkT+'</b>':''))+'">'+truck+'</div>';}).join('');
+    let hots='';if(r.hwA)for(let t=0;t<24;t++){if(r.hwA[hhAt(t)]>=0.75)
+      hots+='<span class="fg-hot" style="left:'+(((t+0.5)/24)*100).toFixed(2)+'%"></span>';}
+    return '<div class="fg-row"><span class="fg-nm" data-d="'+String(r.d).replace(/"/g,'&quot;')+'" onclick="fcGotoDriver(this.dataset.d)">'+r.d+(r.nw?' <span class="fcr-new">NEW</span>':'')+'</span><div class="fg-lane">'+bars+hots+'</div></div>';}).join('');
   const reinf=G.reinf.map(x=>'<span class="fg-chip rf">Reinforce '+hl(x[0])+'–'+hl(x[1])+' · dips to '+x[2]+' drv</span>').join('');
   const bd=(FC.pf&&FC.pf.padOk)?+FC.pf.brdOn:null;
   const lvOk=bd!=null&&Math.abs(bd-(G.curve[0]||0))<=2;
@@ -4602,6 +4618,7 @@ function fcRosterTable(){
       +'\nWork window <b>'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+'</b> · avg <b>'+r.sp.toFixed(1)+' h</b> ('+wb2.t+')'
       +(r.nw?'\nNEW — activation + 12 h rule':'')
       +(r.pw?'':'\nall-days fallback — no closed pump shifts yet')
+      +(r.hwA&&_fcPkHrs(r.hwA)?'\nMost active: <b>'+_fcPkHrs(r.hwA)+'</b>':'')
       +'\n'+audit);
     return '<tr class="'+(r.inc?'':'exc')+'" data-tip="'+tip+'">'
     +'<td><input type="checkbox" '+(r.inc?'checked':'')+(stale?' disabled':'')+' onchange="fcTogDrv(\''+encodeURIComponent(r.d)+'\')"></td>'
@@ -4699,7 +4716,7 @@ function renderFc(){
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
           <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
         </tr></thead><tbody id="fcr-body"></tbody></table></div>
-        <div class="sb" style="margin-top:6px">Window = first start → TOTAL hours per day on pumping days (split shifts on the same day are summed) — prefill days, today's partial day and the still-open shift never count · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
+        <div class="sb" style="margin-top:6px">Window = first start → TOTAL hours per day on pumping days (split shifts on the same day are summed) — prefill days, today's partial day and the still-open shift never count · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · projection weighs each driver by his real hour-by-hour activity map (dark ticks on his lane = most-active hours) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
       </div></div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${kpi('fck-cov','Coverage (no trucks)')}

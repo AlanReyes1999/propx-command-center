@@ -1,4 +1,8 @@
-/** MEDS · PropX Live API — Code.gs v9.4.4. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.4.5. PEGAR TAL CUAL → Nueva versión.
+ *  v9.4.5 PERFIL HORARIO (hw): por driver se publica un mapa de 24 horas con la
+ *  frecuencia real de actividad (0-9 = en cuántos de sus días trabajó esa hora).
+ *  El portal lo usa para pesar la proyección de crew hora por hora y para marcar
+ *  en su línea del roster las horas en las que MÁS activo está.
  *  v9.4.4 HORAS POR DÍA: si un driver trabaja VARIOS bloques el mismo día (split por
  *  huecos ≥6 h — típico en cajas/Fasken esperando swaps), los bloques se SUMAN y la
  *  media de horas es por DÍA trabajado, no por bloque; el arranque (aS) es el primer
@@ -122,7 +126,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.4.4';
+const API_VERSION='v9.4.5';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -735,6 +739,13 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
       spSum+=Math.min(20,hrs);});
     let aS=Math.atan2(vy,vx)/(2*Math.PI)*24; if(aS<0)aS+=24;
     const sp=spSum/Math.max(1,dayKs.length);
+    /* v9.4.5: mapa horario — en cuántos de sus días estuvo activo en cada hora (0-9) */
+    const hwC=new Array(24).fill(0);
+    dayKs.forEach(function(dk){const seen={};
+      byDayS[dk].forEach(function(sh){const s0=Math.floor(sh[0]),e0=Math.ceil(sh[1]+1);
+        for(let h3=s0;h3<e0;h3++){seen[((h3%24)+24)%24]=1;}});
+      Object.keys(seen).forEach(function(h3){hwC[h3]++;});});
+    const hw=dayKs.length?hwC.map(function(c3){return Math.min(9,Math.round(c3/dayKs.length*9));}).join(''):'';
     const D=byDriver[drv]||{name:drv,dates:{},loads:ev.length,carriers:{}};
     const dates=Object.keys(D.dates||{});
     let pl=0,pdd=0,ol=0,odd=0;
@@ -751,7 +762,7 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
     out.push({d:D.name||drv,c:cars[0]||'',n:ol,sh:use.length,
       aS:+aS.toFixed(1),sp:+sp.toFixed(1),
       tp:pdd?+(pl/pdd).toFixed(2):0,days:odd,pd:pdd,
-      fs:hTo(fsH),last:hTo(lastH),nw:shifts.length<2,shd:shd,
+      fs:hTo(fsH),last:hTo(lastH),nw:shifts.length<2,shd:shd,hw:hw,
       pw:pumpShifts.length>=2});});
   return out.sort(function(a,b){return b.n-a.n;});}
 
