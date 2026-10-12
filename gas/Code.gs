@@ -1,4 +1,7 @@
-/** MEDS · PropX Live API — Code.gs v9.4.1. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.4.2. PEGAR TAL CUAL → Nueva versión.
+ *  v9.4.2 TURNOS CERRADOS: además del filtro de pumping days, la ventana ya NO toma el día
+ *  actual del dato (turnos truncados a medias) ni el turno aún abierto (fin a <3 h del último
+ *  load del pad) — el stub de hoy no arrastra la media de horas hacia abajo.
  *  v9.4.1 VENTANAS SOLO DE PUMPING DAYS: la ventana media de cada driver se aprende de sus
  *       turnos en días CON etapas (el prefill ya no diluye las horas); si un driver no
  *       tiene turnos en días pump, cae a todos. Publica shd[] (últimos ≤4 turnos usados:
@@ -112,7 +115,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.4.1';
+const API_VERSION='v9.4.2';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -686,9 +689,12 @@ function _absH(d){const m=String(d||'').match(/(\d{4})-(\d{2})-(\d{2})/);
   return m?Date.UTC(+m[1],+m[2]-1,+m[3])/3600000:0;}
 /* Segmenta los loads de cada driver en TURNOS por huecos >=6 h y resume:
    aS = hora media de arranque (media circular) · sp = duración media (clamp 4–17 h)
-   tp = TR medio en pumping days (loads/día calendario con etapas) · nw = <2 turnos */
+   tp = TR medio en pumping days (loads/día calendario con etapas) · nw = <2 turnos
+   v9.4.2: aprende solo de turnos CERRADOS en pump days — prefill, día actual y
+   turno abierto nunca entran a la media (auditable en shd). */
 function _rosterBuild(rosterEv,byDriver,pumpSet){
   const out=[];
+  let gMax=0;Object.keys(rosterEv).forEach(function(d2){rosterEv[d2].forEach(function(h2){if(h2>gMax)gMax=h2;});});
   Object.keys(rosterEv).forEach(function(drv){
     const ev=rosterEv[drv].slice().sort(function(a,b){return a-b;});
     if(!ev.length)return;
@@ -697,12 +703,16 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
       if(ev[i]-e>=6){shifts.push([s,e]);s=ev[i];}
       e=ev[i];}
     shifts.push([s,e]);
-    /* v9.4.1: la ventana se aprende de los turnos de PUMPING DAYS (prefill fuera) */
+    /* v9.4.2: la ventana se aprende SOLO de turnos CERRADOS de PUMPING DAYS.
+       Fuera: días de prefill (sin etapas), el DÍA ACTUAL del dato (turnos truncados
+       arrastran la media) y el turno AÚN ABIERTO (fin a <3 h del último load global). */
     const dayOf=function(hA){const dMs=Math.floor(hA/24)*86400000;const dt=new Date(dMs);
       const p=function(n){return ('0'+n).slice(-2);};
       return dt.getUTCFullYear()+'-'+p(dt.getUTCMonth()+1)+'-'+p(dt.getUTCDate());};
-    const pumpShifts=shifts.filter(function(sh){return pumpSet.has(dayOf(sh[0]));});
-    const base=(pumpShifts.length>=2)?pumpShifts:shifts;
+    const curDay=dayOf(gMax);
+    const closed=shifts.filter(function(sh){return dayOf(sh[0])!==curDay&&(gMax-sh[1])>=3;});
+    const pumpShifts=closed.filter(function(sh){return pumpSet.has(dayOf(sh[0]));});
+    const base=(pumpShifts.length>=2)?pumpShifts:(closed.length>=2?closed:shifts);
     const use=base.slice(-6);
     let vx=0,vy=0,spSum=0;
     use.forEach(function(sh){

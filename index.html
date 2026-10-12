@@ -244,6 +244,14 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fg-bar.bg-y{background:linear-gradient(135deg,#f3e3b5,#ecd58f);color:#7a5c14}
 .fg-bar.bg-r{background:linear-gradient(135deg,#f3c3c3,#eaa5a5);color:#7d2b2b}
 .fg-axis{display:flex;justify-content:space-between;font:600 8px/1 'Plus Jakarta Sans';color:#9aa7b4;margin-top:4px;padding-left:158px}
+.fg-ribr{padding:2px 0 7px}
+.fg-ribr .fg-ribbon{margin:0}
+.fg-ribt{font:700 8.5px/1.3 'Plus Jakarta Sans';letter-spacing:.05em;color:#8a97a6;text-transform:uppercase;cursor:default}
+.fg-cell.lo{animation:fgSoft 2s ease-in-out infinite}
+@keyframes fgSoft{0%,100%{opacity:1}50%{opacity:.45}}
+.fg-chip.lv{background:#E7F3EC;color:#2F7A45}
+.fg-chip.lv.off{background:#FBF3DC;color:#8a6116}
+@media(max-width:700px){.fg-row{grid-template-columns:92px 1fr}.fg-axis{padding-left:100px}}
 @media(max-width:700px){.fg-row{grid-template-columns:96px 1fr}.fg-axis{padding-left:104px}}
 .fcw{font:800 9.5px/1 'Plus Jakarta Sans';padding:4px 8px;border-radius:999px;display:inline-block}
 .fcw-g{background:#E7F3EC;color:#2F7A45}
@@ -1173,7 +1181,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.88';
+const VBUILD='2026-10-12.89';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3863,7 +3871,28 @@ function fcRosterProj(w,now,H){
     rows.push({d:r.d,c:r.c||'',n:+r.n||0,aS,sp,tp:+r.tp||0,days:+r.days||0,pd:+r.pd||0,
       nw:!!r.nw,fs:r.fs||'',last:r.last||'',fresh,inc,onAt,shd:r.shd||[],pw:r.pw!==false});
   });
-  return {curve,rows,has:R.length>0};}
+  /* piso histórico: las ventanas medias comprimen la cobertura; si el patrón real
+     del pad (mediana de activos por hora en pump days) es mayor, la curva sube a él,
+     escalado por exclusiones y SIEMPRE ≤ drivers proyectando. */
+  let blend=false;
+  const incN=rows.filter(r2=>r2.inc).length;
+  if(incN>0){const hh2=fcHistHour(w,now);
+    if(hh2){const freshN=rows.filter(r2=>r2.fresh).length||incN;
+      const sc=Math.min(1,incN/Math.max(1,freshN));
+      for(let t=0;t<=H;t++){const hv=Math.min(incN,Math.round(hh2[new Date(now+t*36e5).getHours()]*sc));
+        if(hv>curve[t]){curve[t]=hv;blend=true;}}}}
+  return {curve,rows,has:R.length>0,blend};}
+/* Patrón histórico de actividad: mediana de drivers activos por hora-del-día
+   sobre PUMP DAYS (días con etapas), excluyendo el día actual (parcial). */
+function fcHistHour(w,now){
+  const stD={};(((w&&w.stages)||[])).forEach(s2=>{if(s2&&s2.day&&(+s2.used_tons>0||+s2.stage>0))stD[s2.day]=1;});
+  const p2=n=>('0'+n).slice(-2);const dN=new Date(now);
+  const today=dN.getFullYear()+'-'+p2(dN.getMonth()+1)+'-'+p2(dN.getDate());
+  const byH=Array.from({length:24},()=>[]);let any=false;
+  ((w&&w.hourly)||[]).forEach(d=>{if(!d||!stD[d.date]||d.date===today)return;
+    for(let h2=0;h2<24;h2++){const v=(d.dr&&+d.dr[h2])||0;byH[h2].push(v);if(v>0)any=true;}});
+  if(!any)return null;
+  return byH.map(a=>{if(!a.length)return 0;const q=a.slice().sort((x,y)=>x-y);return q[Math.floor(q.length/2)];});}
 /* Score del grid (misma fórmula, rango completo del pozo): TR 40 + Volumen 40 + Consistencia 20 */
 function fcScore(row,rows,dtr,padDays){
   const vmax=Math.max(1,...rows.map(x=>x.n));
@@ -3881,14 +3910,20 @@ function fcBurnWin(w,hrs,now){
 /* Picos/valles significativos de la curva de crew: extremos locales,
    |Δ| ≥ 2 respecto al último marcado y separación ≥ 4 h */
 function fcPeaks(c){const out=[];if(!c||c.length<3)return out;
-  let lastI=-9,lastV=c[0];
+  /* ref = último EXTREMO visto (marcado o no): un 3→1 real se marca aunque
+     el valor de arranque quede a Δ1 de ambos */
+  let lastI=-9,ref=c[0];
   for(let i=1;i<c.length-1;i++){
     const isMax=c[i]>=c[i-1]&&c[i]>c[i+1];
     const isMin=c[i]<=c[i-1]&&c[i]<c[i+1];
     if(!isMax&&!isMin)continue;
-    if(Math.abs(c[i]-lastV)<2||i-lastI<4)continue;
-    out.push({i,v:c[i],up:isMax});lastI=i;lastV=c[i];}
+    if(Math.abs(c[i]-ref)>=2&&i-lastI>=4){out.push({i,v:c[i],up:isMax});lastI=i;}
+    ref=c[i];}
   return out;}
+/* Primera hora en la que la proyección CRUZA hacia arriba la meta (null si nunca llega) */
+function fcGoalCross(arr,goal){if(!arr||!(goal>0))return null;
+  for(let j2=1;j2<arr.length;j2++)if(arr[j2-1]<goal&&arr[j2]>=goal)return j2;
+  return null;}
 /* Semáforo de horas medias por driver — regla Alan:
    11–14 h verde · 8–11 h y 14–16 h amarillo · <8 h o >16 h rojo */
 function fcHrsBand(sp){sp=+sp||0;
@@ -3974,6 +4009,8 @@ function fcPrefill(id){
     pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox,padOk,brdOn,brdAt,dtr,padDays,w};}
 /* overrides SOLO de sesión + exclusiones del roster */
 function _fcStore(id){return (FC.mem||{})[id]||null;}
+function _fcTyped(id){const sv=(FC.mem||{})[id];if(!sv)return false;
+  return ['inv','spd','tps','tr','load','bump','emp'].some(function(k){return sv[k]!=null;});}
 function _fcDirty(){const pf=FC.pf||{};const map={inv:'inv',spd:'spd',tps:'tps',tr:'tr',load:'avgLoad',bump:'bump',emp:'empty'};
   if(Object.keys(FC.exc[FC.id]||{}).length)return true;
   for(const k in map){const el=$('fc-'+k);if(!el)continue;const cur=parseFloat(el.value),base=+pf[map[k]];
@@ -3986,7 +4023,15 @@ function _fcRstBtn(){const b=$('fc-reset');if(!b)return;const d=_fcDirty();
   if(d&&!was){b.classList.remove('alive');void(b.offsetWidth);b.classList.add('alive');}
   b.title=d?'Discard edits & roster exclusions — back to the learned averages':'Already at the live averages';}
 window.fcReset=function(){if(FC.mem)delete FC.mem[FC.id];FC.exc[FC.id]={};renderFc();};
-function _fcSave(){if(!FC.id)return;const o={};['inv','spd','tps','tr','load','bump','emp'].forEach(k=>{const el=$('fc-'+k);if(el)o[k]=el.value;});
+function _fcSave(){if(!FC.id)return;const o={};const pfB=FC.pf||{};
+  const mapS={inv:'inv',spd:'spd',tps:'tps',tr:'tr',load:'avgLoad',bump:'bump',emp:'empty'};
+  /* solo congela un input si el usuario lo APARTÓ del prefill — así un click en capas/KPIs
+     con el pozo aún cargando no deja los ceros pegados (bug del 0 hasta Live sync) */
+  Object.keys(mapS).forEach(function(k){const el=$('fc-'+k);if(!el)return;
+    const cur=parseFloat(el.value),base=+pfB[mapS[k]];
+    const diff=(isFinite(cur)&&isFinite(base))?Math.abs(cur-base)>1e-9
+      :String(el.value==null?'':el.value)!==String(pfB[mapS[k]]==null?'':pfB[mapS[k]]);
+    if(diff)o[k]=el.value;});
   o.hz=FC.hz;o.lay=Object.assign({},FC.lay);o.kpiEsc=FC.kpiEsc;FC.mem=FC.mem||{};FC.mem[FC.id]=o;_fcRstBtn();}
 window.fcHz=function(hv){FC.hz=hv;setSegAct(['fch24','fch48','fch72'],'fch'+hv);_fcSave();renderFcProj();fcCalc();};
 window.fcWell=function(id){FC.id=id;FC._wReq=null;renderFc();};
@@ -4134,7 +4179,9 @@ function fcGaugePaint(){
       +'<div class="fc-gchips" id="fcChips">'+chips+'</div>';}
   else{const s2=$('fcSub');if(s2)s2.innerHTML=sub;const c2=$('fcChips');if(c2)c2.innerHTML=chips;}
   try{
-    _fcTw($('fcPct'),Math.round(gg.pct),v=>Math.round(v)+'%');
+    if(FC.loading&&!(lbs>0)){const pL=$('fcPct');if(pL)pL.textContent='…';
+      const sL=$('fcSub');if(sL)sL.innerHTML='SYNCING WORKBOOK<br>pulling inventory &amp; roster…';}
+    else _fcTw($('fcPct'),Math.round(gg.pct),v=>Math.round(v)+'%');
     const col=gg.state==='ok'?'#4ca882':gg.state==='mid'?'#e0a63e':'#d47272';
     if(belly){
       const s=Math.max(0.12,Math.min(1.08,gg.pct/100));
@@ -4205,7 +4252,7 @@ const _fcMarks={id:'fcMarks',afterDraw(ch){try{
     ctx.strokeStyle=col;ctx.setLineDash([5,4]);ctx.lineWidth=1.4;
     ctx.beginPath();ctx.moveTo(x,ys.top);ctx.lineTo(x,ys.bottom);ctx.stroke();
     ctx.setLineDash([]);ctx.fillStyle=col;ctx.fillText(lbl,x,ys.top+(dy||10));};
-  if((!o.lay||o.lay.t48)&&o.H>=48)vline(48,'#c99a3f','48H COVERAGE TARGET',12);
+  if((!o.lay||o.lay.t48)&&o.goalJ!=null)vline(o.goalJ,'#2F7A45',o.goalTxt||'GOAL',12);
   if(o.runWorst!=null)vline(o.runWorst,'#c24545','RUNOUT '+(o.runWorstK||''),24);
   if(o.pin!=null){const x=xs.getPixelForValue(o.pin);
     ctx.strokeStyle='#3a7ca5';ctx.lineWidth=1.8;
@@ -4278,8 +4325,12 @@ function fcCalc(){
     else if(allShort){al.className='amb on';
       al.innerHTML='▲ Roster short vs every pace — supply never catches burn; inventory only drains.';}
     else{al.className='';al.innerHTML='';}}
+  /* meta de inventario: belly → 3.0M lbs · cajas → GOAL stages × sand/stage */
+  const goalLbs=FC.belly?FC_BELLY_TARGET:(((FC.tg&&FC.tg.goal)||FC_GOAL_STG)*p.tps*2000);
+  const goalJ=fcGoalCross(SIM[K].solid,goalLbs);
+  const goalTxt=goalJ!=null?((FC.belly?'GOAL 3.0M':'GOAL '+((FC.tg&&FC.tg.goal)||FC_GOAL_STG)+' STG')+' · '+fmtT(goalJ)):'';
   const maxC=Math.max(4,...crewFull.filter(v=>v!=null))+2;
-  const FD={H:SIM.m.solid.length-1,iNow,red:SIM.b6.red,runWorst:worst,runWorstK:worst!=null?wn.name.toUpperCase():'',
+  const FD={H:SIM.m.solid.length-1,iNow,red:SIM.b6.red,runWorst:worst,runWorstK:worst!=null?wn.name.toUpperCase():'',goalJ:goalJ,goalTxt:goalTxt,
     solid:SIM.m.solid,curve:p.curve,crewFull,labs,pin:null,histN:iNow,
     SIM:{m:SIM.m.solid,b6:SIM.b6.solid,b12:SIM.b12.solid,b24:SIM.b24.solid},kpiK:K,
     B,sup:SIM.m.sup,reqs:{m:SIM.m.reqDrv,b6:SIM.b6.reqDrv,b12:SIM.b12.reqDrv,b24:SIM.b24.reqDrv},
@@ -4392,16 +4443,20 @@ function fcGantt(){
   const hl=t=>('0'+hhAt(t)).slice(-2)+':00';
   const heat=G.curve.map((v,t)=>{
     const col=v>=G.peak?'#4ca882':v>=G.med?'#9fd4bb':v>G.low?'#ecd58f':'#eaa5a5';
-    return '<div class="fg-cell" style="background:'+col+'" title="'+hl(t)+' · '+v+' drivers on"></div>';}).join('');
+    const lo=(v<=G.low&&G.low<G.med)?' lo':'';
+    return '<div class="fg-cell'+lo+'" style="background:'+col+'" title="'+hl(t)+' · '+v+' drivers projected"></div>';}).join('');
   const truck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16V7h11v9M13 10h5l3 3.5V16h-3"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>';
   const lanes=G.rows.map((r,ri)=>{
     const bars=r.segs.map(sg=>{const l=sg[0]/24*100,w=Math.max(3,(sg[1]-sg[0])/24*100);
       return '<div class="fg-bar '+(r.band==='fcw-g'?'bg-g':r.band==='fcw-y'?'bg-y':'bg-r')+'" style="left:'+l.toFixed(1)+'%;width:'+w.toFixed(1)+'%;animation-delay:'+(ri*55)+'ms" title="'+r.d+' · '+hl(sg[0])+'–'+hl(sg[1])+' · '+r.sp.toFixed(1)+' h avg">'+truck+'</div>';}).join('');
     return '<div class="fg-row"><span class="fg-nm" data-d="'+String(r.d).replace(/"/g,'&quot;')+'" onclick="fcGotoDriver(this.dataset.d)">'+r.d+(r.nw?' <span class="fcr-new">NEW</span>':'')+'</span><div class="fg-lane">'+bars+'</div></div>';}).join('');
   const reinf=G.reinf.map(x=>'<span class="fg-chip rf">Reinforce '+hl(x[0])+'–'+hl(x[1])+' · dips to '+x[2]+' drv</span>').join('');
+  const bd=(FC.pf&&FC.pf.padOk)?+FC.pf.brdOn:null;
+  const lvOk=bd!=null&&Math.abs(bd-(G.curve[0]||0))<=2;
+  const lvc=bd!=null?('<span class="fg-chip lv'+(lvOk?'':' off')+'" title="driver board on duty right now vs the projected curve">live board '+bd+' drv '+(lvOk?'✓':'Δ')+'</span>'):'';
   host.innerHTML='<div class="fg-head">Coverage next 24 h'
-    +'<span class="fg-stats"><span class="fg-chip">peak '+G.peak+' drv</span><span class="fg-chip">median '+G.med+'</span><span class="fg-chip">low '+G.low+'</span>'+reinf+'</span></div>'
-    +'<div class="fg-ribbon">'+heat+'</div>'
+    +'<span class="fg-stats">'+lvc+'<span class="fg-chip">peak '+G.peak+' drv</span><span class="fg-chip">median '+G.med+'</span><span class="fg-chip">low '+G.low+'</span>'+reinf+'</span></div>'
+    +'<div class="fg-row fg-ribr"><span class="fg-nm fg-ribt" title="Projected crew per hour — green peak · yellow mid · red reinforcement window">Crew / hour</span><div class="fg-ribbon">'+heat+'</div></div>'
     +'<div class="fg-grid">'+lanes+'</div>'
     +'<div class="fg-axis"><span>'+hl(0)+'</span><span>'+hl(6)+'</span><span>'+hl(12)+'</span><span>'+hl(18)+'</span><span>+24 h</span></div>';}
 /* ── tabla del truck roster aprendido ── */
@@ -4416,7 +4471,9 @@ function fcRosterTable(){
   const med=a=>{if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.floor(s.length/2)];};
   const mS=med(inc.map(r=>r.aS)),mSp=med(inc.map(r=>r.sp));
   const cnt=$('fcr-cnt');if(cnt)cnt.textContent=inc.length+' of '+rows.length+' projecting · typical window '+_fcHM(mS)+'–'+_fcHM(mS+mSp)+' · median '+mSp.toFixed(1)+' h';
-  if(!rows.length){host.innerHTML='<tr><td colspan="9" style="color:#b45309">No roster yet — paste GAS v9.4 (Code.gs) and hit Live sync.</td></tr>';return;}
+  if(!rows.length){host.innerHTML=FC.loading
+    ?'<tr><td colspan="9" style="color:#8a97a6">Syncing live workbook — the learned roster lands here in a few seconds…</td></tr>'
+    :'<tr><td colspan="9" style="color:#b45309">No roster yet — paste GAS v9.4 (Code.gs) and hit Live sync.</td></tr>';return;}
   host.innerHTML=rows.map(r=>{const sc=fcScore(r,rows,dtr,padDays);
     const stale=!r.fresh;
     return '<tr class="'+(r.inc?'':'exc')+'">'
@@ -4441,7 +4498,7 @@ function renderFc(){
   if(CONFIG.API_URL&&!_fcPad(reg)&&Date.now()-(FC._stsAt||0)>30000){FC._stsAt=Date.now();
     apiStatus().then(s=>{if(s&&s.pads&&s.pads.length){STATUS=s;
       const at=document.querySelector('.tab.active');
-      if(at&&at.dataset.tab==='fc'&&!(FC.mem&&FC.mem[FC.id]))renderFc();}}).catch(()=>{});}
+      if(at&&at.dataset.tab==='fc'&&!_fcTyped(FC.id))renderFc();}}).catch(()=>{});}
   /* slim → snapshot local → workbook completo (y pila vacía → force) */
   {const cw=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
    if(cw&&(cw.slim||!cw.inventory)){const warm=_lsSnapPeek(FC.id,reg.status);
@@ -4451,7 +4508,19 @@ function renderFc(){
   if(CONFIG.API_URL&&(!_cw2||_cw2.slim||!_cw2.inventory||_pEmpty||!_cw2.roster)&&FC._wReq!==FC.id){FC._wReq=FC.id;
     apiWell(FC.id,reg.status,_pEmpty).then(w2=>{if(w2&&w2.daily&&w2.daily.length){RES_DATA[FC.id]={ok:true,w:w2};
       const at=document.querySelector('.tab.active');
-      if(at&&at.dataset.tab==='fc'&&FC.id===w2.__reqId&&!(FC.mem&&FC.mem[FC.id]))renderFc();}}).catch(()=>{});}
+      if(at&&at.dataset.tab==='fc'&&FC.id===w2.__reqId&&!_fcTyped(FC.id))renderFc();}}).catch(()=>{if(FC._wReq===FC.id)FC._wReq=null;});}
+  /* prefetch en segundo plano del resto de pads vivos → cambiar de pozo es instantáneo */
+  if(CONFIG.API_URL){FC._pre=FC._pre||{};
+    lives.forEach(function(w3){if(w3.id===FC.id||FC._pre[w3.id])return;
+      const cc=RES_DATA[w3.id]&&RES_DATA[w3.id].ok&&RES_DATA[w3.id].w;
+      if(cc&&!cc.slim&&cc.inventory&&cc.roster)return;
+      FC._pre[w3.id]=1;
+      setTimeout(function(){apiWell(w3.id,w3.status).then(function(wf){
+        if(wf&&wf.daily&&wf.daily.length){RES_DATA[w3.id]={ok:true,w:wf};
+          const at2=document.querySelector('.tab.active');
+          if(at2&&at2.dataset.tab==='fc'&&FC.id===w3.id&&!_fcTyped(FC.id))renderFc();}
+      }).catch(function(){delete FC._pre[w3.id];});},400);});}
+  FC.loading=!!(CONFIG.API_URL&&FC._wReq===FC.id&&(!_cw2||_cw2.slim||!_cw2.inventory));
   const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;FC.pf=pf;FC.tg=fcStgT(reg);FC.lbsBox=pf.lbsBox;
   const sv=_fcStore(FC.id)||{};FC.hz=+sv.hz||FC.hz||48;
   if(sv.lay)FC.lay=Object.assign({hist:1,crew:1,bands:1,t48:1},sv.lay);
@@ -4478,7 +4547,7 @@ function renderFc(){
       <div class="fc-gauge" id="fc-gauge"></div>
       <div>
         <div class="fc-grp">On location &amp; burn
-          <span class="fc-src ${pf.padOk?'live':'fb'}">${pf.padOk?('board'+(pf.brdAt?' '+pf.brdAt+':00':'')+' — '+pf.brdOn+' on duty · roster projects '+crew0+' now'+(Math.abs(pf.brdOn-crew0)>2?' — CHECK ROSTER':'')):'no live board for this pad'}</span></div>
+          <span class="fc-src ${pf.padOk?'live':'fb'}">${pf.padOk?('board'+(pf.brdAt?' '+pf.brdAt+':00':'')+' — '+pf.brdOn+' on duty · roster'+((FC._proj&&FC._proj.blend)?' ∪ hour pattern':'')+' projects '+crew0+' now'+(Math.abs(pf.brdOn-crew0)>2?' — CHECK ROSTER':'')):'no live board for this pad'}</span></div>
         <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
           ${inp('inv','Sand on location','lbs',V('inv',pf.inv),1000)}
           ${inp('spd','Frac pace (avg line)','stages/day',V('spd',pf.spd),0.1)}
@@ -4503,7 +4572,7 @@ function renderFc(){
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
           <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
         </tr></thead><tbody id="fcr-body"></tbody></table></div>
-        <div class="sb" style="margin-top:6px">Window = mean first→last load per shift (gaps ≥ 6 h split shifts, night wrap handled) · NEW = first day on pad, activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
+        <div class="sb" style="margin-top:6px">Window = mean first→last load per CLOSED shift on pumping days — prefill days, today's partial day and the still-open shift never count · crew floor = the pad's median actives per hour (pump days, today excluded) · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
       </div></div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${kpi('fck-cov','Coverage (no trucks)')}
@@ -4521,7 +4590,7 @@ function renderFc(){
           <span class="fc-lt${FC.lay.hist?' on':''}" id="fcl-hist" onclick="fcLay('hist')">Actual 12 h</span>
           <span class="fc-lt${FC.lay.crew?' on':''}" id="fcl-crew" onclick="fcLay('crew')">Crew</span>
           <span class="fc-lt${FC.lay.bands?' on':''}" id="fcl-bands" onclick="fcLay('bands')">NPT bands</span>
-          <span class="fc-lt${FC.lay.t48?' on':''}" id="fcl-t48" onclick="fcLay('t48')">48 h target</span></div></div>
+          <span class="fc-lt${FC.lay.t48?' on':''}" id="fcl-t48" onclick="fcLay('t48')">Goal target</span></div></div>
       <div class="ch ch-l"><canvas id="fcChart"></canvas></div>
       <div id="fc-pin"></div></div>`;
   fcRosterTable();fcGantt();
@@ -5009,7 +5078,7 @@ async function init(){
       blog('status(pads:'+((STATUS&&STATUS.pads&&STATUS.pads.length)||0)+')',true);
       try{const at=document.querySelector('.tab.active');
         if(at&&at.dataset.tab==='sts')renderStatus();
-        else if(at&&at.dataset.tab==='fc'&&typeof renderFc==='function'&&!(window.FC&&FC.mem&&FC.mem[FC.id]))renderFc();
+        else if(at&&at.dataset.tab==='fc'&&typeof renderFc==='function'&&!(window.FC&&typeof _fcTyped==='function'&&_fcTyped(FC.id)))renderFc();
         paintHeader();}catch(_){}
     }).catch(function(e){blog('status',false,e);});
     const _handleWell=function(w){ if(_bootEp!==WELL_EPOCH){blog('well(descartado·cambio)',true);return;} if(CONFIG.API_URL){const reg=reg0;
