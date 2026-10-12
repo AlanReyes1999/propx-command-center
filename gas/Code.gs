@@ -1,4 +1,9 @@
-/** MEDS · PropX Live API — Code.gs v9.7. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.8. PEGAR TAL CUAL → Nueva versión.
+ *  v9.8 UN PUMPING DAY YA ENSEÑA: con historia (no-NEW: 3+ días calendario y 2+
+ *  turnos), UN solo día bombeado CERRADO posterior al día-1 de ESTE pozo ya define
+ *  la ventana del driver y gana a prefill y a la herencia cross-well. NEW sigue
+ *  igual (2 turnos para promediar; si no, 12 h); prefill ≥2 turnos y el veto del
+ *  día-1 quedan tal cual.
  *  v9.7 HERENCIA ENTRE POZOS (cross-well): si un driver no tiene historia útil en
  *  ESTE pozo (ni pump post día-1 ni prefill), su ventana/mapa horario se hereda del
  *  pozo donde cargó más recientemente — pozos Live del registry + el último Closed —
@@ -148,7 +153,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.7';
+const API_VERSION='v9.8';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -828,8 +833,14 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
     const pumpShifts=closed.filter(function(sh){const dk=dayOf(sh[0]);
       return pumpSet.has(dk)&&(!startDay||dk>startDay);});
     const preShifts=closed.filter(function(sh){return startDay&&dayOf(sh[0])<startDay;});
+    /* v9.8: con historia (no-NEW), UN pumping day cerrado post día-1 ya enseña —
+       el día REAL de este pozo gana a prefill y a la herencia cross-well */
+    const D=byDriver[drv]||{name:drv,dates:{},loads:ev.length,carriers:{}};
+    const dates=Object.keys(D.dates||{});
+    const nwF=(dates.length<=2)||shifts.length<2;
     let base,src;
     if(pumpShifts.length>=2){base=pumpShifts;src='pump';}
+    else if(!nwF&&pumpShifts.length>=1){base=pumpShifts;src='pump';}
     else if(preShifts.length>=2){base=preShifts;src='prefill';}
     else if(closed.length>=2){base=closed;src='all';}
     else{base=shifts;src='all';}
@@ -853,8 +864,6 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
         for(let h3=s0;h3<e0;h3++){seen[((h3%24)+24)%24]=1;}});
       Object.keys(seen).forEach(function(h3){hwC[h3]++;});});
     const hw=dayKs.length?hwC.map(function(c3){return Math.min(9,Math.round(c3/dayKs.length*9));}).join(''):'';
-    const D=byDriver[drv]||{name:drv,dates:{},loads:ev.length,carriers:{}};
-    const dates=Object.keys(D.dates||{});
     let pl=0,pdd=0,ol=0,odd=0;
     dates.forEach(function(dd){if(pumpSet.has(dd)){pl+=D.dates[dd];pdd++;}
       if(!startDay||dd>=startDay){ol+=(+D.dates[dd]||0);odd++;}});
@@ -870,7 +879,7 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
       aS:+aS.toFixed(1),sp:+sp.toFixed(1),
       tp:pdd?+(pl/pdd).toFixed(2):0,days:odd,pd:pdd,
       fs:hTo(fsH),last:hTo(lastH),
-      nw:(dates.length<=2)||shifts.length<2,
+      nw:nwF,
       nwS:hTo(shifts[shifts.length-1][0]),src:src,shd:shd,hw:hw,
       pw:src==='pump'});});
   return out.sort(function(a,b){return b.n-a.n;});}
