@@ -1,4 +1,12 @@
-/** MEDS · PropX Live API — Code.gs v9.5. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.6. PEGAR TAL CUAL → Nueva versión.
+ *  v9.6 REGLAS DE APRENDIZAJE DE VENTANAS:
+ *   · El DÍA 1 del pozo (downhole/arranque) nunca enseña — el aprendizaje pump
+ *     empieza del día operativo 2 en adelante.
+ *   · Pozo en prefill o recién arrancado sin historia pump suficiente → las
+ *     ventanas se toman del TRABAJO PREVIO del driver (sus turnos de prefill),
+ *     marcadas src:'prefill' para auditar.
+ *   · Driver NUEVO = sus primeros 2 días calendario en el pad → proyecta 12 h
+ *     desde el inicio REAL de su último turno (nwS); al 3er día entra a patrones.
  *  v9.5 CACHÉ DE SERVIDOR: well (75 s), status (60 s) y portfolio (120 s) se sirven
  *  desde CacheService comprimidos (gzip, con chunking para libros grandes) — cambiar
  *  de pozo o recargar el portal responde al instante para TODOS los usuarios y el
@@ -132,7 +140,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.5';
+const API_VERSION='v9.6';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -760,8 +768,15 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
       return dt.getUTCFullYear()+'-'+p(dt.getUTCMonth()+1)+'-'+p(dt.getUTCDate());};
     const curDay=dayOf(gMax);
     const closed=shifts.filter(function(sh){return dayOf(sh[0])!==curDay&&(gMax-sh[1])>=3;});
-    const pumpShifts=closed.filter(function(sh){return pumpSet.has(dayOf(sh[0]));});
-    const base=(pumpShifts.length>=2)?pumpShifts:(closed.length>=2?closed:shifts);
+    /* v9.6: pump que ENSEÑA = días con etapas DESPUÉS del día-1 del pozo */
+    const pumpShifts=closed.filter(function(sh){const dk=dayOf(sh[0]);
+      return pumpSet.has(dk)&&(!startDay||dk>startDay);});
+    const preShifts=closed.filter(function(sh){return startDay&&dayOf(sh[0])<startDay;});
+    let base,src;
+    if(pumpShifts.length>=2){base=pumpShifts;src='pump';}
+    else if(preShifts.length>=2){base=preShifts;src='prefill';}
+    else if(closed.length>=2){base=closed;src='all';}
+    else{base=shifts;src='all';}
     const use=base.slice(-6);
     /* v9.4.4: agrupar por DÍA — split shifts del mismo día se suman; la media es por día */
     const byDayS={};use.forEach(function(sh){const dk=dayOf(sh[0]);
@@ -798,8 +813,10 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
     out.push({d:D.name||drv,c:cars[0]||'',n:ol,sh:use.length,
       aS:+aS.toFixed(1),sp:+sp.toFixed(1),
       tp:pdd?+(pl/pdd).toFixed(2):0,days:odd,pd:pdd,
-      fs:hTo(fsH),last:hTo(lastH),nw:shifts.length<2,shd:shd,hw:hw,
-      pw:pumpShifts.length>=2});});
+      fs:hTo(fsH),last:hTo(lastH),
+      nw:(dates.length<=2)||shifts.length<2,
+      nwS:hTo(shifts[shifts.length-1][0]),src:src,shd:shd,hw:hw,
+      pw:src==='pump'});});
   return out.sort(function(a,b){return b.n-a.n;});}
 
 // ---------- Status Live (?action=status · todos los pads del Hub) ----------

@@ -1199,7 +1199,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.105';
+const VBUILD='2026-10-12.106';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3912,7 +3912,7 @@ function fcRosterProj(w,now,H){
     const fresh=lastTS!=null&&(now-lastTS)<=RECENT;
     const inc=fresh&&!exc[r.d];
     let aS=+r.aS||0,sp=Math.min(20,Math.max(4,+r.sp||12));
-    if(r.nw){const f=_fcTS((r.fs||'').slice(0,10),(r.fs||'').slice(11,13)+':00');
+    if(r.nw){const _a=(r.nwS||r.fs||'');const f=_fcTS(_a.slice(0,10),_a.slice(11,13)+':00');
       if(f!=null){aS=new Date(f).getHours();sp=12;}}
     /* .96: si el GAS publica su mapa horario (hw), cada hora pesa lo que el driver
        realmente trabaja esa hora; sin hw (o driver NEW) manda la ventana rectangular */
@@ -3923,7 +3923,7 @@ function fcRosterProj(w,now,H){
     const onAt=t=>pres(t)>=0.5;
     if(inc)for(let t=0;t<=H;t++)curveF[t]+=pres(t);
     rows.push({d:r.d,c:r.c||'',n:+r.n||0,aS,sp,tp:+r.tp||0,days:+r.days||0,pd:+r.pd||0,
-      nw:!!r.nw,fs:r.fs||'',last:r.last||'',fresh,inc,onAt,hwA,shd:r.shd||[],pw:r.pw!==false});
+      nw:!!r.nw,fs:r.fs||'',nwS:r.nwS||'',last:r.last||'',fresh,inc,onAt,hwA,shd:r.shd||[],pw:r.pw!==false,src:r.src||((r.pw!==false)?'pump':'all')});
   });
   for(let t=0;t<=H;t++)curve[t]=Math.round(curveF[t]);
   /* piso histórico: las ventanas medias comprimen la cobertura; si el patrón real
@@ -4673,14 +4673,14 @@ function fcRosterTable(){
     if(r.shd&&r.shd.length){
       const perDay={};r.shd.forEach(s2=>{perDay[s2[0]]=(perDay[s2[0]]||0)+(+s2[2]||0);});
       const pdK=Object.keys(perDay).sort();
-      audit='Learned from '+(r.pw?'pumping-day':'all')+' closed shifts:\n'
+      audit='Learned from '+(r.pw?'pumping-day (day-1 skipped)':(r.src==='prefill'?'PREVIOUS-JOB (prefill)':'all'))+' closed shifts:\n'
         +r.shd.map(s2=>'• '+s2[0]+' — start '+_fcHM(s2[1])+' · '+s2[2]+' h').join('\n')
         +'\nPer-day total: '+pdK.map(k2=>k2+' → '+perDay[k2].toFixed(1)+' h').join(' · ')
         +(pdK.length<r.shd.length?'  (split shifts summed)':'');}
     const tip=encodeURIComponent('<b>'+r.d+'</b>'+(r.c?' — '+r.c:'')
       +'\nWork window <b>'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+'</b> · avg <b>'+r.sp.toFixed(1)+' h</b> ('+wb2.t+')'
-      +(r.nw?'\nNEW — activation + 12 h rule':'')
-      +(r.pw?'':'\nall-days fallback — no closed pump shifts yet')
+      +(r.nw?'\nNEW (first 2 days) — 12 h from his real start'+(r.nwS?' at '+String(r.nwS).slice(11,13)+':00':''):'')
+      +(r.pw?'':(r.src==='prefill'?'\nprefill fallback — windows inherited from the previous job':'\nall-days fallback — no closed pump shifts yet'))
       +(r.hwA&&_fcPkHrs(r.hwA)?'\nMost active: <b>'+_fcPkHrs(r.hwA)+'</b>':'')
       +'\n'+audit);
     return '<tr class="'+(r.inc?'':'exc')+'" data-tip="'+tip+'">'
@@ -4688,7 +4688,7 @@ function fcRosterTable(){
     +'<td><span class="fcr-nm" onclick="fcGotoDriver(\''+String(r.d).replace(/'/g,"\\'")+'\')">'+r.d+'</span>'
       +(r.nw?' <span class="fcr-new">NEW +12H</span>':'')+'</td>'
     +'<td>'+(r.c||'—')+'</td>'
-    +'<td class="fcr-win">'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+(r.pw?'':' <span style="color:#b45309;font-size:8px">all-days</span>')+'</td>'
+    +'<td class="fcr-win">'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+(r.pw?'':' <span style="color:#b45309;font-size:8px">'+(r.src==='prefill'?'prefill':'all-days')+'</span>')+'</td>'
     +'<td><span class="fcw '+fcHrsBand(r.sp).cls+'">'+r.sp.toFixed(1)+' h · '+fcHrsBand(r.sp).t+'</span></td>'
     +'<td>'+r.tp.toFixed(2)+'</td>'
     +'<td class="fcr-sc">'+sc+'</td>'
@@ -4784,7 +4784,7 @@ function renderFc(){
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
           <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
         </tr></thead><tbody id="fcr-body"></tbody></table></div>
-        <div class="sb" style="margin-top:6px">Window = first start → TOTAL hours per day on pumping days (split shifts on the same day are summed) — prefill days, today's partial day and the still-open shift never count · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · projection weighs each driver by his real hour-by-hour activity map (his lane shades STRONGER where he really works — yellow/red bars invert: the alert color burns where he fades) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · NEW = activation + 12 h until history builds · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
+        <div class="sb" style="margin-top:6px">Window = first start → TOTAL hours per day on pumping days AFTER day-1 of the well (downhole day never teaches; split shifts on the same day are summed) — today's partial day and the still-open shift never count · a well in prefill (or just started) inherits each driver's PREVIOUS-JOB prefill windows · NEW = first 2 calendar days project 12 h from the driver's real start · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · projection weighs each driver by his real hour-by-hour activity map (his lane shades STRONGER where he really works — yellow/red bars invert: the alert color burns where he fades) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid.</div>
       </div></div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${kpi('fck-cov','Coverage (no trucks)')}
