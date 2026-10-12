@@ -1,4 +1,9 @@
-/** MEDS · PropX Live API — Code.gs v9.3.2. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v9.3.3. PEGAR TAL CUAL → Nueva versión.
+ *  v9.3.3 INVENTARIO REAL, NO LA ÚLTIMA FILA: el inventario publicado es el de la última
+ *       etapa cuya captura de pila/cajas SÍ está escrita (por display: celda vacía ≠ 0
+ *       escrito). Las etapas recién cerradas sin captura todavía ya no publican ceros.
+ *       Nuevos campos: inventory_stage, inventory_day, inventory_stale (true si hay
+ *       etapas más nuevas que la última captura).
  *  v9.3.2 RÁPIDO Y TOLERANTE: (1) probe barato — antes de leer el STATUS_LOG completo del
  *       board solo mira la columna G de sus últimas filas; sin turnos ahí, no lee nada más
  *       y cachea el resultado 5 min (el ?action=status vuelve a su velocidad normal).
@@ -97,7 +102,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.3.2';
+const API_VERSION='v9.3.3';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -524,7 +529,11 @@ function getWell(id){
         start:sT,end:eT,duration:durDisp,change:chDisp,
         duration_min:durMin,
         full_or_pila:full,empty:num(r[si['Empty boxes']]),damaged:num(r[si['Damged boxes']]),drivers_loc:num(r[si['Drivers at location']])};
-      stages.push(rec); invLatest=rec;
+      stages.push(rec);
+      // v9.3.3: solo cuenta como captura de inventario si ALGUNA celda está ESCRITA
+      // (display '' = aún no capturan; '0' escrito sí cuenta como cero real)
+      const _wrote=function(ci){return ci>=0&&String(rd[ci]==null?'':rd[ci]).trim()!=='';};
+      if(_wrote(si['Full boxes at destination'])||_wrote(si['Empty boxes'])||_wrote(si['Damged boxes'])){invLatest=rec;}
       if(ut>0 && day)stagesDone++;
       if(day){stagesByDay[day]=(stagesByDay[day]||0)+1; tonsByDayS[day]=(tonsByDayS[day]||0)+ut; if(tot>(maxStageByDayS[day]||0))maxStageByDayS[day]=tot;}
     }
@@ -547,9 +556,12 @@ function getWell(id){
       }
       A.change_min=ch;
     }}
+  const _lastStg=stages.length?stages[stages.length-1].stage:0;
   const inventory=invLatest?(isBelly
-    ?{type:'pila',pila:invLatest.full_or_pila,drivers_location:invLatest.drivers_loc}
-    :{type:'boxes',full:invLatest.full_or_pila,empty:invLatest.empty,damaged:invLatest.damaged,drivers_location:invLatest.drivers_loc}):null;
+    ?{type:'pila',pila:invLatest.full_or_pila,drivers_location:invLatest.drivers_loc,
+      stage:invLatest.stage,day:invLatest.day,stale:_lastStg>invLatest.stage}
+    :{type:'boxes',full:invLatest.full_or_pila,empty:invLatest.empty,damaged:invLatest.damaged,drivers_location:invLatest.drivers_loc,
+      stage:invLatest.stage,day:invLatest.day,stale:_lastStg>invLatest.stage}):null;
 
   // daily = unión (Loads → loads/drivers ; Stages → etapas/tons/eficiencia)
   const allDays=Array.from(new Set(Object.keys(byDay).concat(Object.keys(stagesByDay)))).sort();

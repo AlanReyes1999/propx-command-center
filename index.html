@@ -1099,7 +1099,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-11.84';
+const VBUILD='2026-10-11.85';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3828,8 +3828,8 @@ function fcPrefill(id){
   const T=(w&&w.targets)||{};
   const belly=fcIsBelly(reg);
   const lbsBox=+T.net_weight_load||45000;
-  let invType=null,boxes=0,pilaT=0,pilaIsLbs=false,inv=0,emptyB=0;
-  if(w&&w.inventory){
+  let invType=null,boxes=0,pilaT=0,pilaIsLbs=false,inv=0,emptyB=0,invStg=0,invStale=false;
+  if(w&&w.inventory){invStg=+w.inventory.stage||0;invStale=!!w.inventory.stale;
     const rawPila=(w.inventory.pila!=null)?+w.inventory.pila:(belly?+w.inventory.full:null);
     if(belly&&rawPila!=null){invType='pila';const pv=rawPila||0;
       pilaIsLbs=pv>20000;pilaT=pilaIsLbs?pv/2000:pv;inv=pilaIsLbs?pv:pv*2000;}
@@ -3884,7 +3884,7 @@ function fcPrefill(id){
     avgLoad,dNow,dNext,dFollow,pkNext,pkNow,cov,dayN,nightN,covN,src,
     bump:dNow, /* regla Alan: los activos van CON carga en vuelo */
     cycH:+cycH.toFixed(1),belly:belly||invType==='pila',sh:fcShiftHours(reg),
-    hasInv:!!(w&&w.inventory),hasW:!!w,slim:!!(w&&w.slim),invType,boxes,empty:emptyB,pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox,
+    hasInv:!!(w&&w.inventory),hasW:!!w,slim:!!(w&&w.slim),invType,boxes,empty:emptyB,invStg,invStale,pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox,
     padOk,brdA,brdR,brdAt};}
 /* overrides SOLO de sesión: recargar la página regresa al cálculo estándar con promedios vivos */
 function _fcStore(id){return (FC.mem||{})[id]||null;}
@@ -4182,7 +4182,7 @@ function renderFc(){
         <button id="fcs012" class="seg-btn${FC.shp==='012'?' seg-on':''}" onclick="fcShp('012')">00 &amp; 12</button></div></div>
       <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver statuses and reset the assumptions to live data"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
       <button class="rbtn ghost" id="fc-reset" onclick="fcReset()" disabled title="Already at the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
-      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'):pf.invType==='pila'?(pf.pilaT>0?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+' · bellydump'):'sandpile cell EMPTY at last pull (shift change) — re-pulling live · enter lbs if it persists'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'} · shifts ${String(pf.sh[0]).padStart(2,'0')}/${String(pf.sh[1]).padStart(2,'0')}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
+      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')):pf.invType==='pila'?(pf.pilaT>0?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')+' · bellydump'):'sandpile cell EMPTY at last pull (shift change) — re-pulling live · enter lbs if it persists'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'} · shifts ${String(pf.sh[0]).padStart(2,'0')}/${String(pf.sh[1]).padStart(2,'0')}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
     </div>
     <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· hourly projection · crew LEVELS per shift · every field editable, prefilled live</span></div>
     <div class="fc-gwrap mb">
