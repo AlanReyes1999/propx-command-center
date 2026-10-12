@@ -1187,7 +1187,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.91';
+const VBUILD='2026-10-12.92';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -3853,7 +3853,7 @@ function stsPresetInit(S){const lD=keyDate(S.latest);SF.d0=keyDate(keyShift(S.la
    · burn = stages/día × tons/stage (prefill del ritmo real reciente)
    Todo editable; la simulación corre 100% en el navegador.
    ════════════════════════════════════════════════════════════ */
-let FC={id:null,hz:48,mem:{},exc:{},rOpen:false,lay:{hist:1,crew:1,bands:1,t48:1},kpiEsc:'m'};
+let FC={id:null,hz:48,mem:{},exc:{},rOpen:false,lay:{hist:1,crew:1,bands:1,t48:1,cd:0},kpiEsc:'m'};
 function _fcN(v,d){v=parseFloat(v);return isFinite(v)?v:d;}
 function fcIsBelly(reg){return /belly/i.test(String(reg&&reg.equipment||''))
   ||/^(BW\b|BAYSWATER)/i.test(String(reg&&reg.customer||''))
@@ -3943,9 +3943,14 @@ function fcHrsBand(sp){sp=+sp||0;
   if(sp>=11&&sp<=14)return {cls:'fcw-g',t:'healthy'};
   if((sp>=8&&sp<11)||(sp>14&&sp<=16))return {cls:'fcw-y',t:sp<11?'light':'long'};
   return {cls:'fcw-r',t:sp<8?'under-worked':'OVER-WORKED'};}
+/* .92b: crew del PASADO = ACTIVOS del status live por hora (pad.ts/pad.a — la misma
+   serie del Pad Detail); fallback a hourly.dr (delivered) solo si el board no cubre. */
+function _fcLiveH(){const reg=REGISTRY.find(x=>x.id===FC.id)||{};const pad=_fcPad(reg);
+  if(!(pad&&Array.isArray(pad.ts)&&pad.ts.length&&Array.isArray(pad.a)))return null;
+  const o={};pad.ts.forEach(function(k,ix){o[String(k).slice(0,13)]=+pad.a[ix]||0;});return o;}
 /* Histórico de la pila reconstruido hacia atrás: supply REAL por hora (hourly[].tn)
-   − burn REAL de etapas (prorrateo horario). Crew real de hourly[].dr. */
-function fcHistBuild(w,now,hrs,inv0){
+   − burn REAL de etapas (prorrateo horario). Crew: status live → fallback hourly.dr. */
+function fcHistBuild(w,now,hrs,inv0,liveM){
   const map={};((w&&w.hourly)||[]).forEach(d=>{for(let hh2=0;hh2<24;hh2++)
     map[d.date+'|'+hh2]={tn:(d.tn&&+d.tn[hh2])||0,dr:(d.dr&&+d.dr[hh2])||0};});
   const key=t=>{const dt=new Date(t);const p=n=>('0'+n).slice(-2);
@@ -3957,7 +3962,9 @@ function fcHistBuild(w,now,hrs,inv0){
     const burn=fcBurnWin(w,1,t1)||0;
     inv=inv-(hm.tn*2000)+burn;
     invArr.unshift(Math.max(0,Math.round(inv)));
-    crewArr.unshift(hm.dr);}
+    const dt2=new Date(t1-36e5);const pp=n2=>('0'+n2).slice(-2);
+    const kS=dt2.getFullYear()+'-'+pp(dt2.getMonth()+1)+'-'+pp(dt2.getDate())+' '+pp(dt2.getHours());
+    crewArr.unshift((liveM&&liveM[kS]!=null)?liveM[kS]:hm.dr);}
   return {inv:invArr,crew:crewArr,any:Object.keys(map).length>0};}
 /* ── MOTOR v3: curva de crew + un burn → serie de inventario ── */
 function fcSim(p,burn){
@@ -4331,7 +4338,7 @@ function fcCalc(){
   const now=Date.now();
   /* histórico reconstruido (12 h) */
   const HB=12;
-  const hist=(FC.pf&&FC.pf.w)?fcHistBuild(FC.pf.w,now,HB,p.inv0):{inv:[p.inv0],crew:[],any:false};
+  const hist=(FC.pf&&FC.pf.w)?fcHistBuild(FC.pf.w,now,HB,p.inv0,_fcLiveH()):{inv:[p.inv0],crew:[],any:false};
   const iNow=FC.lay.hist&&hist.any?HB:0;
   const N=iNow+SIM.m.solid.length;            /* puntos totales */
   const lab=i=>{const d=new Date(now+(i-iNow)*36e5);
@@ -4343,6 +4350,12 @@ function fcCalc(){
   const histSeries=iNow?hist.inv.concat(Array(N-iNow-1).fill(null)):[];
   const crewFull=(iNow?hist.crew:[]).concat(p.curve.slice(0,SIM.m.solid.length));
   const proj=k=>pad0.concat(SIM[k].solid);
+  /* .92 · velas de cambio de crew: cuerpo = de cuántos → a cuántos; estable = nada */
+  const cdData=[],cdDir=[];
+  for(let i2=0;i2<crewFull.length;i2++){
+    const a2=i2>0?crewFull[i2-1]:null,b2=crewFull[i2];
+    if(a2!=null&&b2!=null&&a2!==b2){cdData.push([Math.min(a2,b2),Math.max(a2,b2)]);cdDir.push(b2>a2?1:-1);}
+    else{cdData.push(null);cdDir.push(0);}}
   /* KPI pace seleccionado */
   const K=FC.kpiEsc&&SIM[FC.kpiEsc]?FC.kpiEsc:'m';
   const rK=SIM[K];const eK=FC_ESC.find(e=>e.k===K);
@@ -4350,6 +4363,10 @@ function fcCalc(){
   FC_ESC.forEach(e=>{const rs=SIM[e.k].runS;
     if(rs!=null&&(worst==null||rs<worst)){worst=rs;worstK=e.k;}});
   const wn=FC_ESC.find(e=>e.k===worstK);
+  /* meta de inventario: belly → 3.0M lbs · cajas → GOAL stages × sand/stage */
+  const goalLbs=FC.belly?FC_BELLY_TARGET:(((FC.tg&&FC.tg.goal)||FC_GOAL_STG)*p.tps*2000);
+  const goalJ=fcGoalCross(SIM[K].solid,goalLbs);
+  const goalTxt=goalJ!=null?((FC.belly?'GOAL 3.0M':'GOAL '+((FC.tg&&FC.tg.goal)||FC_GOAL_STG)+' STG')+' · '+fmtT(goalJ)):'';
   const set=(id,v,cls)=>{const el=$(id);if(!el)return;el.querySelector('.v').innerHTML=v;
     el.classList.remove('bad','okk');if(cls)el.classList.add(cls);};
   const covK=B[K]>0?p.inv0/B[K]:null;
@@ -4361,8 +4378,15 @@ function fcCalc(){
   set('fck-48',fmt(invEnd(K))+' lbs','');
   const k48=$('fck-48');if(k48)k48.querySelector('.sb').textContent=eK.name+' @ '+FC.hz+' h · avg → '+fmt(invEnd('m'))+' lbs';
   const crew0=p.curve[0]||0;
-  set('fck-req',rK.reqDrv?rK.reqDrv.toFixed(1):'—',(crew0>=rK.reqDrv)?'okk':'bad');
-  const kr=$('fck-req');if(kr)kr.querySelector('.sb').textContent='at '+eK.name.toLowerCase()+' · roster now '+crew0+' · worst needs '+(SIM[worstK].reqDrv||0).toFixed(1);
+  /* .92: número REAL a sostener (entero) + punto de regreso al crew de diseño:
+     cuando la pila cruza su GOAL puedes soltar refuerzos; si el crew de diseño
+     no cubre el burn de este pace, se dice tal cual. */
+  const holdN=rK.reqDrv?Math.ceil(rK.reqDrv-1e-9):0;
+  const dDrv2=+((FC.pf&&FC.pf.w&&FC.pf.w.targets&&FC.pf.w.targets.drivers_day))||0;
+  const dsgNet=dDrv2?Math.round(dDrv2*p.perDrvH-B[K]):null;
+  set('fck-req',holdN?String(holdN):'—',(crew0>=holdN)?'okk':'bad');
+  const kr=$('fck-req');if(kr)kr.querySelector('.sb').textContent='keep active until stable · at '+eK.name.toLowerCase()+' · roster now '+crew0
+    +(dDrv2?(' · back to design '+dDrv2+(dsgNet!=null&&dsgNet>=0?(goalJ!=null?' at '+fmtT(goalJ)+' (GOAL back)':' once GOAL is back'):' NOT yet — design crew runs '+fmt(dsgNet)+' /h at this pace')):'');
   const steady=Math.round(crew0*p.perDrvH);
   const netK=steady-Math.round(B[K]);
   set('fck-net',(netK>=0?'+':'')+fmt(netK)+' lbs/h',netK>=0?'okk':'bad');
@@ -4382,12 +4406,8 @@ function fcCalc(){
     else if(allShort){al.className='amb on';
       al.innerHTML='▲ Roster short vs every pace — supply never catches burn; inventory only drains.';}
     else{al.className='';al.innerHTML='';}}
-  /* meta de inventario: belly → 3.0M lbs · cajas → GOAL stages × sand/stage */
-  const goalLbs=FC.belly?FC_BELLY_TARGET:(((FC.tg&&FC.tg.goal)||FC_GOAL_STG)*p.tps*2000);
-  const goalJ=fcGoalCross(SIM[K].solid,goalLbs);
-  const goalTxt=goalJ!=null?((FC.belly?'GOAL 3.0M':'GOAL '+((FC.tg&&FC.tg.goal)||FC_GOAL_STG)+' STG')+' · '+fmtT(goalJ)):'';
   const maxC=Math.max(4,...crewFull.filter(v=>v!=null))+2;
-  const FD={H:SIM.m.solid.length-1,iNow,red:SIM.b6.red,runWorst:worst,runWorstK:worst!=null?wn.name.toUpperCase():'',goalJ:goalJ,goalTxt:goalTxt,
+  const FD={H:SIM.m.solid.length-1,iNow,red:SIM.b6.red,runWorst:worst,runWorstK:worst!=null?wn.name.toUpperCase():'',goalJ:goalJ,goalTxt:goalTxt,cdDir:cdDir,
     solid:SIM.m.solid,curve:p.curve,crewFull,labs,pin:null,histN:iNow,
     SIM:{m:SIM.m.solid,b6:SIM.b6.solid,b12:SIM.b12.solid,b24:SIM.b24.solid},kpiK:K,
     B,sup:SIM.m.sup,reqs:{m:SIM.m.reqDrv,b6:SIM.b6.reqDrv,b12:SIM.b12.reqDrv,b24:SIM.b24.reqDrv},
@@ -4395,7 +4415,11 @@ function fcCalc(){
   const TT={callbacks:{
     title:c=>{const F=c[0].chart.$fc||FD;const i=c[0].dataIndex;
       return F.labs[i]+(i<F.iNow?' — actual (rebuilt)':i===F.iNow?' — current':'');},
-    label:c=>{if(c.dataset.yAxisID==='y2')return c.raw!=null?(' Crew on: '+c.raw+' drivers'):null;
+    label:c=>{if(c.dataset&&c.dataset.$cd){const F=c.chart.$fc||FD;const d2=(F.cdDir||[])[c.dataIndex]||0;
+        if(!d2||!Array.isArray(c.raw))return null;
+        const from=d2>0?c.raw[0]:c.raw[1],to=d2>0?c.raw[1]:c.raw[0];
+        return ' Crew shift: '+from+' → '+to+' drv ('+(d2>0?'▲ +':'▼ −')+Math.abs(to-from)+')';}
+      if(c.dataset.yAxisID==='y2')return c.raw!=null?(' Crew on: '+c.raw+' drivers'):null;
       return c.raw!=null?tipL(c,x=>fmt(x)+' lbs'):null;},
     afterBody:it=>{const F=it[0].chart.$fc||FD;const i=it[0].dataIndex;
       if(i<F.iNow)return [sep,'Actual, rebuilt from hourly deliveries','Crew (board): '+(F.crewFull[i]!=null?F.crewFull[i]:'—')+' drv'];
@@ -4414,7 +4438,7 @@ function fcCalc(){
     if(chart.$fc.pin!=null)fcPinShow(chart.$fc.pin,chart.$fc);else fcPinHide();}catch(_){}};
   const dsHidden=k=>({m:false,b6:false,b12:false,b24:false}[k]);
   let ch=(typeof Chart!=='undefined'&&Chart.getChart)?Chart.getChart('fcChart'):null;
-  const sameShape=ch&&ch.$fcOwn&&ch.data.datasets.length===6&&ch.$fc&&ch.$fc.iNow===iNow;
+  const sameShape=ch&&ch.$fcOwn&&ch.data.datasets.length===7&&ch.$fc&&ch.$fc.iNow===iNow;
   if(sameShape){
     const keepPin=(ch.$fc&&ch.$fc.pin!=null&&ch.$fc.pin<=iNow+FD.H)?ch.$fc.pin:null;
     FD.pin=keepPin;ch.$fc=FD;
@@ -4423,6 +4447,7 @@ function fcCalc(){
     ch.data.datasets[1].data=proj('m');ch.data.datasets[2].data=proj('b6');
     ch.data.datasets[3].data=proj('b12');ch.data.datasets[4].data=proj('b24');
     ch.data.datasets[5].data=crewFull;ch.data.datasets[5].hidden=!FC.lay.crew;
+    ch.data.datasets[6].data=cdData;ch.data.datasets[6].hidden=!FC.lay.cd;
     if(ch.options.scales.y2)ch.options.scales.y2.max=maxC;
     try{ch.update();}catch(_){}
     if(keepPin!=null)fcPinShow(keepPin,FD);
@@ -4433,7 +4458,12 @@ function fcCalc(){
     {label:'Last 6 h pace',data:proj('b6'),borderColor:'#d47272',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.3,cubicInterpolationMode:'monotone'},
     {label:'Last 12 h pace',data:proj('b12'),borderColor:'#e0a63e',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.3,cubicInterpolationMode:'monotone'},
     {label:'Last 24 h pace',data:proj('b24'),borderColor:'#4ca882',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.3,cubicInterpolationMode:'monotone'},
-    {label:'Crew on (right axis)',data:crewFull,yAxisID:'y2',tension:.35,cubicInterpolationMode:'monotone',borderColor:'rgba(96,136,168,.85)',backgroundColor:mkGrad('fcChart','rgba(120,156,186,.22)','rgba(120,156,186,.02)',300),fill:'origin',pointRadius:0,pointHoverRadius:4,borderWidth:1.8,borderJoinStyle:'round',hidden:!FC.lay.crew}]},
+    {label:'Crew on (right axis)',data:crewFull,yAxisID:'y2',tension:.35,cubicInterpolationMode:'monotone',borderColor:'rgba(96,136,168,.85)',backgroundColor:mkGrad('fcChart','rgba(120,156,186,.22)','rgba(120,156,186,.02)',300),fill:'origin',pointRadius:0,pointHoverRadius:4,borderWidth:1.8,borderJoinStyle:'round',hidden:!FC.lay.crew},
+    {label:'Crew shifts (Δ)',$cd:true,type:'bar',data:cdData,yAxisID:'y2',
+      backgroundColor:c=>{const d2=((c.chart.$fc||{}).cdDir||[])[c.dataIndex]||0;return d2>0?'rgba(76,168,130,.32)':'rgba(212,114,114,.32)';},
+      borderColor:c=>{const d2=((c.chart.$fc||{}).cdDir||[])[c.dataIndex]||0;return d2>0?'#2F7A45':'#c24545';},
+      borderWidth:1.3,borderRadius:2.5,borderSkipped:false,barPercentage:.5,categoryPercentage:.9,
+      hidden:!FC.lay.cd,animation:{delay:c=>((c&&c.dataIndex)||0)*5}}]},
     options:{interaction:{mode:'index',intersect:false},layout:{padding:{top:30}},
       onClick:CLICK,
       plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
@@ -4609,7 +4639,7 @@ function renderFc(){
   FC.loading=!!(CONFIG.API_URL&&FC._wReq===FC.id&&(!_cw2||_cw2.slim||!_cw2.inventory));
   const pf=fcPrefill(FC.id);FC.cycH=pf.cycH;FC.belly=pf.belly;FC.pf=pf;FC.tg=fcStgT(reg);FC.lbsBox=pf.lbsBox;
   const sv=_fcStore(FC.id)||{};FC.hz=+sv.hz||FC.hz||48;
-  if(sv.lay)FC.lay=Object.assign({hist:1,crew:1,bands:1,t48:1},sv.lay);
+  if(sv.lay)FC.lay=Object.assign({hist:1,crew:1,bands:1,t48:1,cd:0},sv.lay);
   if(sv.kpiEsc)FC.kpiEsc=sv.kpiEsc;
   const V=(k,d)=>sv[k]!=null?sv[k]:d;
   renderFcProj();
@@ -4664,17 +4694,18 @@ function renderFc(){
       ${kpi('fck-cov','Coverage (no trucks)')}
       ${kpi('fck-run','Runout (worst pace)')}
       ${kpi('fck-48','Inventory ahead')}
-      ${kpi('fck-req','Drivers to break even')}
+      ${kpi('fck-req','Drivers to hold')}
       ${kpi('fck-net','Net right now')}
     </div>
     <div class="card mb"><div class="card-t">Pounds on location — roster crew curve × four frac paces</div>
-      <div class="sb" style="margin-bottom:4px">Navy = ACTUAL last 12 h (rebuilt from hourly deliveries − stage burn) · solid teal = avg pace (editable) · dashed red/amber/green = last 6 / 12 / 24 h pace · grey steps = crew (real → projected) · click a pace chip to anchor the KPIs · legend toggles each line · click any hour for the detail panel</div>
+      <div class="sb" style="margin-bottom:4px">Navy = ACTUAL last 12 h (rebuilt from hourly deliveries − stage burn) · solid teal = avg pace (editable) · dashed red/amber/green = last 6 / 12 / 24 h pace · grey area = crew (past = live board ACTIVES → projected roster) · Crew Δ layer = one candle per crew rise/drop (stable hours stay clean) · click a pace chip to anchor the KPIs · legend toggles each line · click any hour for the detail panel</div>
       <div id="fc-alert"></div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px">
         <div class="fc-esc" id="fc-esc" style="margin:0"></div>
         <div class="fc-lay" style="margin-left:auto"><span class="fc-lb2">Layers</span>
           <span class="fc-lt${FC.lay.hist?' on':''}" id="fcl-hist" onclick="fcLay('hist')">Actual 12 h</span>
           <span class="fc-lt${FC.lay.crew?' on':''}" id="fcl-crew" onclick="fcLay('crew')">Crew</span>
+          <span class="fc-lt${FC.lay.cd?' on':''}" id="fcl-cd" onclick="fcLay('cd')" title="One candle per real crew change — green up, red down, nothing while stable">Crew Δ</span>
           <span class="fc-lt${FC.lay.bands?' on':''}" id="fcl-bands" onclick="fcLay('bands')">NPT bands</span>
           <span class="fc-lt${FC.lay.t48?' on':''}" id="fcl-t48" onclick="fcLay('t48')">Goal target</span></div></div>
       <div class="ch ch-l"><canvas id="fcChart"></canvas></div>
