@@ -241,6 +241,10 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fg-cell{height:14px;border-radius:4px;transition:transform .15s}
 .fg-cell:hover{transform:scaleY(1.25)}
 .fg-grid{position:relative}
+.fg-ovl{position:absolute;inset:0;pointer-events:none;display:grid;grid-template-columns:150px 1fr;gap:8px}
+.fg-ovlane{position:relative}
+.fg-mid{position:absolute;top:0;bottom:0;border-left:1.5px dashed rgba(46,64,87,.3)}
+.fg-mid span{position:absolute;top:2px;left:4px;font:800 8px/1 'Plus Jakarta Sans';color:#8a97a6;letter-spacing:.05em;background:rgba(255,255,255,.78);border-radius:4px;padding:1px 4px;white-space:nowrap}
 .fg-row{display:grid;grid-template-columns:150px 1fr;align-items:center;gap:8px;padding:3px 0}
 .fg-nm{font:700 10px/1.2 'Plus Jakarta Sans';color:#2E4057;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
 .fg-nm:hover{color:#1c5d8f}
@@ -271,7 +275,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fg-chip.lv{background:#E7F3EC;color:#2F7A45}
 .fg-chip.lv.off{background:#FBF3DC;color:#8a6116}
 @media(max-width:700px){.fg-row{grid-template-columns:92px 1fr}.fg-axis{padding-left:100px}}
-@media(max-width:700px){.fg-row{grid-template-columns:96px 1fr}.fg-axis{padding-left:104px}}
+@media(max-width:700px){.fg-row{grid-template-columns:96px 1fr}.fg-axis{padding-left:104px}.fg-ovl{grid-template-columns:96px 1fr}}
 .fcw{font:800 9.5px/1 'Plus Jakarta Sans';padding:4px 8px;border-radius:999px;display:inline-block}
 .fcw-g{background:#E7F3EC;color:#2F7A45}
 .fcw-y{background:#faf3dc;color:#9a7b2d}
@@ -1202,7 +1206,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.109';
+const VBUILD='2026-10-12.110';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -4104,7 +4108,7 @@ function _fcSave(){if(!FC.id)return;const o={};const pfB=FC.pf||{};
     const diff=(isFinite(cur)&&isFinite(base))?Math.abs(cur-base)>1e-9
       :String(el.value==null?'':el.value)!==String(pfB[mapS[k]]==null?'':pfB[mapS[k]]);
     if(diff)o[k]=el.value;});
-  o.hz=FC.hz;o.lay=Object.assign({},FC.lay);o.kpiEsc=FC.kpiEsc;o.holdV=FC.holdV||'shift';FC.mem=FC.mem||{};FC.mem[FC.id]=o;_fcRstBtn();}
+  o.hz=FC.hz;o.lay=Object.assign({},FC.lay);o.kpiEsc=FC.kpiEsc;o.holdV=FC.holdV||'shift';o.gHz=FC.gHz||24;o.gSort=FC.gSort||'next';FC.mem=FC.mem||{};FC.mem[FC.id]=o;_fcRstBtn();}
 window.fcHz=function(hv){FC.hz=hv;setSegAct(['fch24','fch48','fch72'],'fch'+hv);_fcSave();renderFcProj();fcCalc();};
 window.fcWell=function(id){FC.id=id;FC._wReq=null;renderFc();};
 window.fcSync=function(){const b=$('fc-sync');if(b){b.classList.add('busy');b.disabled=true;}
@@ -4126,6 +4130,8 @@ window.fcHoldV=function(k){FC.holdV=(k==='day')?'day':'shift';_fcSave();fcCalc()
   const a2=$('fchv-s'),b2=$('fchv-d');
   if(a2&&a2.classList)a2.classList.toggle('on',FC.holdV!=='day');
   if(b2&&b2.classList)b2.classList.toggle('on',FC.holdV==='day');};
+window.fcGHz=function(h2){FC.gHz=(+h2===48)?48:24;_fcSave();fcGantt();};
+window.fcGSort=function(k2){FC.gSort=(k2==='loads')?'loads':'next';_fcSave();fcGantt();};
 window.fcTogDrv=function(nm){nm=decodeURIComponent(nm);const E=FC.exc[FC.id]=FC.exc[FC.id]||{};
   if(E[nm])delete E[nm];else E[nm]=1;
   renderFcProj();fcRosterTable();fcGantt();fcCalc();_fcRstBtn();};
@@ -4586,12 +4592,15 @@ function fcPinShow(i,F){
 function fcGanttData(proj,H24){
   H24=H24||24;const rows=[],curve=[];
   const inc=((proj&&proj.rows)||[]).filter(r=>r.inc);
-  for(let t=0;t<H24;t++)curve.push((proj&&proj.curve&&proj.curve[t])||0);
+  /* .110: horas más allá de la curva proyectada → suma del roster (onAt) */
+  for(let t=0;t<H24;t++){let v=(proj&&proj.curve)?proj.curve[t]:null;
+    if(v==null)v=inc.reduce((a2,r2)=>a2+((r2.onAt&&r2.onAt(t))?1:0),0);
+    curve.push(v||0);}
   inc.forEach(r=>{const segs=[];let s=null;
     for(let t=0;t<=H24;t++){const on=t<H24&&r.onAt(t);
       if(on&&s==null)s=t;
       if(!on&&s!=null){segs.push([s,t]);s=null;}}
-    rows.push({d:r.d,c:r.c,sp:r.sp,nw:r.nw,hwA:r.hwA,band:fcHrsBand(r.sp).cls,segs});});
+    rows.push({d:r.d,c:r.c,n:+r.n||0,sp:r.sp,nw:r.nw,hwA:r.hwA,band:fcHrsBand(r.sp).cls,segs});});
   rows.sort((a,b)=>(a.segs[0]?a.segs[0][0]:99)-(b.segs[0]?b.segs[0][0]:99));
   const peak=Math.max(0,...curve),low=Math.min(...curve);
   const sorted=curve.slice().sort((a,b)=>a-b);const med=sorted[Math.floor(sorted.length/2)];
@@ -4602,7 +4611,9 @@ function fcGanttData(proj,H24){
   return {rows,curve,peak,med,low,reinf:reinf.slice(0,3)};}
 function fcGantt(){
   const host=$('fc-gantt');if(!host)return;
-  const G=fcGanttData(FC._proj,24);const now=Date.now();
+  const gh=(FC.gHz===48)?48:24;
+  const G=fcGanttData(FC._proj,gh);const now=Date.now();
+  if(FC.gSort==='loads')G.rows.sort((a,b)=>(b.n||0)-(a.n||0));
   if(!G.rows.length){host.innerHTML='';return;}
   const hhAt=t=>new Date(now+t*36e5).getHours();
   const hl=t=>('0'+hhAt(t)).slice(-2)+':00';
@@ -4612,7 +4623,7 @@ function fcGantt(){
     return '<div class="fg-cell'+lo+'" style="background:'+col+'" data-tip="'+encodeURIComponent(hl(t)+' — <b>'+v+' drivers</b> projected')+'"></div>';}).join('');
   const truck='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16V7h11v9M13 10h5l3 3.5V16h-3"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>';
   const lanes=G.rows.map((r,ri)=>{
-    const bars=r.segs.map(sg=>{const l=sg[0]/24*100,w=Math.max(3,(sg[1]-sg[0])/24*100);
+    const bars=r.segs.map(sg=>{const l=sg[0]/gh*100,w=Math.max(gh===48?1.6:3,(sg[1]-sg[0])/gh*100);
       const pkT=_fcPkHrs(r.hwA);
       /* .109: etiqueta honesta — tramo de 24 h = arranque que se mueve día a día, no un turno de 24 h */
       const vr=_fcVr(r);const f24=(sg[1]-sg[0])>=24;
@@ -4637,11 +4648,20 @@ function fcGantt(){
   const bd=(FC.pf&&FC.pf.padOk)?+FC.pf.brdOn:null;
   const lvOk=bd!=null&&Math.abs(bd-(G.curve[0]||0))<=2;
   const lvc=bd!=null?('<span class="fg-chip lv'+(lvOk?'':' off')+'" title="driver board on duty right now vs the projected curve">live board '+bd+' drv '+(lvOk?'✓':'Δ')+'</span>'):'';
-  host.innerHTML='<div class="fg-head">Coverage next 24 h'
-    +'<span class="fg-stats">'+lvc+'<span class="fg-chip">peak '+G.peak+' drv</span><span class="fg-chip">median '+G.med+'</span><span class="fg-chip">low '+G.low+'</span>'+reinf+'</span></div>'
-    +'<div class="fg-row fg-ribr"><span class="fg-nm fg-ribt" title="Projected crew per hour — green peak · yellow mid · red reinforcement window">Crew / hour</span><div class="fg-ribbon">'+heat+'</div></div>'
-    +'<div class="fg-grid">'+lanes+'</div>'
-    +'<div class="fg-axis"><span>'+hl(0)+'</span><span>'+hl(6)+'</span><span>'+hl(12)+'</span><span>'+hl(18)+'</span><span>+24 h</span></div>';}
+  host.innerHTML='<div class="fg-head">Coverage next '+gh+' h'
+    +'<span class="fg-stats">'
+    +'<span class="fc-hvp'+(gh===24?' on':'')+'" onclick="fcGHz(24)" title="Coverage board horizon: next 24 h">24 h</span>'
+    +'<span class="fc-hvp'+(gh===48?' on':'')+'" onclick="fcGHz(48)" title="Coverage board horizon: next 48 h (lanes repeat each driver\'s daily pattern)">48 h</span>'
+    +'<span class="fc-hvp'+(FC.gSort!=='loads'?' on':'')+'" style="margin-left:6px" onclick="fcGSort(\'next\')" title="Lanes ordered by when each driver comes on next">next on</span>'
+    +'<span class="fc-hvp'+(FC.gSort==='loads'?' on':'')+'" onclick="fcGSort(\'loads\')" title="Lanes ordered by total loads — heaviest first">loads</span>'
+    +lvc+'<span class="fg-chip">peak '+G.peak+' drv</span><span class="fg-chip">median '+G.med+'</span><span class="fg-chip">low '+G.low+'</span>'+reinf+'</span></div>'
+    +'<div class="fg-row fg-ribr"><span class="fg-nm fg-ribt" title="Projected crew per hour — green peak · yellow mid · red reinforcement window">Crew / hour</span><div class="fg-ribbon" style="grid-template-columns:repeat('+gh+',1fr)">'+heat+'</div></div>'
+    +'<div class="fg-grid">'+lanes+(function(){let m='';const dL=t5=>{const d5=new Date(now+t5*36e5);
+      return ['SUN','MON','TUE','WED','THU','FRI','SAT'][d5.getDay()]+' '+d5.getDate();};
+      for(let t5=1;t5<gh;t5++)if(hhAt(t5)===0)m+='<div class="fg-mid" style="left:'+(t5/gh*100).toFixed(2)+'%"><span>'+dL(t5)+'</span></div>';
+      return m?'<div class="fg-ovl"><span></span><div class="fg-ovlane">'+m+'</div></div>':'';})()+'</div>'
+    +(function(){const q2=gh/4;const aX=t5=>hl(t5)+(t5>=24?' (+1d)':'');
+      return '<div class="fg-axis"><span>'+aX(0)+'</span><span>'+aX(q2)+'</span><span>'+aX(2*q2)+'</span><span>'+aX(3*q2)+'</span><span>+'+gh+' h</span></div>';})();}
 /* ── tooltip flotante propio (no se corta, misma info en toda la fila) ── */
 function _fcTipEl(){if(!document.getElementById)return null;
   let t=document.getElementById('fcTip');
@@ -4756,6 +4776,7 @@ function renderFc(){
   if(sv.lay)FC.lay=Object.assign({hist:1,crew:1,bands:1,t48:1,cd:1,dm:0},sv.lay);
   if(sv.kpiEsc)FC.kpiEsc=sv.kpiEsc;
   FC.holdV=(sv.holdV==='day')?'day':'shift';
+  FC.gHz=(sv.gHz===48)?48:24;FC.gSort=(sv.gSort==='loads')?'loads':'next';
   const V=(k,d)=>sv[k]!=null?sv[k]:d;
   renderFcProj();
   const crew0=(FC._proj&&FC._proj.curve[0])||0;
@@ -4803,7 +4824,7 @@ function renderFc(){
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
           <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
         </tr></thead><tbody id="fcr-body"></tbody></table></div>
-        <div class="sb" style="margin-top:6px">Window = first start → TOTAL hours per day on pumping days AFTER day-1 of the well (downhole day never teaches; split shifts on the same day are summed) — today's partial day and the still-open shift never count · a well in prefill (or just started) inherits each driver's PREVIOUS-JOB prefill windows · transfers inherit window + hour-map from their LATEST pad (Live wells or the last closed, ≤14 d, name-matched, source cited) · NEW = first 2 calendar days project 12 h from the driver's real start · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · projection weighs each driver by his real hour-by-hour activity map (his lane shades STRONGER where he really works — yellow/red bars invert: the alert color burns where he fades) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid · TR pump arrow = his pump turn rate vs the well target, hover for target + Δ (green ▲ meets · amber ▼ within 15% below · red ▼ further below) · ~ varies / a full-width lane = his start moves day to day (his hour map is much wider than his avg day): the table window is just the average — trust the lane heat and hover it for the real pattern · window minutes are averages across his days (loads land on whole hours; 06:48 = the mean of several real starts).</div>
+        <div class="sb" style="margin-top:6px">Window = first start → TOTAL hours per day on pumping days AFTER day-1 of the well (downhole day never teaches; split shifts on the same day are summed) — today's partial day and the still-open shift never count · a well in prefill (or just started) inherits each driver's PREVIOUS-JOB prefill windows · transfers inherit window + hour-map from their LATEST pad (Live wells or the last closed, ≤14 d, name-matched, source cited) · NEW = first 2 calendar days project 12 h from the driver's real start · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · projection weighs each driver by his real hour-by-hour activity map (his lane shades STRONGER where he really works — yellow/red bars invert: the alert color burns where he fades) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid · TR pump arrow = his pump turn rate vs the well target, hover for target + Δ (green ▲ meets · amber ▼ within 15% below · red ▼ further below) · ~ varies / a full-width lane = his start moves day to day (his hour map is much wider than his avg day): the table window is just the average — trust the lane heat and hover it for the real pattern · window minutes are averages across his days (loads land on whole hours; 06:48 = the mean of several real starts) · the coverage board switches 24 h / 48 h and lane order (next on / loads) — at 48 h each lane repeats the driver's daily pattern and the dashed line marks midnight.</div>
       </div></div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${kpi('fck-cov','Coverage (no trucks)')}
