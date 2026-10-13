@@ -350,7 +350,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fcp-drv{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px dashed #e3eaf1;font:600 10.5px/1.4 'Plus Jakarta Sans'}
 .fcp-drv:last-child{border-bottom:none}
 .fcp-drv .sc{margin-left:auto;font-weight:800;color:#2E4057;font-variant-numeric:tabular-nums}
-@media(max-width:700px){.fcr-t th:nth-child(7),.fcr-t td:nth-child(7),.fcr-t th:nth-child(8),.fcr-t td:nth-child(8){display:none}}
+@media(max-width:700px){.fcr-t th:nth-child(7),.fcr-t td:nth-child(7),.fcr-t th:nth-child(8),.fcr-t td:nth-child(8),.fcr-t th:nth-child(9),.fcr-t td:nth-child(9),.fcr-t th:nth-child(10),.fcr-t td:nth-child(10){display:none}}
 @media(max-width:700px){
   .fc-src{float:none;display:block;margin-top:3px}
   .fc-gauge{max-width:330px;width:100%;margin:0 auto}
@@ -1224,6 +1224,7 @@ const _regSort=(a,b)=>{const al=String(a.status).toLowerCase()==='live',bl=Strin
   if(al!==bl)return al?-1:1;
   return String(b.start||b.end||'').localeCompare(String(a.start||a.end||''));};
 let REGISTRY=[], CURRENT_ID=CONFIG.DEFAULT_WELL, RANGE={i0:0,i1:0}, CARR_SEL=null, PAD_SEL=null, LAT_SEL='';
+let WT_SCOPE='ALL'; /* .116: planta seleccionada en el trend Net/Gross */
 let WELL_EPOCH=0;
 let APPLIED_ID=null; // qué pozo está efectivamente pintado ahora mismo   // token de vigencia: cada cambio de pozo lo incrementa; toda respuesta async lo verifica al aterrizar
 let _wellCtl=null;  // cancela el fetch del pozo anterior al cambiar (libera red y GAS)
@@ -1269,7 +1270,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.115';
+const VBUILD='2026-10-12.116';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -1431,7 +1432,7 @@ function applyWell(w){
   ASSETS_DATA=w.assets||null;
   PART_D=w.daily.map(d=>d.participation==null?null:+d.participation);
   PART_SPAN_D=w.daily.map(d=>+d.pad_span||0);
-  ACTIVE_META={name:w.name,customer:w.customer,status:w.status,equipment:(w.targets&&w.targets.equipment)||'',totals:w.totals||{},targets:w.targets||{},byTerminal:w.byTerminal||[],byTerminalDaily:w.byTerminalDaily||[],stageWaitByTerminal:w.stageWaitByTerminal||[],inventory:w.inventory||null};
+  ACTIVE_META={name:w.name,customer:w.customer,status:w.status,equipment:(w.targets&&w.targets.equipment)||'',totals:w.totals||{},targets:w.targets||{},byTerminal:w.byTerminal||[],byTerminalDaily:w.byTerminalDaily||[],stageWaitByTerminal:w.stageWaitByTerminal||[],inventory:w.inventory||null,wt:w.wt||null};
   return true;
 }
 
@@ -2131,6 +2132,17 @@ function buildM(){
   else btAll=(ACTIVE_META&&ACTIVE_META.byTerminal)||FACILITY.map(x=>({terminal:x[0],loads:x[1],revenue:0,tons:0}));
   const totLd=btAll.reduce((s,b)=>s+(+b.loads||0),0)||1;
   const mixD={};['cig','covia'].forEach(k=>{if(T[k+'_mix']!=null)mixD[k]=+T[k+'_mix'];});
+  /* .116: pesos NET/GROSS del GAS v10.1 (wt{days,hrs,dd}) filtrados al range */
+  const _wt=(ACTIVE_META&&ACTIVE_META.wt)||null;
+  const _inR=d=>ISO.indexOf(String(d).slice(0,10))>=0;
+  const _wtD=_wt?(_wt.days||[]).filter(r=>_inR(r[0])):[];
+  const _wtH=_wt?(_wt.hrs||[]).filter(r=>_inR(r[0])):[];
+  const _wtDD=_wt?(_wt.dd||[]).filter(r=>_inR(r[0])):[];
+  let _gS=0,_gL=0,_nS=0,_nL=0,_ovS=0,_lwS=0;
+  _wtD.forEach(r=>{if(+r[4]>0){_gS+=r[4]*r[2];_gL+=r[2];}if(+r[3]>0){_nS+=r[3]*r[2];_nL+=r[2];}_ovS+=(+r[5]||0);_lwS+=(+r[6]||0);});
+  const WT={has:!!(_wt&&_wtD.length),days:_wtD,hrs:_wtH,dd:_wtDD,avail:!!_wt,
+    gAvg:_gL?Math.round(_gS/_gL):0,nAvg:_nL?Math.round(_nS/_nL):0,ov:_ovS,lw:_lwS,
+    terms:Array.from(new Set(_wtD.map(r=>String(r[1]))))};
   const SRC=btAll.map(b=>{const key=termKeyFor(b.terminal,T);
     const dPct=key&&(+T[key+'_mix_pct'])?+T[key+'_mix_pct']:(key&&mixD[key]!=null?mixD[key]:0);
     const an=b.tons&&b.loads?Math.round(b.tons*2000/b.loads):43500;
@@ -2250,7 +2262,7 @@ function buildM(){
   return {ISO,D:Dl,L,TD:Tt,TR:TRr,TN,ST,PH,H,AN,CUMACT,CUMPL,CUMREV,CUMREVPL,
     CTR,CTE,CDE,CTOT,AVG,DSN,dCT,dCTbuf,CYC_TERMS,cycHas,cycSel:PZCYC,CN,runIdx:runI,bestI,
     DR,CD:CDl,VMAX:Math.max.apply(null,DR.map(d=>d[2]).concat([1])),
-    DTE,dtExcl,openHid,DT_RESP,nptTot,nptLog,SRC,SRC_RANGED,AST,PART,RD,
+    DTE,dtExcl,openHid,DT_RESP,nptTot,nptLog,SRC,SRC_RANGED,WT,AST,PART,RD,
     STG:STGrows,RMIX:RMIXA,RUN_DL,RUN_DL_STG,SPD,TPD,DAY_TONS,DAY_DUR,tonsStageD,stagesDayD,durStageD,durFracD,durChgD,durTotD,validDays:_validDays,
     totL,totT,totR,totFsc,fscD,FSCR,fscRD,fscDsnTot,totRevDsnF,dRevDayF,CUMREVPLF,CUMFSC,IPT,IPT_D,IPT_F,HR,trAll,rpl,dTgt,dDrv:+T.drivers_day||20,DTR,techTR:+(DTR*1.2).toFixed(2),dRevDay,
     T,X,n,isLive,name:(ACTIVE_META&&ACTIVE_META.name)||CURRENT_ID,f,l};
@@ -2794,20 +2806,31 @@ function bFin(){
 /* ═══════ SOURCING ═══════ */
 function bSrc(){
   const m=M;const cols=[PZ.B,PZ.P,PZ.G,PZ.A,PZ.Pu];
+  if(m.WT&&WT_SCOPE!=='ALL'&&m.WT.terms.indexOf(WT_SCOPE)<0)WT_SCOPE='ALL'; /* .116 */
+  const _TG={};((m.WT&&m.WT.days)||[]).forEach(r=>{const g=_TG[r[1]]=_TG[r[1]]||{l:0,gs:0,ov:0};
+    if(+r[4]>0){g.gs+=r[4]*r[2];g.l+=r[2];}g.ov+=(+r[5]||0);});
+  const _tg=t2=>{const g=_TG[t2];return g&&g.l?{avg:Math.round(g.gs/g.l),ov:g.ov}:(g&&g.ov?{avg:0,ov:g.ov}:null);};
   const anAvg=Math.round(m.SRC.reduce((s,x)=>s+x.an*x.loads,0)/Math.max(m.SRC.reduce((s,x)=>s+x.loads,0),1));
   $('pz-cl-src').innerHTML=`
     <div class="st"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11a7 7 0 1 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg> Sourcing — ${m.SRC.map(s=>`${s.t} ${s.aPct}%`).join(' · ')} <span class="ssub">${m.SRC_RANGED?'· range '+m.n+'d':'· full-well range — paste Code v6.7 to filter by dates'}</span></div>
     <div class="grid g4 mb">
       ${m.SRC.map((s,i)=>kpiCard(s.t,fmt(s.loads)+' lds · '+s.aPct+'%',['ca','cp','cb','cg'][i%4],'Design: '+s.dPct+'%',((s.aPct-s.dPct)>=0?'+':'')+(s.aPct-s.dPct).toFixed(1)+' pp vs design',Math.abs(s.aPct-s.dPct)<=3?'dn':'dw')).join('')}
       ${kpiCard('Avg Net Weight',fmt(anAvg)+' lbs','cg',fmt(Math.round(m.SRC.reduce((s,x)=>s+x.lbs,0)/1e6))+'M lbs delivered','2-Box avg ✓','dn')}
+      ${m.WT&&m.WT.has?kpiCard('Avg Gross Weight',fmt(m.WT.gAvg)+' lbs',gwBand(m.WT.gAvg).cls,(m.WT.ov?fmt(m.WT.ov)+' over 80k':'none over 80k')+' · '+(m.WT.lw?fmt(m.WT.lw)+' under 70k':'none under 70k'),gwBand(m.WT.gAvg).t,gwBand(m.WT.gAvg).k):''}
     </div>
     <div class="grid g2 mb">
       <div class="card"><div class="card-t">Design vs Actual Mix (%)</div><div class="ch ch-s"><canvas id="chSrcComp"></canvas></div></div>
       <div class="card"><div class="card-t">Loads by Terminal: Design vs Actual</div><div class="ch ch-s"><canvas id="chSrcLoads"></canvas></div></div>
     </div>
-    <div class="card"><table><thead><tr><th>Terminal</th><th>Mix Design</th><th>Actual Mix</th><th>Loads</th><th>Avg Net (lbs)</th><th>Lbs Delivered</th><th>Revenue Est.</th></tr></thead><tbody>
-      ${m.SRC.map(s=>`<tr><td>${s.t}</td><td>${s.dPct}%</td><td class="mono">${s.aPct}%</td><td class="mono">${fmt(s.loads)}</td><td class="mono">${fmt(s.an)}</td><td class="mono">${fmt(s.lbs)}</td><td class="mono"><strong>${s.rev?'$'+fmt(s.rev):'—'}</strong></td></tr>`).join('')}
-      <tr style="background:#f0fdf4"><td><strong>TOTAL</strong></td><td>100%</td><td><strong>100%</strong></td><td class="mono"><strong>${fmt(m.SRC.reduce((s,x)=>s+x.loads,0))}</strong></td><td class="mono">${fmt(anAvg)}</td><td class="mono">${fmt(m.SRC.reduce((s,x)=>s+x.lbs,0))}</td><td class="mono"><strong>$${fmt(m.SRC.reduce((s,x)=>s+x.rev,0))}</strong></td></tr>
+    ${m.WT&&m.WT.has&&m.WT.ov?`<div class="note" style="background:#fdecec;border:1px solid #f1c8c8;color:#b23b3b;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-weight:700">Overweight alert — ${fmt(m.WT.ov)} load${m.WT.ov===1?'':'s'} above 80,000 lbs gross in this range. Hover the weight trend to find the exact ${m.n===1?'hours':'days'}.</div>`:''}
+    ${m.WT&&m.WT.has?`<div class="card mb"><div class="card-t" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">Net & Gross weight — ${m.n===1?'by hour':'by day'}
+      <select id="wt-scope" class="acc-sel" onchange="WT_SCOPE=this.value;bSrc()"><option value="ALL"${WT_SCOPE==='ALL'?' selected':''}>General — all plants</option>${m.WT.terms.map(t2=>`<option value="${t2}"${WT_SCOPE===t2?' selected':''}>${t2}</option>`).join('')}</select>
+      <span class="sb" style="margin-left:auto">78–80k green · <78k amber · >80k / <70k red${m.n>1?' · $ dashed = Income/Truck·Day (rate + FSC)':''}</span></div>
+      <div class="ch"><canvas id="chWt"></canvas></div></div>`
+     :(m.WT&&m.WT.avail?'':`<div class="note" style="margin-bottom:12px">Gross/Net weight trend lands with <b>Code v10.1</b> — paste the new GAS and hit Refresh.</div>`)}
+    <div class="card"><table><thead><tr><th>Terminal</th><th>Mix Design</th><th>Actual Mix</th><th>Loads</th><th>Avg Net (lbs)</th><th>Avg Gross</th><th>Over 80k</th><th>Lbs Delivered</th><th>Revenue Est.</th></tr></thead><tbody>
+      ${m.SRC.map(s=>{const g2=_tg(s.t);return `<tr><td>${s.t}</td><td>${s.dPct}%</td><td class="mono">${s.aPct}%</td><td class="mono">${fmt(s.loads)}</td><td class="mono">${fmt(s.an)}</td><td class="mono" style="color:${g2?gwBand(g2.avg).col:'#8a97a6'}">${g2?fmt(g2.avg):'—'}</td><td class="mono">${g2&&g2.ov?('<strong style="color:#b23b3b">'+fmt(g2.ov)+'</strong>'):'0'}</td><td class="mono">${fmt(s.lbs)}</td><td class="mono"><strong>${s.rev?'$'+fmt(s.rev):'—'}</strong></td></tr>`;}).join('')}
+      <tr style="background:#f0fdf4"><td><strong>TOTAL</strong></td><td>100%</td><td><strong>100%</strong></td><td class="mono"><strong>${fmt(m.SRC.reduce((s,x)=>s+x.loads,0))}</strong></td><td class="mono">${fmt(anAvg)}</td><td class="mono" style="color:${m.WT&&m.WT.gAvg?gwBand(m.WT.gAvg).col:'#8a97a6'}"><strong>${m.WT&&m.WT.gAvg?fmt(m.WT.gAvg):'—'}</strong></td><td class="mono"><strong>${m.WT?fmt(m.WT.ov):'0'}</strong></td><td class="mono">${fmt(m.SRC.reduce((s,x)=>s+x.lbs,0))}</td><td class="mono"><strong>$${fmt(m.SRC.reduce((s,x)=>s+x.rev,0))}</strong></td></tr>
     </tbody></table></div>`;
   const totDL=m.T.total_loads||m.totL;
   mkChart('chSrcComp',{type:'bar',data:{labels:m.SRC.map(s=>s.t),datasets:[
@@ -2824,6 +2847,45 @@ function bSrc(){
       tooltip:{callbacks:{title:c=>`${c[0].label}`,label:c=>`${c.dataset.label}: ${fmt(c.raw)} loads`,
         afterBody:it=>{if(it.length<2)return[];const d=it[1].raw-it[0].raw;const s2=m.SRC[it[0].dataIndex];return[sep,`Delta: ${d>=0?'+':''}${fmt(d)} loads`,s2.rev?`Revenue: ${fK(s2.rev)}`:''].filter(Boolean);}}}},
       scales:{x:{...gO},y:{...gO,ticks:{callback:v=>fmt(v)+' lds'}}}}});
+  /* .116: trend Net/Gross — 1 día = por hora · 2+ días = por día + Income/Truck·Day */
+  if(m.WT&&m.WT.has){
+    const oneD=m.n===1;const sc=WT_SCOPE;
+    const rows=(oneD?m.WT.hrs:m.WT.days).filter(r=>sc==='ALL'||String(r[oneD?2:1])===sc);
+    const labels=[],net=[],gw=[],lds=[],ovA=[];let dayKeys=[],inc=null;const incParts={};
+    if(oneD){for(let h=0;h<24;h++){labels.push(('0'+h).slice(-2)+':00');
+      let l=0,ns=0,nl=0,gs=0,gl=0,ov=0;
+      rows.filter(r=>+r[1]===h).forEach(r=>{l+=(+r[3]||0);if(+r[4]>0){ns+=r[4]*r[3];nl+=r[3];}if(+r[5]>0){gs+=r[5]*r[3];gl+=r[3];}ov+=(+r[6]||0);});
+      lds.push(l);net.push(nl?Math.round(ns/nl):null);gw.push(gl?Math.round(gs/gl):null);ovA.push(ov);}}
+    else{dayKeys=Array.from(new Set(rows.map(r=>String(r[0])))).sort();
+      dayKeys.forEach(d=>{labels.push(String(d).slice(5));
+        let l=0,ns=0,nl=0,gs=0,gl=0,ov=0;
+        rows.filter(r=>String(r[0])===d).forEach(r=>{l+=(+r[2]||0);if(+r[3]>0){ns+=r[3]*r[2];nl+=r[2];}if(+r[4]>0){gs+=r[4]*r[2];gl+=r[2];}ov+=(+r[5]||0);});
+        lds.push(l);net.push(nl?Math.round(ns/nl):null);gw.push(gl?Math.round(gs/gl):null);ovA.push(ov);});
+      if(dayKeys.length>1){inc=dayKeys.map(d=>{const row=(m.WT.dd||[]).find(x=>String(x[0])===d);
+        if(!row||!+row[1])return null;incParts[d]={dr:+row[1],rev:+row[2]||0,fsc:+row[3]||0};
+        return Math.round(row[2]/row[1]);});if(!inc.some(v=>v!=null))inc=null;}}
+    const TH=v=>labels.map(()=>v);
+    const dsArr=[
+      {label:'Avg Net',data:net,borderColor:'#4ca882',backgroundColor:'rgba(76,168,130,.12)',tension:.35,spanGaps:true,pointRadius:3,yAxisID:'y'},
+      {label:'Avg Gross',data:gw,borderColor:'#2d5a7b',backgroundColor:'rgba(45,90,123,.10)',tension:.35,spanGaps:true,pointRadius:3,yAxisID:'y'},
+      {label:'80k limit',data:TH(80000),borderColor:'rgba(212,114,114,.85)',borderWidth:1.5,pointRadius:0,yAxisID:'y'},
+      {label:'78k floor',data:TH(78000),borderColor:'rgba(76,168,130,.5)',borderWidth:1,borderDash:[3,4],pointRadius:0,yAxisID:'y'},
+      {label:'70k light',data:TH(70000),borderColor:'rgba(224,166,62,.8)',borderWidth:1.2,borderDash:[5,4],pointRadius:0,yAxisID:'y'}];
+    if(!oneD&&inc)dsArr.push({label:'Income/Truck·Day',data:inc,borderColor:'#9b8ec4',borderDash:[6,4],borderWidth:2,pointRadius:3,tension:.3,spanGaps:true,yAxisID:'y2'});
+    mkChart('chWt',{type:'line',data:{labels:labels,datasets:dsArr},options:{interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9},filter:it=>!/limit|floor|light/.test(it.text)}},
+        tooltip:{filter:it=>!/limit|floor|light/.test(it.dataset.label),callbacks:{
+          title:c=>c[0].label+' — '+(sc==='ALL'?'all plants':sc),
+          label:c=>{if(c.dataset.yAxisID==='y2'){const d=dayKeys[c.dataIndex],p2=incParts[d]||{};
+              return 'Income/Truck·Day: $'+fmt(c.raw)+' ('+(p2.dr||0)+' drivers)';}
+            return c.dataset.label+': '+fmt(c.raw)+' lbs'+(c.dataset.label==='Avg Gross'?(' · '+gwBand(c.raw).t):'');},
+          afterBody:it=>{if(!it.length)return [];const i2=it[0].dataIndex;
+            const out=[sep,'Loads: '+fmt(lds[i2])+(ovA[i2]?' · OVER 80k: '+ovA[i2]:'')];
+            if(!oneD&&inc&&inc[i2]!=null){const p2=incParts[dayKeys[i2]];
+              if(p2&&p2.dr)out.push('Income mix: rate $'+fmt(Math.round((p2.rev-p2.fsc)/p2.dr))+' + FSC $'+fmt(Math.round(p2.fsc/p2.dr))+' per truck');}
+            return out;}}}},
+      scales:{x:{...gO},y:{...gO,title:{display:true,text:'lbs',font:{size:8}},ticks:{callback:v=>fmt(v)}},
+        ...((!oneD&&inc)?{y2:{position:'right',grid:{display:false},ticks:{callback:v=>'$'+fmt(v),font:{size:8}},title:{display:true,text:'$/truck·day',font:{size:8}}}}:{})}}});}
 }
 
 /* ═══════ DOWNTIME ═══════ */
@@ -3983,6 +4045,12 @@ function _fcTS(day,hm){if(!day)return null;const m=String(hm||'').match(/^(\d{1,
   const d=new Date(day+'T00:00:00');if(isNaN(d))return null;
   return d.getTime()+(m?(+m[1]*36e5+ +m[2]*6e4):0);}
 /* Rangos 'más activo' (p ≥ 0.75) del mapa horario de un driver → 'HH–HH · HH–HH' */
+/* .116: banda semáforo de Gross Weight (78–80k verde · <78k ámbar · <70k y >80k rojo) */
+function gwBand(g){g=+g||0;if(!g)return {cls:'co',t:'—',k:'dw',col:'#8a97a6'};
+  if(g>80000)return {cls:'cr',t:'OVERWEIGHT >80k',k:'dd',col:'#b23b3b'};
+  if(g>=78000)return {cls:'cg',t:'in window 78–80k',k:'dn',col:'#2F7A45'};
+  if(g>=70000)return {cls:'co',t:'light <78k',k:'dw',col:'#9a7b2d'};
+  return {cls:'cr',t:'UNDER-LOADED <70k',k:'dd',col:'#b23b3b'};}
 /* .109: horario variable — su mapa (horas con presencia ≥50%) es mucho más ancho que su día promedio */
 function _fcVr(r){return !!(r&&r.hwA&&!r.nw&&r.hwA.filter(p=>p>=0.5).length>=Math.ceil(+r.sp||0)+5);}
 function _fcPkHrs(hwA){if(!hwA)return '';const out=[];let a0=null;
@@ -4010,7 +4078,7 @@ function fcRosterProj(w,now,H){
     const onAt=t=>pres(t)>=0.5;
     if(inc)for(let t=0;t<=H;t++)curveF[t]+=pres(t);
     rows.push({d:r.d,c:r.c||'',n:+r.n||0,aS,sp,tp:+r.tp||0,days:+r.days||0,pd:+r.pd||0,
-      nw:!!r.nw,fs:r.fs||'',nwS:r.nwS||'',last:r.last||'',fresh,inc,onAt,hwA,shd:r.shd||[],pw:r.pw!==false,src:r.src||((r.pw!==false)?'pump':'all'),xw:r.xw||'',xwL:r.xwL||''});
+      nw:!!r.nw,fs:r.fs||'',nwS:r.nwS||'',last:r.last||'',fresh,inc,onAt,hwA,shd:r.shd||[],pw:r.pw!==false,src:r.src||((r.pw!==false)?'pump':'all'),xw:r.xw||'',xwL:r.xwL||'',nwA:+r.nwA||0,gwA:+r.gwA||0});
   });
   for(let t=0;t<=H;t++)curve[t]=Math.round(curveF[t]);
   /* piso histórico: las ventanas medias comprimen la cobertura; si el patrón real
@@ -4947,8 +5015,8 @@ function fcRosterTable(){
   const mS=med(inc.map(r=>r.aS)),mSp=med(inc.map(r=>r.sp));
   const cnt=$('fcr-cnt');if(cnt)cnt.textContent=inc.length+' of '+rows.length+' projecting · typical window '+_fcHM(mS)+'–'+_fcHM(mS+mSp)+' · median '+mSp.toFixed(1)+' h';
   if(!rows.length){host.innerHTML=FC.loading
-    ?'<tr><td colspan="9" style="color:#8a97a6">Syncing live workbook — the learned roster lands here in a few seconds…</td></tr>'
-    :'<tr><td colspan="9" style="color:#b45309">No roster yet — paste GAS v9.4 (Code.gs) and hit Live sync.</td></tr>';return;}
+    ?'<tr><td colspan="11" style="color:#8a97a6">Syncing live workbook — the learned roster lands here in a few seconds…</td></tr>'
+    :'<tr><td colspan="11" style="color:#b45309">No roster yet — paste GAS v9.4 (Code.gs) and hit Live sync.</td></tr>';return;}
   /* .108: flecha de cumplimiento vs turn rate objetivo del pozo (Targets) */
   const _wT=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
   const trT=(_wT&&_wT.targets&&+_wT.targets.turn_rate_target)||0;
@@ -4982,6 +5050,8 @@ function fcRosterTable(){
       const st=pT>=1?['ok','▲','meets the well target']:(pT>=0.85?['wn','▼','close — just below target']:['bad','▼','below target']);
       const tip2=encodeURIComponent('<b>Turn rate vs well target</b>\n'+r.d+': <b>'+r.tp.toFixed(2)+'</b> · target <b>'+trT.toFixed(2)+'</b>\nΔ <b>'+sg+Math.abs(dT).toFixed(2)+'</b> loads/day ('+sg+Math.abs(Math.round((pT-1)*100))+'% · '+st[2]+')');
       return '<td class="fcr-trc" data-tip="'+tip2+'">'+r.tp.toFixed(2)+' <span class="fcr-tra '+st[0]+'">'+st[1]+'</span></td>';})()
+    +'<td class="fcr-win">'+(r.nwA?fmt(r.nwA):'—')+'</td>'
+    +'<td class="fcr-win" style="color:'+gwBand(r.gwA||0).col+'"'+(r.gwA?' data-tip="'+encodeURIComponent('<b>'+r.d+' — avg weights</b>\nNet <b>'+fmt(r.nwA)+' lbs</b> · Gross <b>'+fmt(r.gwA)+' lbs</b>\n'+gwBand(r.gwA).t)+'"':'')+'>'+(r.gwA?fmt(r.gwA):'—')+'</td>'
     +'<td class="fcr-sc">'+sc+'</td>'
     +'<td>'+r.days+'</td>'
     +'<td style="color:'+(stale?'#c24545':'#8a97a6')+'">'+(r.last?r.last.slice(5).replace(' ',' · ')+':00':'—')+(stale?' · off pad':'')+'</td>'
@@ -5075,7 +5145,7 @@ function renderFc(){
       <div class="rbody">
         <div id="fc-gantt"></div>
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
-          <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
+          <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Net avg</th><th>Gross avg</th><th>Score</th><th>Days</th><th>Last load</th>
         </tr></thead><tbody id="fcr-body"></tbody></table></div>
       </div></div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">

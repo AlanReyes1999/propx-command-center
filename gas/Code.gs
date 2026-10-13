@@ -1,4 +1,9 @@
-/** MEDS · PropX Live API — Code.gs v10.0. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v10.1. PEGAR TAL CUAL → Nueva versión.
+ *  v10.1 PESOS (Sourcing): lee la columna "Gross Weight" del Loads Report (col R
+ *  como fallback literal) y publica wt{days,hrs,dd}: promedios NET/GROSS por día×
+ *  terminal y por hora×terminal, overweight (>80k) / light (<70k) por load, y la
+ *  base de Income/Truck·Day (drivers únicos + revenue + FSC por día). byDriver y
+ *  el roster ganan avg NET y avg GROSS por driver. Guard: gross válido 30k–120k.
  *  v10.0 AUTH / USUARIOS: hoja "Users" en el Hub (se crea sola), login con hash
  *  salteado, token HMAC de 7 días y 3 roles: admin · operative · customer. Con un
  *  admin activo creado, TODA acción de datos exige token; sin admin aún, la API
@@ -158,7 +163,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v10.0';
+const API_VERSION='v10.1';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -639,8 +644,10 @@ function getWell(id){
   // Loads Report → loads, drivers, tons, etapas, ciclos, terminales, carriers, products, drivers
   const L=readTab(ss,reg.sheet_name||CFG.tabs.loads,'Load #');
   const _sheetNames=ss.getSheets().map(function(x){return x.getName();});
-  const ix=L?colmap(L.H,['Load #','Load ID','Carrier Name','Truck #','Driver Name','Product','Stage#','At Terminal','In Transit','At Staging','At Dest.','Delivered','Terminal','Mileage','Load Weight']):{};
+  const ix=L?colmap(L.H,['Load #','Load ID','Carrier Name','Truck #','Driver Name','Product','Stage#','At Terminal','In Transit','At Staging','At Dest.','Delivered','Terminal','Mileage','Load Weight','Gross Weight']):{};
+  const gwIx=(ix['Gross Weight']!=null&&ix['Gross Weight']>=0)?ix['Gross Weight']:17; /* v10.1: header literal o col R */
   const byDay={},drvByDay={},tonsByDay={},maxStageByDay={},revByDay={},cycDay={},byTerm={},byTermDay={},cycDayT={},byCarrier={},byProd={},byDriver={},driversAll=new Set(),cyc={},byHourDay={},rosterEv={};
+  const wtDay={},wtHr={};let gwTot=0,gwN=0,ovTot=0,lwTot=0; /* v10.1 pesos NET/GROSS */
   let aMoves=0,aRev=0,aCost=0; const aByDay={},aRevByDay={},aEvents=[];
   const partDay={}; let gMinNo=9e15,gMaxNo=-9e15;
   const rateMixDay={}; // {fecha: {"17.76":{loads,tons,revenue}, "19.00":{...}}} — qué tarifa cobró cada carga
@@ -675,6 +682,8 @@ function getWell(id){
     // TONS ENTREGADAS = col O ÷ 2000. netW>1000 garantizado aquí (pesos ≤1000 ya salieron como asset);
     // fallback 21.8 solo si la celda viene VACÍA (hueco de captura, no equipment).
     const t=netW>1000?netW/2000:(+CFG.tonsPerLoadFallback); tons+=t;
+    const gwL=num(row[gwIx]); const gwOk=gwL>30000&&gwL<120000; /* v10.1: gross plausible de unidad cargada */
+    if(gwOk){gwTot+=gwL;gwN++;if(gwL>80000)ovTot++;else if(gwL<70000)lwTot++;}
     const mi=num(row[ix['Mileage']]); miles+=mi;
     const dl=row[ix['Delivered']]; const dDel=dl?fmtDate(dl,TZS):'';
     const rb=rateFor(rates,client,mi,dDel); /* tarifa VIGENTE en la fecha de esta carga */
@@ -698,8 +707,9 @@ function getWell(id){
     const _dk=driverKey(row[ix['Driver Name']]);
     const drv=_dk.key; // clave unificada: mismo humano aunque cambie el sufijo de carrier
     if(drv){ driversAll.add(drv);
-      const D=byDriver[drv]=byDriver[drv]||{name:_dk.name,loads:0,revenue:0,fsc:0,dates:{},carriers:{},sufs:{}};
+      const D=byDriver[drv]=byDriver[drv]||{name:_dk.name,loads:0,revenue:0,fsc:0,nw:0,nn:0,gw:0,gn:0,dates:{},carriers:{},sufs:{}};
       D.loads++; D.revenue+=revL; D.fsc+=fscL; /* v9.1: facturado exacto por driver (rate+FSC) */
+      if(netW>1000){D.nw+=netW;D.nn++;} if(gwOk){D.gw+=gwL;D.gn++;} /* v10.1 */
       if(code&&code!=='—')D.carriers[code]=(D.carriers[code]||0)+1;
       if(_dk.suf)D.sufs[_dk.suf]=(D.sufs[_dk.suf]||0)+1; }
     byProd[prodS]=(byProd[prodS]||0)+1;
@@ -708,6 +718,9 @@ function getWell(id){
       const _e=_RM[_rk]=_RM[_rk]||{loads:0,tons:0,revenue:0,fsc:0}; _e.loads++; _e.tons+=t; _e.revenue+=revL; _e.fsc+=fscL;}
     if(dDel){const d=dDel; byDay[d]=(byDay[d]||0)+1;
       const btk=d+'|'+term; byTermDay[btk]=byTermDay[btk]||{date:d,terminal:term,loads:0,tons:0,revenue:0}; byTermDay[btk].loads++; byTermDay[btk].tons+=t; byTermDay[btk].revenue+=revL;
+      const wk2=d+'|'+term; const WD=wtDay[wk2]=wtDay[wk2]||{d:d,t:term,l:0,nw:0,nn:0,gw:0,gn:0,ov:0,lw:0,rev:0,fsc:0};
+      WD.l++; WD.rev+=revL; WD.fsc+=fscL; if(netW>1000){WD.nw+=netW;WD.nn++;}
+      if(gwOk){WD.gw+=gwL;WD.gn++; if(gwL>80000)WD.ov++; else if(gwL<70000)WD.lw++;}
       const _no=parseInt(loadNo,10);
       if(isFinite(_no)&&_no>0){const pn=partDay[d]=partDay[d]||{min:_no,max:_no}; if(_no<pn.min)pn.min=_no; if(_no>pn.max)pn.max=_no; if(_no<gMinNo)gMinNo=_no; if(_no>gMaxNo)gMaxNo=_no;} (drvByDay[d]=drvByDay[d]||new Set()).add(drv); tonsByDay[d]=(tonsByDay[d]||0)+t; revByDay[d]=(revByDay[d]||0)+revL; if(stg>(maxStageByDay[d]||0))maxStageByDay[d]=stg; if(drv)byDriver[drv].dates[d]=(byDriver[drv].dates[d]||0)+1;}
     // tiempos de ciclo (min) por terminal
@@ -737,6 +750,8 @@ function getWell(id){
     if(dDel&&dv){const _hh=dv.getHours();
       const HD=byHourDay[dDel]=byHourDay[dDel]||{l:Array(24).fill(0),rv:Array(24).fill(0),fs:Array(24).fill(0),tn:Array(24).fill(0),dr:{},te:Array(24).fill(0),ten:Array(24).fill(0),trh:Array(24).fill(0),trn:Array(24).fill(0),de:Array(24).fill(0),den:Array(24).fill(0)};
       HD.l[_hh]++; HD.rv[_hh]+=revL; HD.fs[_hh]+=fscL; HD.tn[_hh]+=t;
+      const wh2=dDel+'|'+_hh+'|'+term; const WH=wtHr[wh2]=wtHr[wh2]||{d:dDel,h:_hh,t:term,l:0,nw:0,nn:0,gw:0,gn:0,ov:0};
+      WH.l++; if(netW>1000){WH.nw+=netW;WH.nn++;} if(gwOk){WH.gw+=gwL;WH.gn++;if(gwL>80000)WH.ov++;}
       if(drv){(HD.dr[_hh]=HD.dr[_hh]||{})[drv]=1;
         (rosterEv[drv]=rosterEv[drv]||[]).push(_absH(dDel)+_hh);} // v9.4: evento driver×hora
       if(aT&&iT){const m=(iT-aT)/6e4; if(m>0&&m<1200){HD.te[_hh]+=m;HD.ten[_hh]++;}}
@@ -871,6 +886,8 @@ function getWell(id){
       downtimes_found:!!D, downtimes_rows:D?D.rows.length:0 },
     totals:{ loads, tons:Math.round(tons), revenue:Math.round(revenue), revenue_base:Math.round(revenueBase), revenue_fsc:Math.round(fscTot), cost:Math.round(cost), margin:Math.round(revenue-cost),
              rev_per_load:loads?+(revenue/loads).toFixed(2):0, unique_drivers:driversAll.size, miles:Math.round(miles),
+             avg_net_lbs:loads?Math.round(tons*2000/loads):0, avg_gross_lbs:gwN?Math.round(gwTot/gwN):0,
+             gross_loads:gwN, gross_over80:ovTot, gross_under70:lwTot,
              max_stage:stagesDone||Math.max(maxStage,totalStageMax), stages_completed:stagesDone, stages_planned:(+targets.total_stages||totalStageMax), stages_sheet_max:totalStageMax, downtime_minutes:+dMin.toFixed(1),
              assets_moves:aMoves, assets_revenue:Math.round(aRev),
              pad_span:(gMaxNo>gMinNo)?Math.max(gMaxNo-gMinNo,loads):null,
@@ -893,10 +910,13 @@ function getWell(id){
       const sufs=Object.keys(v.sufs).sort(function(a,b){return v.sufs[b]-v.sufs[a];});
       const hist=cars.length?cars:sufs;
       return {driver:v.name,carrier:hist[0]||'',carriers:hist,switched:hist.length>1,
-        loads:v.loads,revenue:Math.round(v.revenue),fsc:Math.round(v.fsc),days:Object.keys(v.dates).length,dates:v.dates};
+        loads:v.loads,revenue:Math.round(v.revenue),fsc:Math.round(v.fsc),avg_net:(v.nn?Math.round(v.nw/v.nn):0),avg_gross:(v.gn?Math.round(v.gw/v.gn):0),days:Object.keys(v.dates).length,dates:v.dates};
     }).sort((a,b)=>b.loads-a.loads),
     downtimes:Object.entries(dCat).map(([k,v])=>({category:k,minutes:+v.toFixed(1)})).sort((a,b)=>b.minutes-a.minutes),
     cycleTimes:Object.entries(cyc).map(([k,v])=>({terminal:k,load:avg2(v.load),transit:avg2(v.transit),unload:avg2(v.unload),full:avg2(v.full)})),
+    wt:{days:Object.values(wtDay).map(function(v){return [v.d,v.t,v.l,v.nn?Math.round(v.nw/v.nn):0,v.gn?Math.round(v.gw/v.gn):0,v.ov,v.lw,Math.round(v.rev),Math.round(v.fsc)];}).sort(function(a,b){return a[0]<b[0]?-1:a[0]>b[0]?1:(a[1]<b[1]?-1:1);}),
+        hrs:Object.values(wtHr).map(function(v){return [v.d,v.h,v.t,v.l,v.nn?Math.round(v.nw/v.nn):0,v.gn?Math.round(v.gw/v.gn):0,v.ov];}).sort(function(a,b){return a[0]<b[0]?-1:a[0]>b[0]?1:(a[1]-b[1]);}),
+        dd:Object.keys(revByDay).sort().map(function(d){return [d,(drvByDay[d]?drvByDay[d].size:0),Math.round(revByDay[d]||0),Math.round(fscByDay[d]||0)];})},
     stages, inventory,
     roster:(function(){
       let R=_rosterBuild(rosterEv,byDriver,new Set(Object.keys(stagesByDay||{})));
@@ -1037,6 +1057,7 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
       aS:+aS.toFixed(1),sp:+sp.toFixed(1),
       tp:pdd?+(pl/pdd).toFixed(2):0,days:odd,pd:pdd,
       fs:hTo(fsH),last:hTo(lastH),
+      nwA:(D.nn?Math.round(D.nw/D.nn):0),gwA:(D.gn?Math.round(D.gw/D.gn):0),
       nw:nwF,
       nwS:hTo(shifts[shifts.length-1][0]),src:src,shd:shd,hw:hw,
       pw:src==='pump'});});
