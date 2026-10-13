@@ -259,6 +259,33 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .acc-act{font:700 10px 'Plus Jakarta Sans';color:#2b6a92;cursor:pointer;margin-right:10px;white-space:nowrap}
 .acc-act.red{color:#b23b3b}
 .acc-sel{font:700 10px 'Plus Jakarta Sans';border:1px solid #dde6ef;border-radius:8px;padding:4px 6px;background:#fff;color:#17293a}
+/* .117: Access rediseñado */
+.acc-stat{background:#fff;border:1px solid var(--border,#e4e9ef);border-radius:14px;padding:12px 14px}
+.acc-stat .v{font:800 22px/1.1 'Plus Jakarta Sans';color:#17293a}
+.acc-stat .t{font:700 9px/1 'Plus Jakarta Sans';letter-spacing:.08em;text-transform:uppercase;color:#8a97a6;margin-bottom:6px}
+.acc-stat.warn{background:#fffaf0;border-color:#eadfbf}
+.acc-stat.warn .v{color:#9a7b2d}
+.acc-u{display:flex;align-items:center;gap:10px;min-width:0}
+.acc-av{flex:0 0 34px;width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font:800 11px 'Plus Jakarta Sans';letter-spacing:.02em}
+.acc-av.admin{background:#fdecec;color:#b23b3b}.acc-av.operative{background:#e8f1fb;color:#2b6a92}
+.acc-av.customer{background:#E7F3EC;color:#2F7A45}.acc-av.pending{background:#faf3dc;color:#9a7b2d}
+.acc-nm{font:700 12px/1.3 'Plus Jakarta Sans';color:#17293a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-em{font:600 10.5px/1.3 'Plus Jakarta Sans';color:#8a97a6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acc-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#c6d0da;margin-right:6px;vertical-align:1px}
+.acc-dot.on{background:#3fa272}.acc-dot.pd{background:#d9a62e}.acc-dot.off{background:#c24545}
+.acc-dots{cursor:pointer;font:800 15px/1 'Plus Jakarta Sans';color:#8a97a6;padding:4px 10px;border-radius:8px;letter-spacing:.1em}
+.acc-dots:hover{background:#eef3f9;color:#17293a}
+#acc-pop{position:fixed;z-index:400;background:#fff;border:1px solid #e4e9ef;border-radius:14px;box-shadow:0 14px 40px rgba(28,61,84,.16);padding:6px;min-width:190px;display:none}
+#acc-pop.on{display:block}
+#acc-pop .it{display:block;width:100%;text-align:left;background:none;border:0;font:700 11.5px 'Plus Jakarta Sans';color:#2E4057;padding:9px 12px;border-radius:9px;cursor:pointer}
+#acc-pop .it:hover{background:#f1f6fb}
+#acc-pop .it.red{color:#b23b3b}#acc-pop .it.red:hover{background:#fdecec}
+#acc-pop .hd{font:800 8.5px/1 'Plus Jakarta Sans';letter-spacing:.1em;text-transform:uppercase;color:#9aa7b4;padding:8px 12px 4px}
+.acc-q{background:#eef3f9;border:1px solid #dde6ef;border-radius:10px;padding:8px 12px;font:600 11.5px 'Plus Jakarta Sans';color:#17293a;outline:none;min-width:200px}
+.acc-q:focus{border-color:#2d5a7b;background:#fff}
+.acc-tr-pd{background:#fffaf0}
+.lgx{background:#fff;border:1px solid #dde6ef;border-radius:10px;padding:9px 11px;font:600 11.5px 'Plus Jakarta Sans';color:#17293a;outline:none}
+@media(max-width:700px){.acc-hide-m{display:none!important}.acc-q{min-width:120px;flex:1}}
 /* gauge 3D tilt */
 .fc-gauge{perspective:700px}
 .fc-gstage{position:relative;transform-style:preserve-3d;transition:transform .22s ease;transform:rotateX(var(--gx,0deg)) rotateY(var(--gy,0deg))}
@@ -1270,7 +1297,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.116';
+const VBUILD='2026-10-12.117';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -4380,37 +4407,75 @@ try{paintAuth();}catch(_){}
 /* — Access (User Management, solo admin) — */
 function renderAccess(){const pane=$('p-acc');if(!pane)return;
   if(!(AUTH&&AUTH.role==='admin')){pane.innerHTML='<div class="note" style="margin:14px">Admin only.</div>';return;}
+  window.ACC_F=window.ACC_F||{q:'',r:'ALL'};
   pane.innerHTML='<div class="st">'+ICO.chart+' Access — User Management <span class="ssub">· approve requests · set roles · reset passwords</span></div>'
+   +'<div class="grid g4 mb" id="acc-stats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))"></div>'
    +'<div class="card"><div class="card-t" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">Users <span class="sb" id="acc-cnt"></span>'
-   +'<button class="rbtn" style="margin-left:auto" onclick="accNewTog()">Create access</button></div>'
-   +'<div id="acc-new" style="display:none;background:#f6f9fc;border:1px solid #e4e9ef;border-radius:12px;padding:12px;margin-bottom:10px">'
+   +'<input id="acc-q" class="acc-q" style="margin-left:auto" placeholder="Search name or email…" oninput="ACC_F.q=this.value;accPaint()">'
+   +['ALL','admin','operative','customer','pending'].map(r9=>'<span class="fc-hvp'+(r9==='ALL'?' on':'')+'" id="accf-'+r9+'" onclick="accFil(\''+r9+'\')">'+(r9==='ALL'?'all':r9)+'</span>').join('')
+   +'<button class="rbtn" onclick="accNewTog()">Create access</button></div>'
+   +'<div id="acc-new" style="display:none;background:#f6f9fc;border:1px solid #e4e9ef;border-radius:14px;padding:14px;margin-bottom:12px">'
    +'<div class="grid g4" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px">'
    +'<input id="accn-name" class="lgx" placeholder="Name"><input id="accn-email" class="lgx" placeholder="Email">'
    +'<input id="accn-pass" class="lgx" placeholder="Temp password (8+)">'
-   +'<select id="accn-role" class="acc-sel"><option value="operative">operative</option><option value="customer">customer</option><option value="admin">admin</option></select></div>'
-   +'<div style="margin-top:8px;display:flex;gap:8px;align-items:center"><button class="rbtn" onclick="accCreate()">Create</button><span class="sb">They sign in with this email + temp password and can change it later.</span></div></div>'
+   +'<select id="accn-role" class="acc-sel" style="padding:9px 11px"><option value="operative">operative</option><option value="customer">customer</option><option value="admin">admin</option></select></div>'
+   +'<div style="margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="rbtn" onclick="accCreate()">Create</button><span class="sb">They sign in with this email + temp password and can change it later.</span></div></div>'
    +'<div class="sb" id="acc-msg" style="min-height:14px;margin-bottom:6px"></div>'
-   +'<div style="overflow-x:auto"><table class="fcr-t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last login</th><th>Actions</th></tr></thead><tbody id="acc-body"><tr><td colspan="6" style="color:#8a97a6">Loading…</td></tr></tbody></table></div>'
-   +'<div class="sb" style="margin-top:8px">admin = everything incl. this tab · operative = full dashboard · customer = Forecast only · pending = requested access, pick a role to approve.</div></div>';
+   +'<div style="overflow-x:auto"><table class="fcr-t"><thead><tr><th>User</th><th>Role</th><th>Status</th><th class="acc-hide-m">Last login</th><th style="text-align:right">Actions</th></tr></thead><tbody id="acc-body"><tr><td colspan="5" style="color:#8a97a6">Loading…</td></tr></tbody></table></div>'
+   +'<div class="sb" style="margin-top:10px">admin = everything incl. this tab · operative = full dashboard · customer = Forecast only · pending = requested access — pick a role to approve.</div></div>'
+   +'<div id="acc-pop"></div>';
   accLoad();}
+window.accFil=function(r9){ACC_F.r=r9;['ALL','admin','operative','customer','pending'].forEach(x=>{const e9=$('accf-'+x);if(e9&&e9.classList)e9.classList.toggle('on',x===r9);});accPaint();};
+function _accIni(n,em){const p9=String(n||em||'?').trim().split(/\s+/);return ((p9[0]||'?')[0]+(p9[1]?p9[1][0]:'')).toUpperCase();}
+window.accMenu=function(ev,em){ev.stopPropagation();const pop=$('acc-pop');if(!pop)return;
+  const u=(window.ACC_USERS||[]).find(x=>x.email===em);if(!u)return;
+  const roles=['admin','operative','customer'].filter(r9=>r9!==u.role);
+  pop.innerHTML='<div class="hd">'+u.email+'</div>'
+   +roles.map(r9=>'<button class="it" onclick="accPopDo(\''+em+'\',\'role\',\''+r9+'\')">Make '+r9+'</button>').join('')
+   +'<button class="it" onclick="accPopDo(\''+em+'\',\'reset\')">Reset password</button>'
+   +'<button class="it" onclick="accPopDo(\''+em+'\',\'status\',\''+(u.status==='active'?'disabled':'active')+'\')">'+(u.status==='active'?'Disable account':'Enable account')+'</button>'
+   +'<button class="it red" onclick="accPopDo(\''+em+'\',\'delete\')">Delete user</button>';
+  pop.classList.add('on');
+  const vw=window.innerWidth||1200;let x=ev.clientX,y=ev.clientY+10;
+  pop.style.left=Math.min(x,vw-230)+'px';pop.style.top=y+'px';
+  setTimeout(()=>{document.addEventListener('click',accPopHide,{once:true});},0);};
+window.accPopHide=function(){const pop=$('acc-pop');if(pop)pop.classList.remove('on');};
+window.accPopDo=function(em,op,val){accPopHide();
+  if(op==='reset')return accReset(em);
+  if(op==='delete')return accDel(em);
+  accSet(em,op,val);};
 window.accNewTog=function(){const n=$('acc-new');if(n)n.style.display=n.style.display==='none'?'':'none';};
 function accMsg(t,okM){const m=$('acc-msg');if(m){m.textContent=t||'';m.style.color=okM?'#2F7A45':'#b23b3b';}}
-async function accLoad(){const tb=$('acc-body');if(!tb)return;
-  let j=null;try{j=await fetchJSON(CONFIG.API_URL+'?action=users_list');}catch(e){tb.innerHTML='<tr><td colspan="6" style="color:#b23b3b">Could not load users — '+String(e&&e.message||e).slice(0,70)+'</td></tr>';return;}
-  if(!(j&&j.ok&&j.users)){tb.innerHTML='<tr><td colspan="6" style="color:#b23b3b">'+((j&&j.error)?('Server said: '+j.error+' — is Code v10.0 pasted?'):'No reply')+'</td></tr>';return;}
-  const cnt=$('acc-cnt');if(cnt)cnt.textContent=j.users.length+' users · '+j.users.filter(u=>u.status==='pending').length+' pending';
-  tb.innerHTML=j.users.map(function(u){
-    const me=AUTH&&u.email===AUTH.email;
-    const chipR='<span class="acc-chip '+(u.role||'pending')+'">'+(u.role||'pending')+'</span>';
-    const chipS=u.status==='active'?'':' <span class="acc-chip '+(u.status==='pending'?'pending':'disabled')+'">'+u.status+'</span>';
+function accPaint(){const tb=$('acc-body');if(!tb)return;const us=window.ACC_USERS||[];
+  const q=(ACC_F.q||'').toLowerCase();
+  const list=us.filter(u=>(ACC_F.r==='ALL'||(ACC_F.r==='pending'?(u.status==='pending'||u.role==='pending'):u.role===ACC_F.r))
+    &&(!q||String(u.name).toLowerCase().indexOf(q)>=0||String(u.email).toLowerCase().indexOf(q)>=0));
+  const st=$('acc-stats');if(st){const pd=us.filter(u=>u.status==='pending').length;
+    st.innerHTML='<div class="acc-stat"><div class="t">Total users</div><div class="v">'+us.length+'</div></div>'
+     +'<div class="acc-stat"><div class="t">Active</div><div class="v" style="color:#2F7A45">'+us.filter(u=>u.status==='active').length+'</div></div>'
+     +'<div class="acc-stat'+(pd?' warn':'')+'"><div class="t">Pending requests</div><div class="v">'+pd+'</div></div>'
+     +'<div class="acc-stat"><div class="t">Admins</div><div class="v">'+us.filter(u=>u.role==='admin'&&u.status==='active').length+'</div></div>';}
+  const cnt=$('acc-cnt');if(cnt)cnt.textContent=list.length+' of '+us.length;
+  if(!list.length){tb.innerHTML='<tr><td colspan="5" style="color:#8a97a6">No users match.</td></tr>';return;}
+  tb.innerHTML=list.map(function(u){
+    const me=AUTH&&u.email===AUTH.email;const rl=u.role||'pending';
+    const pd=u.status==='pending';
+    const dot=u.status==='active'?'on':(pd?'pd':'off');
     let act='';
-    if(u.status==='pending'){act='Approve as <select class="acc-sel" onchange="if(this.value)accSet(\''+u.email+'\',\'role\',this.value)"><option value=""></option><option value="customer">customer</option><option value="operative">operative</option><option value="admin">admin</option></select> <span class="acc-act red" onclick="accDel(\''+u.email+'\')">Reject</span>';}
+    if(pd){act='Approve as <select class="acc-sel" onchange="if(this.value)accSet(\''+u.email+'\',\'role\',this.value)"><option value=""></option><option value="customer">customer</option><option value="operative">operative</option><option value="admin">admin</option></select> <span class="acc-act red" onclick="accDel(\''+u.email+'\')">Reject</span>';}
     else if(me){act='<span class="sb">(you)</span>';}
-    else{act='<select class="acc-sel" onchange="if(this.value)accSet(\''+u.email+'\',\'role\',this.value)"><option value="">role…</option><option value="admin">admin</option><option value="operative">operative</option><option value="customer">customer</option></select> '
-      +'<span class="acc-act" onclick="accSet(\''+u.email+'\',\'status\',\''+(u.status==='active'?'disabled':'active')+'\')">'+(u.status==='active'?'Disable':'Enable')+'</span>'
-      +'<span class="acc-act" onclick="accReset(\''+u.email+'\')">Reset pass</span>'
-      +'<span class="acc-act red" onclick="accDel(\''+u.email+'\')">Delete</span>';}
-    return '<tr><td>'+(u.name||'—')+(me?' <span class="sb">(you)</span>':'')+'</td><td>'+u.email+'</td><td>'+chipR+'</td><td>'+(u.status==='active'?'<span class="acc-chip customer" style="background:#E7F3EC">active</span>':chipS)+'</td><td style="color:#8a97a6">'+(u.last?String(u.last).slice(0,16).replace('T',' '):'—')+'</td><td>'+act+'</td></tr>';}).join('');}
+    else{act='<span class="acc-dots" onclick="accMenu(event,\''+u.email+'\')">···</span>';}
+    return '<tr'+(pd?' class="acc-tr-pd"':'')+'><td><div class="acc-u"><span class="acc-av '+rl+'">'+_accIni(u.name,u.email)+'</span><div style="min-width:0"><div class="acc-nm">'+(u.name||'—')+(me?' <span class="sb">(you)</span>':'')+'</div><div class="acc-em">'+u.email+'</div></div></div></td>'
+      +'<td><span class="acc-chip '+rl+'">'+rl+'</span></td>'
+      +'<td style="white-space:nowrap"><span class="acc-dot '+dot+'"></span>'+u.status+'</td>'
+      +'<td class="acc-hide-m" style="color:#8a97a6;white-space:nowrap">'+(u.last?String(u.last).slice(0,16).replace('T',' · '):'—')+'</td>'
+      +'<td style="text-align:right">'+act+'</td></tr>';}).join('');}
+async function accLoad(){const tb=$('acc-body');if(!tb)return;
+  let j=null;try{j=await fetchJSON(CONFIG.API_URL+'?action=users_list');}catch(e){tb.innerHTML='<tr><td colspan="5" style="color:#b23b3b">Could not load users — '+String(e&&e.message||e).slice(0,70)+'</td></tr>';return;}
+  if(!(j&&j.ok&&j.users)){tb.innerHTML='<tr><td colspan="5" style="color:#b23b3b">'+((j&&j.error)?('Server said: '+j.error+' — is Code v10.0+ pasted?'):'No reply')+'</td></tr>';return;}
+  window.ACC_USERS=j.users.slice().sort(function(a,b){const pa=(a.status==='pending')?0:1,pb=(b.status==='pending')?0:1;
+    if(pa!==pb)return pa-pb;return String(a.name||a.email).localeCompare(String(b.name||b.email));});
+  accPaint();}
 window.accSet=async function(email,op,val){accMsg('Saving…',true);
   const q='&op='+op+'&email='+encodeURIComponent(email)+(op==='role'?('&role='+val):op==='status'?('&status='+val):op==='resetpass'?('&pass='+encodeURIComponent(val)):'');
   let j=null;try{j=await fetchJSON(CONFIG.API_URL+'?action=user_set'+q);}catch(e){return accMsg('Failed: '+String(e&&e.message||e).slice(0,70));}
