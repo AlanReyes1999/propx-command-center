@@ -809,7 +809,6 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
   <div class="lg-err" id="lg-err"></div>
   <button class="lg-btn" id="lg-go" onclick="lgGo()">Sign in</button>
   <div class="lg-alt" id="lg-alt"><span onclick="lgMode('reg')">Request access</span></div>
-  <div class="lg-foot">Access is managed by MEDS dispatch</div>
 </div></div>
 <div class="content">
 <div id="api-hint" style="display:none;background:var(--ora-l);border:1px solid #eadcc0;color:#7a5a1e;border-radius:12px;padding:10px 16px;margin-bottom:14px;font-size:11.5px;line-height:1.5"></div>
@@ -1270,7 +1269,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.114';
+const VBUILD='2026-10-12.115';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
