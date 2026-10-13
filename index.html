@@ -286,6 +286,35 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .acc-tr-pd{background:#fffaf0}
 .lgx{background:#fff;border:1px solid #dde6ef;border-radius:10px;padding:9px 11px;font:600 11.5px 'Plus Jakarta Sans';color:#17293a;outline:none}
 @media(max-width:700px){.acc-hide-m{display:none!important}.acc-q{min-width:120px;flex:1}}
+/* .118 Driver Profile */
+#drv-ov{position:fixed;inset:0;z-index:290;background:rgba(246,248,251,.985);display:none;overflow:auto;padding:18px}
+#drv-ov.on{display:block}
+.dvp-wrap{max-width:1180px;margin:0 auto}
+.dvp-hero{background:linear-gradient(135deg,#17293a,#1f3b52 55%,#24506f);border-radius:20px;color:#fff;padding:20px 22px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;box-shadow:0 18px 44px rgba(23,41,58,.25)}
+.dvp-nm{font:800 26px/1.1 'Plus Jakarta Sans';letter-spacing:-.02em}
+.dvp-sub{font:700 10.5px/1.6 'Plus Jakarta Sans';color:#9fb4c6;letter-spacing:.04em}
+.dvp-chip{display:inline-block;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:4px 10px;font:700 9.5px 'Plus Jakarta Sans';color:#dce8f2;margin:4px 6px 0 0}
+.dvp-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:8px;flex:1;min-width:250px}
+.dvp-k{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:9px 11px}
+.dvp-k .t{font:700 8.5px/1 'Plus Jakarta Sans';letter-spacing:.09em;text-transform:uppercase;color:#9fb4c6;margin-bottom:5px}
+.dvp-k .v{font:800 16.5px/1.1 'Plus Jakarta Sans';color:#fff;white-space:nowrap}
+.dvp-k .s{font:600 9.5px/1.3 'Plus Jakarta Sans';color:#9fb4c6;margin-top:3px}
+.dvp-x{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;font:800 16px/1 'Plus Jakarta Sans';padding:8px 13px;cursor:pointer;flex:0 0 auto}
+.dvp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-top:12px}
+.dvp-donut{width:118px;height:118px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 118px}
+.dvp-donut>div{width:90px;height:90px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px #edf1f5}
+.dvp-dnum{font:800 26px 'Plus Jakarta Sans';color:#17293a}
+.dvp-drank{font:700 9px 'Plus Jakarta Sans';color:#8a97a6}
+.dvp-bar{height:8px;border-radius:999px;background:#edf1f5;overflow:hidden;flex:1}
+.dvp-bar>div{height:100%;border-radius:999px;transition:width .5s ease}
+.dvp-row{display:flex;align-items:center;gap:10px;margin:8px 0;font:700 10.5px 'Plus Jakarta Sans';color:#2E4057}
+.dvp-foot{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 8px}
+.fcp-o{cursor:pointer;color:#2b6a92;font:800 11px 'Plus Jakarta Sans';opacity:.5;padding:0 2px}
+.fcp-o:hover{opacity:1}
+@media(max-width:700px){#drv-ov{padding:10px}.dvp-nm{font-size:21px}.dvp-kpis{grid-template-columns:repeat(2,1fr)}}
+@media print{body.dvp-print>*:not(#drv-ov){display:none!important}
+ body.dvp-print #drv-ov{position:static!important;display:block!important;overflow:visible!important;background:#fff!important;padding:0!important}
+ body.dvp-print .dvp-foot{display:none!important}}
 /* gauge 3D tilt */
 .fc-gauge{perspective:700px}
 .fc-gstage{position:relative;transform-style:preserve-3d;transition:transform .22s ease;transform:rotateX(var(--gx,0deg)) rotateY(var(--gy,0deg))}
@@ -837,6 +866,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
   <button class="lg-btn" id="lg-go" onclick="lgGo()">Sign in</button>
   <div class="lg-alt" id="lg-alt"><span onclick="lgMode('reg')">Request access</span></div>
 </div></div>
+<div id="drv-ov"></div>
 <div class="content">
 <div id="api-hint" style="display:none;background:var(--ora-l);border:1px solid #eadcc0;color:#7a5a1e;border-radius:12px;padding:10px 16px;margin-bottom:14px;font-size:11.5px;line-height:1.5"></div>
 
@@ -1297,7 +1327,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.117';
+const VBUILD='2026-10-12.118';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -5067,6 +5097,179 @@ function _fcTipBind(host){if(!host||host._tipB||!host.addEventListener)return;ho
     else t.classList.remove('on');});
   host.addEventListener('mousemove',mv);
   host.addEventListener('mouseleave',function(){const t=_fcTipEl();if(t)t.classList.remove('on');});}
+/* ══════════ .118 · DRIVER PROFILE — overlay con score, benchmark, día a día y export ══════════ */
+let DRVP={d:null,day:'',met:'loads'};
+function _dvCls(el,on){const c=el&&el.classList;if(c&&c.add){if(on)c.add('on');else c.remove('on');}}
+function _dvData(name){
+  const w=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;if(!w)return null;
+  const bd=((w.byDriver)||[]).find(x=>x.driver===name)||null;
+  const rows=(FC._proj&&FC._proj.rows)||[];
+  const r=rows.find(x=>x.d===name)||null;
+  const dtr=(FC.pf&&FC.pf.dtr)||4,padDays=(FC.pf&&FC.pf.padDays)||1;
+  const sc=r?Math.min(100,fcScore(r,rows,dtr,padDays)):0; /* cap 100 */
+  const rank=rows.map(x=>({d:x.d,s:Math.min(100,fcScore(x,rows,dtr,padDays))})).sort((a,b)=>b.s-a.s);
+  const rk=Math.max(1,rank.findIndex(x=>x.d===name)+1);
+  const tgt=(w.targets&&+w.targets.turn_rate_target)||0;
+  return {w,bd,r,sc,rk,nR:rank.length||1,dtr,padDays,tgt};}
+window.drvProfile=function(name){const ov=$('drv-ov');if(!ov)return;
+  DRVP={d:name,day:'',met:DRVP.met||'loads'};
+  const D=_dvData(name);if(!D||!(D.bd||D.r)){return;}
+  drvRender();_dvCls(ov,true);try{document.body.style.overflow='hidden';}catch(_){}};
+window.drvClose=function(){const ov=$('drv-ov');_dvCls(ov,false);try{document.body.style.overflow='';}catch(_){}};
+window.drvDay=function(d){DRVP.day=d;drvRender();};
+window.drvMet=function(m2){DRVP.met=m2;drvRender();};
+window.drvLocate=function(){const n=DRVP.d;drvClose();
+  const host=$('fcr-body');
+  if(!(host&&host.querySelectorAll))return (typeof fcGotoDriver==='function')?fcGotoDriver(n):null;
+  let row=null;host.querySelectorAll('tr').forEach(tr=>{if(tr.textContent.indexOf(n)>=0)row=tr;});
+  if(row){try{row.scrollIntoView({block:'center',behavior:'smooth'});row.style.background='#fff6d8';
+    setTimeout(function(){row.style.background='';},1800);}catch(_){}}};
+function drvRender(){
+  const ov=$('drv-ov');const D=DRVP.d?_dvData(DRVP.d):null;if(!ov||!D)return;
+  const bd=D.bd||{driver:DRVP.d,loads:(D.r&&D.r.n)||0,revenue:0,fsc:0,days:(D.r&&D.r.days)||0,dates:{},carriers:[],avg_net:(D.r&&D.r.nwA)||0,avg_gross:(D.r&&D.r.gwA)||0};
+  const r=D.r||{};
+  const dates=Object.keys(bd.dates||{}).sort();
+  if(!DRVP.day||dates.indexOf(DRVP.day)<0)DRVP.day=dates[dates.length-1]||'';
+  const revB=Math.max(0,(bd.revenue||0)-(bd.fsc||0));
+  const rpl=bd.loads?bd.revenue/bd.loads:0;
+  const perDay=bd.days?Math.round(bd.revenue/bd.days):0;
+  const best=dates.reduce((a,d)=>Math.max(a,bd.dates[d]||0),0);
+  const avgDay=bd.days?+(bd.loads/bd.days).toFixed(2):0;
+  const nwA=bd.avg_net||r.nwA||0, gwA=bd.avg_gross||r.gwA||0;
+  const vmax=Math.max(1,...(((FC._proj&&FC._proj.rows)||[{n:1}]).map(x=>x.n||0)));
+  const pTR=Math.min(100,Math.round((r.tp||0)/Math.max(.1,D.dtr)*100));
+  const pVol=Math.min(100,Math.round(((r.n!=null?r.n:bd.loads)||0)/vmax*100));
+  const pCon=Math.min(100,Math.round(((r.days!=null?r.days:bd.days)||0)/Math.max(1,D.padDays)*100));
+  const trCol=(D.tgt>0&&r.tp>0)?(r.tp>=D.tgt?'#7fd4a8':(r.tp/D.tgt>=.85?'#e8c56f':'#f3a0a0')):'#dce8f2';
+  const trMark=(D.tgt>0&&r.tp>0)?(r.tp>=D.tgt?' ▲':' ▼'):'';
+  const gB=gwBand(gwA);
+  const srcTxt=r.src==='xwell'?('inherited from '+r.xw):(r.src==='prefill'?'prefill window':(r.src==='all'?'all-days window':(r.pw?'pump window':'')));
+  const stale=r.fresh===false;
+  const kp=(t,v,s2)=>'<div class="dvp-k"><div class="t">'+t+'</div><div class="v">'+v+'</div>'+(s2?'<div class="s">'+s2+'</div>':'')+'</div>';
+  const hasBD=!!D.bd&&dates.length>0;
+  const eN=String(DRVP.d).replace(/'/g,"\'");
+  ov.innerHTML='<div class="dvp-wrap">'
+   +'<div class="dvp-hero"><div style="min-width:210px;max-width:330px">'
+   +'<div class="dvp-sub">DRIVER PROFILE · '+FC.id+'</div>'
+   +'<div class="dvp-nm">'+DRVP.d+'</div>'
+   +'<div class="dvp-sub" style="margin-top:4px">'+((bd.carriers&&bd.carriers[0])||r.c||'—')+(bd.carriers&&bd.carriers.length>1?' · switched carrier':'')+'</div>'
+   +'<div style="margin-top:8px">'
+   +(stale?'<span class="dvp-chip" style="background:rgba(212,114,114,.25)">OFF PAD · last '+String(r.last||'').slice(5)+'</span>':'<span class="dvp-chip">ON ROSTER</span>')
+   +(r.nw?'<span class="dvp-chip">NEW +12H</span>':'')
+   +(srcTxt?'<span class="dvp-chip">'+srcTxt+'</span>':'')
+   +(r.aS!=null&&r.sp?'<span class="dvp-chip">window '+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+' · '+(+r.sp).toFixed(1)+' h/day</span>':'')
+   +(r.hwA&&_fcPkHrs(r.hwA)?'<span class="dvp-chip">most active '+_fcPkHrs(r.hwA)+'</span>':'')
+   +'</div></div>'
+   +'<div class="dvp-kpis">'
+   +kp('TR · pump days','<span style="color:'+trCol+'">'+((+r.tp||0).toFixed(2))+trMark+'</span>',D.tgt?('target '+D.tgt.toFixed(2)+'/day'):'no target set')
+   +kp('Loads',fmt(bd.loads),bd.days+' day'+(bd.days===1?'':'s')+' · best '+best)
+   +kp('Avg / day',avgDay,'loads per worked day')
+   +(hasBD?kp('Revenue','$'+fmt(Math.round(bd.revenue)),'rate $'+fmt(Math.round(revB))+' + FSC $'+fmt(Math.round(bd.fsc||0))):kp('Revenue','—','no loads report rows yet'))
+   +(hasBD?kp('$ / day','$'+fmt(perDay),'billed per worked day'):kp('$ / day','—','no loads report rows yet'))
+   +kp('Net avg',nwA?fmt(nwA)+' lbs':'—','per load delivered')
+   +kp('Gross avg',gwA?('<span style="color:'+(gB.col==='#2F7A45'?'#7fd4a8':gB.col==='#9a7b2d'?'#e8c56f':'#f3a0a0')+'">'+fmt(gwA)+'</span>'):'—',gwA?gB.t:'no gross captured')
+   +kp('Score',D.sc+'<span style="font-size:11px;color:#9fb4c6"> /100</span>','#'+D.rk+' of '+D.nR+' ranked')
+   +'</div>'
+   +'<button class="dvp-x" onclick="drvClose()" title="Close profile">×</button></div>'
+   +'<div class="dvp-grid">'
+   +'<div class="card"><div class="card-t">Driver Score — how the '+D.sc+' is built</div>'
+   +'<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">'
+   +'<div class="dvp-donut" style="background:conic-gradient(#2d5a7b '+(D.sc*3.6)+'deg,#e8eef4 0)"><div><b class="dvp-dnum">'+D.sc+'</b><span class="dvp-drank">#'+D.rk+' of '+D.nR+'</span></div></div>'
+   +'<div style="flex:1;min-width:200px">'
+   +'<div class="dvp-row"><span style="width:92px">Turn rate <span style="color:#8a97a6">· 40%</span></span><div class="dvp-bar"><div style="width:'+pTR+'%;background:'+(pTR>=100?'#3fa272':pTR>=70?'#4ca882':'#d49a6a')+'"></div></div><b style="width:40px;text-align:right">'+pTR+'%</b></div>'
+   +'<div class="dvp-row"><span style="width:92px">Volume <span style="color:#8a97a6">· 40%</span></span><div class="dvp-bar"><div style="width:'+pVol+'%;background:'+(pVol>=100?'#3fa272':pVol>=70?'#4ca882':'#d49a6a')+'"></div></div><b style="width:40px;text-align:right">'+pVol+'%</b></div>'
+   +'<div class="dvp-row"><span style="width:92px">Consistency <span style="color:#8a97a6">· 20%</span></span><div class="dvp-bar"><div style="width:'+pCon+'%;background:'+(pCon>=100?'#3fa272':pCon>=70?'#4ca882':'#d49a6a')+'"></div></div><b style="width:40px;text-align:right">'+pCon+'%</b></div>'
+   +'<div class="sb" style="margin-top:6px">TR vs the pad input ('+D.dtr+'/day) · volume vs the top driver · consistency = days worked vs pad days.</div>'
+   +'</div></div></div>'
+   +(hasBD?'<div class="card"><div class="card-t">Driver vs pad — loads per day</div><div class="ch ch-s"><canvas id="chDrvB"></canvas></div>'
+   +'<div class="sb">bars = his loads · dashed = pad average per active driver that day'+(D.tgt?' · red line = TR target':'')+'</div></div>'
+     :'<div class="card"><div class="card-t">Driver vs pad</div><div class="note">No Loads Report rows for this driver in the current range — the chart lands with his first delivered load.</div></div>')
+   +'</div>'
+   +(hasBD?'<div class="card" style="margin-top:12px"><div class="card-t" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">Day by day'
+   +'<select class="acc-sel" onchange="drvMet(this.value)">'
+   +'<option value="loads"'+(DRVP.met==='loads'?' selected':'')+'>Loads vs target</option>'
+   +'<option value="revenue"'+(DRVP.met==='revenue'?' selected':'')+'>Revenue (est. by loads)</option>'
+   +'<option value="hours"'+(DRVP.met==='hours'?' selected':'')+'>Hours worked (shift log)</option></select>'
+   +'<span style="margin-left:auto;display:inline-flex;gap:4px;flex-wrap:wrap">'
+   +dates.map(d=>'<span class="fc-hvp'+(d===DRVP.day?' on':'')+'" onclick="drvDay(\''+d+'\')">'+d.slice(5)+'</span>').join('')
+   +'</span></div><div class="ch ch-s"><canvas id="chDrvD"></canvas></div>'
+   +'<div class="sb" id="dvp-dayline"></div></div>':'')
+   +'<div class="dvp-foot">'
+   +'<button class="rbtn" onclick="drvLocate()">Locate in roster</button>'
+   +'<button class="rbtn" onclick="drvShot()">Export card (PNG)</button>'
+   +'<button class="rbtn" onclick="drvPrint()">Download PDF</button>'
+   +'<button class="rbtn ghost" style="margin-left:auto" onclick="drvClose()">Close</button></div>'
+   +'</div>';
+  if(hasBD)drvCharts(D,bd,dates,rpl);}
+function drvCharts(D,bd,dates,rpl){
+  const daily=(D.w.daily||[]);
+  const padAvg=dates.map(d=>{const dd=daily.find(x=>String(x.date).slice(0,10)===d);
+    return (dd&&+dd.drivers)?+(dd.loads/dd.drivers).toFixed(2):null;});
+  const mine=dates.map(d=>bd.dates[d]||0);
+  const lbls=dates.map(d=>d.slice(5));
+  const bds=[{label:'His loads',data:mine,backgroundColor:mine.map((v,i)=>dates[i]===DRVP.day?'rgba(45,90,123,.95)':(D.tgt&&v>=D.tgt?'rgba(76,168,130,.8)':'rgba(45,90,123,.55)')),borderRadius:8,borderSkipped:false,order:2},
+    {label:'Pad avg / driver',data:padAvg,type:'line',borderColor:'#9b8ec4',borderDash:[5,4],borderWidth:2,pointRadius:3,tension:.3,spanGaps:true,order:1}];
+  if(D.tgt)bds.push({label:'TR target',data:dates.map(()=>D.tgt),type:'line',borderColor:'rgba(212,114,114,.8)',borderWidth:1.5,pointRadius:0,order:0});
+  mkChart('chDrvB',{type:'bar',data:{labels:lbls,datasets:bds},
+    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+(c.dataset.type==='line'&&c.dataset.label!=='TR target'?' lds/driver':' lds')}}},
+      scales:{x:{...gO},y:{...gO,ticks:{callback:v=>v+' lds'}}}}});
+  const shdMap={};((D.r&&D.r.shd)||[]).forEach(s2=>{shdMap[s2[0]]=(shdMap[s2[0]]||0)+(+s2[2]||0);});
+  const met=DRVP.met;
+  const serie=dates.map(d=>met==='loads'?(bd.dates[d]||0):met==='revenue'?Math.round((bd.dates[d]||0)*rpl):(shdMap[d.slice(5)]!=null?+shdMap[d.slice(5)].toFixed(1):null));
+  const col=met==='revenue'?'rgba(155,142,196,.8)':met==='hours'?'rgba(224,166,62,.75)':'rgba(76,168,130,.8)';
+  const ds2=[{label:met==='loads'?'Loads':met==='revenue'?'Revenue est.':'Hours',data:serie,backgroundColor:dates.map((d,i)=>d===DRVP.day?'rgba(45,90,123,.95)':col),borderRadius:8,borderSkipped:false}];
+  if(met==='loads'&&D.tgt)ds2.push({label:'TR target',data:dates.map(()=>D.tgt),type:'line',borderColor:'rgba(212,114,114,.8)',borderWidth:1.5,pointRadius:0});
+  mkChart('chDrvD',{type:'bar',data:{labels:lbls,datasets:ds2},
+    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>c.dataset.label+': '+(met==='revenue'?'$'+fmt(c.raw):c.raw+(met==='hours'?' h':' lds'))}}},
+      scales:{x:{...gO},y:{...gO,ticks:{callback:v=>met==='revenue'?('$'+fmt(v)):v}}}}});
+  const dl=$('dvp-dayline');
+  if(dl&&DRVP.day){const d=DRVP.day;const l=bd.dates[d]||0;const hv=shdMap[d.slice(5)];
+    dl.innerHTML='<b>'+d+'</b> · '+l+' loads · est. $'+fmt(Math.round(l*rpl))+(hv!=null?' · '+hv.toFixed(1)+' h on the shift log':'')+(D.tgt?(' · target '+D.tgt.toFixed(2)+' → '+(l>=D.tgt?'<b style="color:#2F7A45">met ▲</b>':'<b style="color:#b23b3b">missed ▼</b>')):'');}}
+window.drvShot=function(){try{const D=_dvData(DRVP.d);if(!D)return;
+  const bd=D.bd||{loads:0,revenue:0,fsc:0,days:0,dates:{}};const r=D.r||{};
+  const dates=Object.keys(bd.dates||{}).sort();
+  const W=1000,H=640,cv=document.createElement('canvas');cv.width=W*2;cv.height=H*2;
+  const x=cv.getContext('2d');x.scale(2,2);
+  x.fillStyle='#f6f8fb';x.fillRect(0,0,W,H);
+  const grd=x.createLinearGradient(0,0,W,0);grd.addColorStop(0,'#17293a');grd.addColorStop(1,'#24506f');
+  x.fillStyle=grd;x.fillRect(0,0,W,150);
+  x.fillStyle='#9fb4c6';x.font="700 11px 'Plus Jakarta Sans',sans-serif";x.fillText('DRIVER PROFILE · '+FC.id+' · '+new Date().toISOString().slice(0,10),28,36);
+  x.fillStyle='#fff';x.font="800 34px 'Plus Jakarta Sans',sans-serif";x.fillText(String(DRVP.d).slice(0,30),28,78);
+  x.font="700 13px 'Plus Jakarta Sans',sans-serif";x.fillStyle='#dce8f2';
+  x.fillText(((bd.carriers&&bd.carriers[0])||r.c||'—')+(r.aS!=null&&r.sp?('  ·  window '+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)):''),28,106);
+  const kp=[['TR PUMP',(+r.tp||0).toFixed(2)+(D.tgt?' / '+D.tgt.toFixed(2):'')],['LOADS',fmt(bd.loads)+' · '+bd.days+'d'],['REVENUE','$'+fmt(Math.round(bd.revenue))],['SCORE',D.sc+' · #'+D.rk+'/'+D.nR],['NET AVG',(bd.avg_net||r.nwA)?fmt(bd.avg_net||r.nwA):'—'],['GROSS AVG',(bd.avg_gross||r.gwA)?fmt(bd.avg_gross||r.gwA):'—']];
+  kp.forEach((k2,i)=>{const bx=28+i*158;x.fillStyle='#fff';x.strokeStyle='#e4e9ef';
+    x.beginPath();x.roundRect?x.roundRect(bx,176,146,74,12):x.rect(bx,176,146,74);x.fill();x.stroke();
+    x.fillStyle='#8a97a6';x.font="700 9px 'Plus Jakarta Sans',sans-serif";x.fillText(k2[0],bx+12,198);
+    x.fillStyle=(k2[0]==='GROSS AVG'&&(bd.avg_gross||r.gwA))?gwBand(bd.avg_gross||r.gwA).col:'#17293a';
+    x.font="800 17px 'Plus Jakarta Sans',sans-serif";x.fillText(String(k2[1]).slice(0,14),bx+12,226);});
+  x.fillStyle='#2E4057';x.font="800 12px 'Plus Jakarta Sans',sans-serif";x.fillText('Loads per day',28,296);
+  const mx=Math.max(1,...dates.map(d=>bd.dates[d]||0),D.tgt||0);
+  const bw=Math.min(84,(W-56)/Math.max(1,dates.length)-14);
+  dates.forEach((d,i)=>{const v=bd.dates[d]||0;const bh=Math.round(v/mx*240);
+    const bx=28+i*(bw+14);const by=580-bh;
+    x.fillStyle=(D.tgt&&v>=D.tgt)?'rgba(76,168,130,.85)':'rgba(45,90,123,.7)';
+    x.beginPath();x.roundRect?x.roundRect(bx,by,bw,bh,8):x.rect(bx,by,bw,bh);x.fill();
+    x.fillStyle='#17293a';x.font="800 13px 'Plus Jakarta Sans',sans-serif";x.fillText(String(v),bx+bw/2-7,by-8);
+    x.fillStyle='#8a97a6';x.font="700 10px 'Plus Jakarta Sans',sans-serif";x.fillText(d.slice(5),bx+bw/2-16,600);});
+  if(D.tgt){const ty=580-Math.round(D.tgt/mx*240);x.strokeStyle='rgba(212,114,114,.85)';x.setLineDash([6,5]);
+    x.beginPath();x.moveTo(24,ty);x.lineTo(W-24,ty);x.stroke();x.setLineDash([]);
+    x.fillStyle='#b23b3b';x.font="700 10px 'Plus Jakarta Sans',sans-serif";x.fillText('target '+D.tgt.toFixed(2),W-110,ty-6);}
+  const a2=document.createElement('a');
+  a2.download='driver_'+String(DRVP.d).toLowerCase().replace(/[^a-z0-9]+/g,'-')+'_'+new Date().toISOString().slice(0,10)+'.png';
+  a2.href=cv.toDataURL('image/png');a2.click();
+}catch(e){console.warn('drvShot',e);}};
+window.drvPrint=function(){try{
+  document.body.classList.add('dvp-print');
+  const done=function(){try{document.body.classList.remove('dvp-print');}catch(_){ }
+    try{window.removeEventListener('afterprint',done);}catch(_){ }};
+  try{window.addEventListener('afterprint',done);}catch(_){ }
+  setTimeout(done,2000);
+  window.print();
+}catch(e){console.warn('drvPrint',e);}};
+
 /* ── tabla del truck roster aprendido ── */
 function _fcHM(hF){let hh=Math.floor(((hF%24)+24)%24),mm=Math.round((hF-Math.floor(hF))*60);
   if(mm===60){mm=0;hh=(hh+1)%24;}
@@ -5106,6 +5309,7 @@ function fcRosterTable(){
     return '<tr class="'+(r.inc?'':'exc')+'" data-tip="'+tip+'">'
     +'<td><input type="checkbox" '+(r.inc?'checked':'')+(stale?' disabled':'')+' onchange="fcTogDrv(\''+encodeURIComponent(r.d)+'\')"></td>'
     +'<td><span class="fcr-nm" onclick="fcGotoDriver(\''+String(r.d).replace(/'/g,"\\'")+'\')">'+r.d+'</span>'
+      +' <span class="fcp-o" title="Open profile" onclick="drvProfile(\''+String(r.d).replace(/'/g,"\\'")+'\')">\u2197</span>'
       +(r.nw?' <span class="fcr-new">NEW +12H</span>':'')+'</td>'
     +'<td>'+(r.c||'—')+'</td>'
     +'<td class="fcr-win">'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+(r.pw?'':' <span style="font-size:8px;color:'+(r.src==='xwell'?'#1c5d8f':'#b45309')+'">'+(r.src==='xwell'?('from '+r.xw):(r.src==='prefill'?'prefill':'all-days'))+'</span>')+(vr2?' <span style="font-size:8px;color:#9a7b2d">~ varies</span>':'')+'</td>'
