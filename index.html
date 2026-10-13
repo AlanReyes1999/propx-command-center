@@ -1214,7 +1214,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.111';
+const VBUILD='2026-10-12.112';
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -4908,7 +4908,6 @@ function renderFc(){
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
           <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Score</th><th>Days</th><th>Last load</th>
         </tr></thead><tbody id="fcr-body"></tbody></table></div>
-        <div class="sb" style="margin-top:6px">Window = first start → TOTAL hours per day on pumping days AFTER day-1 of the well (downhole day never teaches; split shifts on the same day are summed) — today's partial day and the still-open shift never count · a well in prefill (or just started) inherits each driver's PREVIOUS-JOB prefill windows · transfers inherit window + hour-map from their LATEST pad (Live wells or the last closed, ≤14 d, name-matched, source cited) · NEW = first 2 calendar days project 12 h from the driver's real start · loads / days / score count operating days only once the well is running (prefill-only wells count prefill) · projection weighs each driver by his real hour-by-hour activity map (his lane shades STRONGER where he really works — yellow/red bars invert: the alert color burns where he fades) · crew floor = the pad's median actives per hour (operating days, today excluded) · hour 0 = live board actives · unchecking a driver removes them from the crew curve · click a name to open their Driver Grid · TR pump arrow = his pump turn rate vs the well target, hover for target + Δ (green ▲ meets · amber ▼ within 15% below · red ▼ further below) · ~ varies / a full-width lane = his start moves day to day (his hour map is much wider than his avg day): the table window is just the average — trust the lane heat and hover it for the real pattern · window minutes are averages across his days (loads land on whole hours; 06:48 = the mean of several real starts) · the coverage board switches 24 h / 48 h and lane order (next on / loads) — at 48 h each lane repeats the driver's daily pattern and the dashed line marks midnight · click a Reinforce chip for who could cover that dip (off-pad / unchecked drivers whose learned hours touch it) · compare = a second pad's crew ribbon + transfer windows · PNG downloads the board.</div>
       </div></div>
     <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
       ${kpi('fck-cov','Coverage (no trucks)')}
