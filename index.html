@@ -290,7 +290,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 #drv-ov{position:fixed;inset:0;z-index:290;background:rgba(246,248,251,.985);display:none;overflow:auto;padding:18px}
 #drv-ov.on{display:block}
 .dvp-wrap{max-width:1180px;margin:0 auto}
-.dvp-hero{background:linear-gradient(135deg,#17293a,#1f3b52 55%,#24506f);border-radius:20px;color:#fff;padding:20px 22px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;box-shadow:0 18px 44px rgba(23,41,58,.25)}
+.dvp-hero{position:relative;background:linear-gradient(135deg,#17293a,#1f3b52 55%,#24506f);border-radius:20px;color:#fff;padding:20px 54px 20px 22px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;box-shadow:0 18px 44px rgba(23,41,58,.25)}
 .dvp-nm{font:800 26px/1.1 'Plus Jakarta Sans';letter-spacing:-.02em}
 .dvp-sub{font:700 10.5px/1.6 'Plus Jakarta Sans';color:#9fb4c6;letter-spacing:.04em}
 .dvp-chip{display:inline-block;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:4px 10px;font:700 9.5px 'Plus Jakarta Sans';color:#dce8f2;margin:4px 6px 0 0}
@@ -299,7 +299,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .dvp-k .t{font:700 8.5px/1 'Plus Jakarta Sans';letter-spacing:.09em;text-transform:uppercase;color:#9fb4c6;margin-bottom:5px}
 .dvp-k .v{font:800 16.5px/1.1 'Plus Jakarta Sans';color:#fff;white-space:nowrap}
 .dvp-k .s{font:600 9.5px/1.3 'Plus Jakarta Sans';color:#9fb4c6;margin-top:3px}
-.dvp-x{background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;font:800 16px/1 'Plus Jakarta Sans';padding:8px 13px;cursor:pointer;flex:0 0 auto}
+.dvp-x{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;font:800 16px/1 'Plus Jakarta Sans';padding:8px 13px;cursor:pointer}
 .dvp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;margin-top:12px}
 .dvp-donut{width:118px;height:118px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:0 0 118px}
 .dvp-donut>div{width:90px;height:90px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px #edf1f5}
@@ -311,7 +311,8 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .dvp-foot{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 8px}
 .fcp-o{cursor:pointer;color:#2b6a92;font:800 11px 'Plus Jakarta Sans';opacity:.5;padding:0 2px}
 .fcp-o:hover{opacity:1}
-@media(max-width:700px){#drv-ov{padding:10px}.dvp-nm{font-size:21px}.dvp-kpis{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){#drv-ov{padding:10px}.dvp-nm{font-size:21px}.dvp-kpis{grid-template-columns:repeat(2,1fr)}
+ .fg-stats{gap:4px}.fg-stats .fg-chip,.fg-stats .fc-hvp{font-size:8.5px;padding:3px 7px}}
 @media print{body.dvp-print>*:not(#drv-ov){display:none!important}
  body.dvp-print #drv-ov{position:static!important;display:block!important;overflow:visible!important;background:#fff!important;padding:0!important}
  body.dvp-print .dvp-foot{display:none!important}}
@@ -1327,7 +1328,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.118';
+const VBUILD='2026-10-12.119';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -2471,7 +2472,7 @@ function bExec(){
   if(m.nptLog<=0)hl.push('<li><strong>Zero logistics NPT</strong> — every event attributed to Frac/external.</li>');
   if(m.trAll<m.DTR)gp.push(`<li><strong>TR ${m.trAll} vs ${m.DTR} target (${pctS(m.trAll,m.DTR)})</strong> — offload ${m.AVG.dest}m vs ${m.DSN.dest}m design is the cycle driver.</li>`);
   if(m.AVG.tot>m.dCTbuf)gp.push(`<li><strong>Ciclo ${m.AVG.tot}m vs ${m.dCTbuf}m buffered (${pctS(m.AVG.tot,m.dCTbuf)})</strong> — absorbed by scaling drivers, not schedule slip.</li>`);
-  if(m.nptTot>0)gp.push(`<li><strong>${m.nptTot}h NPT (${m.DTE.length} eventos)</strong> — concentrado en ${m.DTE[0]?m.DTE[0].resp:'—'}; peor evento ${m.DTE[0]?m.DTE[0].h+'h ('+m.DTE[0].date+')':''}.</li>`);
+  if(m.nptTot>0)gp.push(`<li><strong>${m.nptTot}h NPT (${m.DTE.length} events)</strong> — concentrated on ${m.DTE[0]?m.DTE[0].resp:'—'}; worst event ${m.DTE[0]?m.DTE[0].h+'h ('+m.DTE[0].date+')':''}.</li>`);
   $('pz-cl-exec').innerHTML=`
     <div class="st"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4m0 1h13l-2.5 4L17 13H4"/></svg> ${m.isLive?'Live':'Closure'} — Design ${T.total_stages?'('+T.total_stages+' stg · '+fmt(T.total_loads||0)+' ld)':''} vs Actual (${m.D[0]}–${m.D[m.n-1]})</div>
     ${secH('<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16V7h11v9M13 10h5l3 3.5V16h-3"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>','Logistics — MEDS Delivery','loads · tons · turn rate · drivers')}
@@ -2955,7 +2956,7 @@ function bDT(){
   $('pz-cl-dt').innerHTML=`
     <div class="st"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="#d47272"/></svg> Downtime — ${m.nptTot?fmtH(m.nptTot):'0 h'} Total · ${m.nptLog?fmtH(m.nptLog):'0 h'} Logistics · ${m.DTE.length} event${m.DTE.length===1?'':'s'} <span class="ssub">· range ${m.n}d${m.dtExcl?` · ${m.dtExcl} undated/out-of-range — visible in All`:''}${m.openHid?` · <b style="color:#d97706">${m.openHid} open/sanitized — excluded from NPT</b>`:''}</span></div>
     <div class="grid g4 mb">
-      ${kpiCard('Total NPT',fmtH(m.nptTot),'cr',m.DTE.length+' eventos · '+m.nptTot.toFixed(1)+' h',Object.keys(m.DT_RESP).slice(0,2).join(' / '),'dd')}
+      ${kpiCard('Total NPT',fmtH(m.nptTot),'cr',m.DTE.length+' events · '+m.nptTot.toFixed(1)+' h',Object.keys(m.DT_RESP).slice(0,2).join(' / '),'dd')}
       ${kpiCard('Logistics NPT',m.nptLog+' h',m.nptLog<=0?'cg':'co',m.nptLog<=0?'Perfect record':'', (m.nptLog<=0?'0% logistics ✓':''),'du')}
       ${kpiCard('Worst Event',hToHM(worst.h),'co',worst.date+' — '+worst.cause,Math.round(worst.h/Math.max(m.nptTot,1)*100)+'% of total NPT','dd')}
       ${kpiCard('Pad Efficiency',Math.max(0,padEff)+'%','co',fmtH(m.nptTot)+' / '+fmt(padH)+' h window ('+m.n+'d)',m.nptTot>0?'NPT driven':'no NPT ✓',m.nptTot>0?'dw':'dn')}
@@ -3567,11 +3568,11 @@ function bPreOps(){
       <tr><td>Steady-state loads/day</td><td class="mono">${m.dTgt}</td><td>${Math.round(m.dTgt/2)} por turno</td></tr>
       <tr><td>Drivers/day</td><td class="mono">${T.drivers_day||m.dDrv}</td><td>${Math.round((T.drivers_day||m.dDrv)/2)} por turno</td></tr>
       <tr><td>Turn rate</td><td class="mono">${m.DTR}</td><td>technical ${m.techTR}</td></tr>
-      <tr><td>Ciclo ponderado</td><td class="mono">${m.dCT} min</td><td>buffered ${m.dCTbuf} min</td></tr>
+      <tr><td>Weighted cycle</td><td class="mono">${m.dCT} min</td><td>buffered ${m.dCTbuf} min</td></tr>
       <tr><td>Stages/day</td><td class="mono">${m.stagesDayD}</td><td>${fmtMin(m.durStageD)}/stage</td></tr>
       <tr><td>Tons/stage</td><td class="mono">${m.tonsStageD} t</td><td>${fmt(Math.round(m.tonsStageD*2000))} lbs</td></tr>
       ${(function(){const isBelly=/belly/i.test((ACTIVE_META&&ACTIVE_META.equipment)||'')||(!T.boxes_total&&!T.boxes_full_pad);
-        if(isBelly){const sp=+T.sandpile_target||5000000;return `<tr><td>Sandpile en pad</td><td class="mono">${(sp/1e6).toFixed(1)}M lbs</td><td>bellydump · target de pila</td></tr>`;}
+        if(isBelly){const sp=+T.sandpile_target||5000000;return `<tr><td>Sandpile on pad</td><td class="mono">${(sp/1e6).toFixed(1)}M lbs</td><td>bellydump · pile target</td></tr>`;}
         return T.boxes_total?`<tr><td>Total boxes</td><td class="mono">${T.boxes_total}</td><td>${T.boxes_full_pad||'—'} pad · ${T.boxes_transit||'—'} transit · ${T.boxes_empty||'—'} empty</td></tr>`:'';})()}
       <tr><td>Running revenue/day</td><td class="mono">${fK(m.dRevDay)}</td><td>$${T.rev_per_load||m.rpl}/load</td></tr>
     </tbody></table></div>`;
@@ -3580,7 +3581,7 @@ function bPreFin(){
   const m=M,T=m.T;
   $('pz-pre-fin').innerHTML=`<div class="st">${ICO.dollar} Financial — design vs running</div>
     <div class="grid g2 mb"><div class="card"><div class="card-t">Design vs Actual Revenue</div><div class="ch"><canvas id="chPreFinBar"></canvas></div></div>
-    <div class="card"><div class="card-tl">Supuestos</div><table><tbody>
+    <div class="card"><div class="card-tl">Assumptions</div><table><tbody>
       <tr><td>Design revenue</td><td class="mono" style="text-align:right">${T.total_revenue?'$'+fmt(T.total_revenue):'—'}</td></tr>
       <tr><td>Design rev/load</td><td class="mono" style="text-align:right">$${T.rev_per_load||m.rpl}</td></tr>
       <tr><td>Running rev/day</td><td class="mono" style="text-align:right">${fK(m.dRevDay)}</td></tr>
@@ -3720,7 +3721,7 @@ window.pzShow=function(tab){
     if(fn&&M){try{fn();_pzDirty[tab]=false;} // dirty=false SOLO si el build completó
       catch(e){console.error('[pzShow]',tab,e);
         const pane=$('pz-'+tab);
-        if(pane)pane.innerHTML='<div class="note" style="background:#fdecec;color:#b91c1c;padding:14px;border-radius:12px">This view did not load ('+String(e&&e.message||e).slice(0,90)+') — <a href="#" style="color:#b91c1c;font-weight:800" onclick="_pzDirty[\''+tab+'\']=true;pzShow(\''+tab+'\');return false">Reintentar ↻</a></div>';}}}
+        if(pane)pane.innerHTML='<div class="note" style="background:#fdecec;color:#b91c1c;padding:14px;border-radius:12px">This view did not load ('+String(e&&e.message||e).slice(0,90)+') — <a href="#" style="color:#b91c1c;font-weight:800" onclick="_pzDirty[\''+tab+'\']=true;pzShow(\''+tab+'\');return false">Retry ↻</a></div>';}}}
   resizeCharts();
   // Autocuración: si un chart del pane VISIBLE quedó 0×0 (murió por un resize oculto o throw de plugin) → resize; si sigue muerto, rebuild 1 sola vez
   const _raf=(typeof requestAnimationFrame==='function')?requestAnimationFrame:(cb=>setTimeout(cb,16));
@@ -5503,7 +5504,7 @@ function show(tab){
   const fn={res:renderResumen,pozo:renderPozo,sts:renderStatus,fc:renderFc,cie:renderCie,acc:renderAccess}[tab];
   if(fn&&!RENDERED[tab]){try{fn();RENDERED[tab]=true;}
     catch(e){console.error('[show]',tab,e);const p=$('p-'+tab);
-      if(p)p.innerHTML='<div class="note" style="background:#fdecec;color:#b91c1c;padding:14px;border-radius:12px;margin:14px">This tab did not load ('+String(e&&e.message||e).slice(0,90)+') — <a href="#" style="color:#b91c1c;font-weight:800" onclick="show(\''+tab+'\');return false">Reintentar ↻</a></div>';}}
+      if(p)p.innerHTML='<div class="note" style="background:#fdecec;color:#b91c1c;padding:14px;border-radius:12px;margin:14px">This tab did not load ('+String(e&&e.message||e).slice(0,90)+') — <a href="#" style="color:#b91c1c;font-weight:800" onclick="show(\''+tab+'\');return false">Retry ↻</a></div>';}}
   resizeCharts();
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>show(t.dataset.tab));
@@ -5540,7 +5541,7 @@ function renderHint(){
       hint.innerHTML='<strong>Apps Script outdated:</strong> the deployment answers with an old version (pre-v6.9) — downtimes may carry a +17h30m ghost offset. Paste the new Code.gs and create a <b>New version</b>.'+trace;return;}
     hint.style.display='block';
     const head=st==='live'?ICO.info+' Live with notices':st==='error'?ICO.warn+' No API connection':st==='empty'?ICO.info+' API connected · empty Registry':ICO.info+' Demo mode';
-    hint.innerHTML='<strong>'+head+':</strong> '+(API_STATE.reason||'check the trace.')+' <a href="#" onclick="location.reload();return false" style="color:#1c3d54;font-weight:700">Reintentar ↻</a>'+trace;
+    hint.innerHTML='<strong>'+head+':</strong> '+(API_STATE.reason||'check the trace.')+' <a href="#" onclick="location.reload();return false" style="color:#1c3d54;font-weight:700">Retry ↻</a>'+trace;
   }catch(_){}
 }
 function paintHeader(){
