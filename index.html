@@ -229,6 +229,36 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .cli-fc .pane{visibility:hidden}
 .cli-fc .pane#p-fc{visibility:visible}
 .rbtn.okc{color:#2F7A45;border-color:#bfe3d2}
+/* .114: login + roles */
+#login-ov{position:fixed;inset:0;z-index:300;background:#f6f8fb;display:none;align-items:center;justify-content:center;padding:20px}
+#login-ov.on{display:flex}
+.lg-card{width:min(380px,94vw);background:#fff;border:1px solid var(--border,#e4e9ef);border-radius:18px;box-shadow:0 18px 50px rgba(28,61,84,.12);padding:26px 26px 20px;font-family:'Plus Jakarta Sans',sans-serif}
+.lg-logo{font:800 13px/1 'Plus Jakarta Sans';letter-spacing:.14em;color:#1c3d54}
+.lg-logo span{color:#8a97a6;letter-spacing:.02em;font-weight:700}
+.lg-t{font:800 20px/1.2 'Plus Jakarta Sans';color:#17293a;margin:18px 0 2px}
+.lg-s{font:600 11.5px/1.5 'Plus Jakarta Sans';color:#8a97a6;margin-bottom:14px}
+.lg-f{margin:10px 0}
+.lg-f label{display:block;font:700 9.5px/1 'Plus Jakarta Sans';letter-spacing:.08em;text-transform:uppercase;color:#8a97a6;margin-bottom:5px}
+.lg-f input{width:100%;box-sizing:border-box;background:#eef3f9;border:1px solid #dde6ef;border-radius:10px;padding:11px 12px;font:600 13px 'Plus Jakarta Sans';color:#17293a;outline:none}
+.lg-f input:focus{border-color:#2d5a7b;background:#fff}
+.lg-err{min-height:16px;font:700 11px/1.4 'Plus Jakarta Sans';color:#b23b3b;margin:6px 0 2px}
+.lg-err.okm{color:#2F7A45}
+.lg-btn{width:100%;background:#1F2937;color:#fff;border:0;border-radius:11px;padding:12px;font:800 13px 'Plus Jakarta Sans';cursor:pointer;margin-top:4px}
+.lg-btn:disabled{opacity:.55;cursor:wait}
+.lg-alt{text-align:center;font:700 11px 'Plus Jakarta Sans';color:#2b6a92;margin-top:12px}
+.lg-alt span{cursor:pointer}
+.lg-foot{text-align:center;font:600 10px 'Plus Jakarta Sans';color:#9aa7b4;margin-top:14px}
+.tab.adm{display:none}
+.is-admin .tab.adm{display:block}
+.acc-chip{font:800 9px/1 'Plus Jakarta Sans';border-radius:999px;padding:4px 9px;letter-spacing:.05em;text-transform:uppercase;display:inline-block}
+.acc-chip.admin{background:#fdecec;color:#b23b3b}
+.acc-chip.operative{background:#e8f1fb;color:#2b6a92}
+.acc-chip.customer{background:#E7F3EC;color:#2F7A45}
+.acc-chip.pending{background:#faf3dc;color:#9a7b2d}
+.acc-chip.disabled{background:#eef1f4;color:#8a97a6}
+.acc-act{font:700 10px 'Plus Jakarta Sans';color:#2b6a92;cursor:pointer;margin-right:10px;white-space:nowrap}
+.acc-act.red{color:#b23b3b}
+.acc-sel{font:700 10px 'Plus Jakarta Sans';border:1px solid #dde6ef;border-radius:8px;padding:4px 6px;background:#fff;color:#17293a}
 /* gauge 3D tilt */
 .fc-gauge{perspective:700px}
 .fc-gstage{position:relative;transform-style:preserve-3d;transition:transform .22s ease;transform:rotateX(var(--gx,0deg)) rotateY(var(--gy,0deg))}
@@ -745,6 +775,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
     <span class="pill p-gold" id="pill-api">Modo demo</span>
     <span class="pill" id="pill-upd">—</span>
     <button class="rbtn" id="yrPill" onclick="openYrGate()" title="Operating year">— ▾</button>
+    <button class="rbtn ghost" id="btn-auth" style="display:none"></button>
     <button class="rbtn" id="btn-refresh"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Refresh</span></button>
     <button class="rbtn" id="btn-export" title="Exportar informe PDF de la vista actual"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><span class="btxt"> PDF</span></button>
   </div>
@@ -765,8 +796,21 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
   <div class="tab" data-tab="fc">Forecast</div>
   
   <div class="tab" data-tab="cie">Closeouts</div>
+  <div class="tab adm" data-tab="acc">Access</div>
 </div>
 
+<div id="login-ov"><div class="lg-card">
+  <div class="lg-logo">MEDS <span>· PropX Command Center</span></div>
+  <div class="lg-t" id="lg-title">Welcome back</div>
+  <div class="lg-s" id="lg-sub">Sign in to your account to continue</div>
+  <div class="lg-f" id="lg-fname" style="display:none"><label>Name</label><input id="lg-name" type="text" autocomplete="name"></div>
+  <div class="lg-f"><label>Email</label><input id="lg-email" type="email" autocomplete="username"></div>
+  <div class="lg-f"><label>Password</label><input id="lg-pass" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')lgGo()"></div>
+  <div class="lg-err" id="lg-err"></div>
+  <button class="lg-btn" id="lg-go" onclick="lgGo()">Sign in</button>
+  <div class="lg-alt" id="lg-alt"><span onclick="lgMode('reg')">Request access</span></div>
+  <div class="lg-foot">Access is managed by MEDS dispatch</div>
+</div></div>
 <div class="content">
 <div id="api-hint" style="display:none;background:var(--ora-l);border:1px solid #eadcc0;color:#7a5a1e;border-radius:12px;padding:10px 16px;margin-bottom:14px;font-size:11.5px;line-height:1.5"></div>
 
@@ -928,6 +972,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
 
 <!-- ============ CIERRES ============ -->
 <div class="pane" id="p-fc"></div>
+<div class="pane" id="p-acc"></div>
 <div class="pane" id="p-cie">
   <div class="st">Closed Wells <span class="ssub">— executive summary per well · parity with your historical INDEX</span></div>
   <div class="grid g2 mb" id="cie-cards"></div>
@@ -1186,6 +1231,8 @@ let _wellCtl=null;  // cancela el fetch del pozo anterior al cambiar (libera red
 const FILTERS={q:'',year:'',cust:'',eq:'',stat:''};
 
 async function fetchJSON(u,_xsig){
+  /* .114: toda llamada al GAS viaja con el token de sesión */
+  try{if(typeof AUTH!=='undefined'&&AUTH&&AUTH.tk&&/script\.google\.com/.test(u))u+=(u.indexOf('?')>=0?'&':'?')+'tk='+encodeURIComponent(AUTH.tk);}catch(_){}
   // TIMEOUT 90s: un ?action=well de un pozo grande (36d, 2,400+ loads) tarda 30-60s en GAS,
   // more el arranque en frío. 25s era guillotina ("signal is aborted"). 90s protege del cuelgue
   // real sin matar cargas legítimas. + 1 REINTENTO automático (el cold-start suele responder al 2º).
@@ -1200,7 +1247,9 @@ async function fetchJSON(u,_xsig){
       if(!r.ok)throw new Error('HTTP '+r.status);
       const tx=await r.text();
       if(/^\s*</.test(tx))throw new Error('HTML_LOGIN');
-      return JSON.parse(tx);
+      const jj=JSON.parse(tx);
+      if(jj&&jj.error==='auth_required'){try{_authNeed();}catch(_){}}
+      return jj;
     }catch(e){
       const msg=String(e&&(e.message||e.name)||e);
       if(/abort/i.test(msg))throw new Error('API took over '+(TMO/1000)+'s (GAS slow or asleep)'+(attempt?'':' — retrying'));
@@ -1221,7 +1270,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.113';
+const VBUILD='2026-10-12.114';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -1229,6 +1278,14 @@ const CLI_FC=(function(){try{
   try{document.documentElement.classList.add('cli-fc');}catch(_){}
   return {well:m?decodeURIComponent(m[1]):''};
 }catch(_){return null;}})();
+/* .114: sesión — token emitido por el GAS v10.0 (hoja Users del Hub) */
+let AUTH=(function(){try{const j=JSON.parse(localStorage.getItem('meds_auth:v1')||'null');
+  if(j&&j.tk&&j.exp>Date.now())return j;}catch(_){}return null;})();
+try{if(AUTH&&AUTH.role==='customer')document.documentElement.classList.add('cli-fc');
+  if(AUTH&&AUTH.role==='admin')document.documentElement.classList.add('is-admin');}catch(_){}
+function _authSave(o){AUTH=o;try{if(o)localStorage.setItem('meds_auth:v1',JSON.stringify(o));else localStorage.removeItem('meds_auth:v1');}catch(_){}}
+let _authAsked=false;
+function _authNeed(){if(_authAsked)return;_authAsked=true;_authSave(null);try{lgShow();}catch(_){}}
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
 window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
@@ -4212,6 +4269,96 @@ window.fcShare=function(){const u=_fcShareUrl();
   const b=$('fc-share');if(b){b.classList.add('okc');
     b.title='Link copied · opened in a new tab — the client lands on Forecast only';
     setTimeout(function(){try{b.classList.remove('okc');b.title='Open link to share';}catch(_){}},2400);}};
+/* ═══ .114 · LOGIN + SESIÓN + USER MANAGEMENT (GAS v10.0) ═══ */
+let LG_MODE='login';
+function lgShow(msg){const ov=$('login-ov');if(!ov)return;ov.classList.add('on');
+  if(msg){const er=$('lg-err');if(er){er.textContent=msg;er.classList.remove('okm');}}
+  const em=$('lg-email');if(em&&AUTH&&AUTH.email)em.value=AUTH.email;}
+function lgHide(){const ov=$('login-ov');if(ov)ov.classList.remove('on');}
+window.lgMode=function(m){LG_MODE=m;const T=$('lg-title'),S=$('lg-sub'),N=$('lg-fname'),B=$('lg-go'),A2=$('lg-alt'),E2=$('lg-err');
+  if(E2){E2.textContent='';E2.classList.remove('okm');}
+  if(m==='reg'){if(T)T.textContent='Request access';if(S)S.textContent='Your request stays pending until MEDS approves it';
+    if(N)N.style.display='';if(B)B.textContent='Request access';if(A2)A2.innerHTML='<span onclick="lgMode(\'login\')">Back to sign in</span>';}
+  else if(m==='boot'){if(T)T.textContent='Set up the first admin';if(S)S.textContent='No users exist yet — this account will control all access';
+    if(N)N.style.display='';if(B)B.textContent='Create admin';if(A2)A2.innerHTML='<span onclick="lgMode(\'login\')">Back to sign in</span>';}
+  else{if(T)T.textContent='Welcome back';if(S)S.textContent='Sign in to your account to continue';
+    if(N)N.style.display='none';if(B)B.textContent='Sign in';if(A2)A2.innerHTML='<span onclick="lgMode(\'reg\')">Request access</span>';}};
+const LG_ERRS={bad_credentials:'Wrong email or password',pending_approval:'Your request is pending approval — MEDS will enable it',
+  account_disabled:'This account is disabled — contact MEDS',exists:'That email already has an account or request',
+  bad_request:'Check the fields — password needs 8+ characters',already_setup:'An admin already exists — sign in instead',
+  user_limit:'User limit reached',busy:'Server busy — try again',forbidden:'Not allowed'};
+window.lgGo=async function(){const B=$('lg-go'),E2=$('lg-err');if(B)B.disabled=true;
+  const nm=($('lg-name')||{}).value||'',em=(($('lg-email')||{}).value||'').trim(),pw=($('lg-pass')||{}).value||'';
+  const err=t=>{if(E2){E2.textContent=t;E2.classList.remove('okm');}if(B)B.disabled=false;};
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em))return err('Enter a valid email');
+  if((LG_MODE!=='login')&&pw.length<8)return err('Password needs 8+ characters');
+  if((LG_MODE!=='login')&&!nm.trim())return err('Enter a name');
+  const act=LG_MODE==='reg'?'register':LG_MODE==='boot'?'bootstrap_admin':'login';
+  let j=null;try{j=await fetchJSON(CONFIG.API_URL+'?action='+act+'&name='+encodeURIComponent(nm)+'&email='+encodeURIComponent(em)+'&pass='+encodeURIComponent(pw));}
+  catch(e){return err('Could not reach the server — '+String(e&&e.message||e).slice(0,80));}
+  if(j&&j.error==='no_users'){lgMode('boot');return err('No users yet — create the first admin');}
+  if(j&&j.error)return err(LG_ERRS[j.error]||('Error: '+j.error));
+  if(j&&j.ok&&j.pending){lgMode('login');if(E2){E2.textContent='Request sent — pending approval by MEDS';E2.classList.add('okm');}if(B)B.disabled=false;return;}
+  if(j&&j.ok&&j.token){_authSave({tk:j.token,role:j.role,name:j.name||nm,email:j.email||em,exp:j.exp||(Date.now()+6*864e5)});location.reload();return;}
+  err('Unexpected reply — is Code v10.0 pasted in Apps Script?');};
+window.lgOut=function(){_authSave(null);location.reload();};
+function paintAuth(){const b=$('btn-auth');if(!b)return;
+  if(!CONFIG.API_URL){b.style.display='none';return;}
+  b.style.display='';
+  if(AUTH){b.title='Log out';b.onclick=lgOut;
+    b.innerHTML='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="btxt"> '+String(AUTH.name||AUTH.email).split(' ')[0]+' · '+AUTH.role+'</span>';}
+  else{b.title='Sign in';b.onclick=function(){lgMode('login');lgShow();};
+    b.innerHTML='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="btxt"> Sign in</span>';}}
+try{paintAuth();}catch(_){}
+/* — Access (User Management, solo admin) — */
+function renderAccess(){const pane=$('p-acc');if(!pane)return;
+  if(!(AUTH&&AUTH.role==='admin')){pane.innerHTML='<div class="note" style="margin:14px">Admin only.</div>';return;}
+  pane.innerHTML='<div class="st">'+ICO.chart+' Access — User Management <span class="ssub">· approve requests · set roles · reset passwords</span></div>'
+   +'<div class="card"><div class="card-t" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">Users <span class="sb" id="acc-cnt"></span>'
+   +'<button class="rbtn" style="margin-left:auto" onclick="accNewTog()">Create access</button></div>'
+   +'<div id="acc-new" style="display:none;background:#f6f9fc;border:1px solid #e4e9ef;border-radius:12px;padding:12px;margin-bottom:10px">'
+   +'<div class="grid g4" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px">'
+   +'<input id="accn-name" class="lgx" placeholder="Name"><input id="accn-email" class="lgx" placeholder="Email">'
+   +'<input id="accn-pass" class="lgx" placeholder="Temp password (8+)">'
+   +'<select id="accn-role" class="acc-sel"><option value="operative">operative</option><option value="customer">customer</option><option value="admin">admin</option></select></div>'
+   +'<div style="margin-top:8px;display:flex;gap:8px;align-items:center"><button class="rbtn" onclick="accCreate()">Create</button><span class="sb">They sign in with this email + temp password and can change it later.</span></div></div>'
+   +'<div class="sb" id="acc-msg" style="min-height:14px;margin-bottom:6px"></div>'
+   +'<div style="overflow-x:auto"><table class="fcr-t"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Last login</th><th>Actions</th></tr></thead><tbody id="acc-body"><tr><td colspan="6" style="color:#8a97a6">Loading…</td></tr></tbody></table></div>'
+   +'<div class="sb" style="margin-top:8px">admin = everything incl. this tab · operative = full dashboard · customer = Forecast only · pending = requested access, pick a role to approve.</div></div>';
+  accLoad();}
+window.accNewTog=function(){const n=$('acc-new');if(n)n.style.display=n.style.display==='none'?'':'none';};
+function accMsg(t,okM){const m=$('acc-msg');if(m){m.textContent=t||'';m.style.color=okM?'#2F7A45':'#b23b3b';}}
+async function accLoad(){const tb=$('acc-body');if(!tb)return;
+  let j=null;try{j=await fetchJSON(CONFIG.API_URL+'?action=users_list');}catch(e){tb.innerHTML='<tr><td colspan="6" style="color:#b23b3b">Could not load users — '+String(e&&e.message||e).slice(0,70)+'</td></tr>';return;}
+  if(!(j&&j.ok&&j.users)){tb.innerHTML='<tr><td colspan="6" style="color:#b23b3b">'+((j&&j.error)?('Server said: '+j.error+' — is Code v10.0 pasted?'):'No reply')+'</td></tr>';return;}
+  const cnt=$('acc-cnt');if(cnt)cnt.textContent=j.users.length+' users · '+j.users.filter(u=>u.status==='pending').length+' pending';
+  tb.innerHTML=j.users.map(function(u){
+    const me=AUTH&&u.email===AUTH.email;
+    const chipR='<span class="acc-chip '+(u.role||'pending')+'">'+(u.role||'pending')+'</span>';
+    const chipS=u.status==='active'?'':' <span class="acc-chip '+(u.status==='pending'?'pending':'disabled')+'">'+u.status+'</span>';
+    let act='';
+    if(u.status==='pending'){act='Approve as <select class="acc-sel" onchange="if(this.value)accSet(\''+u.email+'\',\'role\',this.value)"><option value=""></option><option value="customer">customer</option><option value="operative">operative</option><option value="admin">admin</option></select> <span class="acc-act red" onclick="accDel(\''+u.email+'\')">Reject</span>';}
+    else if(me){act='<span class="sb">(you)</span>';}
+    else{act='<select class="acc-sel" onchange="if(this.value)accSet(\''+u.email+'\',\'role\',this.value)"><option value="">role…</option><option value="admin">admin</option><option value="operative">operative</option><option value="customer">customer</option></select> '
+      +'<span class="acc-act" onclick="accSet(\''+u.email+'\',\'status\',\''+(u.status==='active'?'disabled':'active')+'\')">'+(u.status==='active'?'Disable':'Enable')+'</span>'
+      +'<span class="acc-act" onclick="accReset(\''+u.email+'\')">Reset pass</span>'
+      +'<span class="acc-act red" onclick="accDel(\''+u.email+'\')">Delete</span>';}
+    return '<tr><td>'+(u.name||'—')+(me?' <span class="sb">(you)</span>':'')+'</td><td>'+u.email+'</td><td>'+chipR+'</td><td>'+(u.status==='active'?'<span class="acc-chip customer" style="background:#E7F3EC">active</span>':chipS)+'</td><td style="color:#8a97a6">'+(u.last?String(u.last).slice(0,16).replace('T',' '):'—')+'</td><td>'+act+'</td></tr>';}).join('');}
+window.accSet=async function(email,op,val){accMsg('Saving…',true);
+  const q='&op='+op+'&email='+encodeURIComponent(email)+(op==='role'?('&role='+val):op==='status'?('&status='+val):op==='resetpass'?('&pass='+encodeURIComponent(val)):'');
+  let j=null;try{j=await fetchJSON(CONFIG.API_URL+'?action=user_set'+q);}catch(e){return accMsg('Failed: '+String(e&&e.message||e).slice(0,70));}
+  if(j&&j.ok){accMsg('Saved ✓',true);accLoad();}else accMsg(LG_ERRS[j&&j.error]||('Server said: '+((j&&j.error)||'no reply')));};
+window.accReset=function(email){const pw=window.prompt('New temporary password for '+email+' (8+ chars):');
+  if(pw==null)return;if(String(pw).length<8)return accMsg('Password needs 8+ characters');
+  accSet(email,'resetpass',String(pw));};
+window.accDel=function(email){if(!window.confirm('Delete '+email+'? This cannot be undone.'))return;
+  (async function(){let j=null;try{j=await fetchJSON(CONFIG.API_URL+'?action=user_set&op=delete&email='+encodeURIComponent(email));}catch(e){return accMsg('Failed');}
+   if(j&&j.ok){accMsg('Deleted ✓',true);accLoad();}else accMsg(LG_ERRS[j&&j.error]||('Server said: '+((j&&j.error)||'?')));})();};
+window.accCreate=async function(){const nm=($('accn-name')||{}).value||'',em=(($('accn-email')||{}).value||'').trim(),pw=($('accn-pass')||{}).value||'',rl=($('accn-role')||{}).value||'operative';
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em))return accMsg('Valid email required');
+  if(pw.length<8)return accMsg('Temp password needs 8+ characters');
+  let j=null;try{j=await fetchJSON(CONFIG.API_URL+'?action=user_set&op=create&name='+encodeURIComponent(nm)+'&email='+encodeURIComponent(em)+'&pass='+encodeURIComponent(pw)+'&role='+rl);}catch(e){return accMsg('Failed: '+String(e&&e.message||e).slice(0,70));}
+  if(j&&j.ok){accMsg('Access created ✓',true);accNewTog();accLoad();}else accMsg(LG_ERRS[j&&j.error]||('Server said: '+((j&&j.error)||'?')));};
 function fcCmpRender(gh){const host=$('fc-cmp');if(!host)return;
   if(!FC.gCmp){host.innerHTML='';return;}
   const lives=REGISTRY.filter(w=>yrOK(w)&&String(w.status)==='Live'&&w.id!==FC.id);
@@ -5015,7 +5162,7 @@ function show(tab){
   document.querySelectorAll('#mnav button').forEach(b=>b.classList.toggle('on',b.dataset.m===tab));
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
   $('p-'+tab).classList.add('active');
-  const fn={res:renderResumen,pozo:renderPozo,sts:renderStatus,fc:renderFc,cie:renderCie}[tab];
+  const fn={res:renderResumen,pozo:renderPozo,sts:renderStatus,fc:renderFc,cie:renderCie,acc:renderAccess}[tab];
   if(fn&&!RENDERED[tab]){try{fn();RENDERED[tab]=true;}
     catch(e){console.error('[show]',tab,e);const p=$('p-'+tab);
       if(p)p.innerHTML='<div class="note" style="background:#fdecec;color:#b91c1c;padding:14px;border-radius:12px;margin:14px">This tab did not load ('+String(e&&e.message||e).slice(0,90)+') — <a href="#" style="color:#b91c1c;font-weight:800" onclick="show(\''+tab+'\');return false">Reintentar ↻</a></div>';}}
@@ -5432,8 +5579,8 @@ async function init(){
     CURRENT_ID=(REGISTRY[0]&&REGISTRY[0].id)||CONFIG.DEFAULT_WELL;
     const reg0=REGISTRY.find(w=>w.id===CURRENT_ID)||{};
     /* .113: link de cliente → directo al Forecast con el pozo del hash */
-    if(CLI_FC){try{const lwC=REGISTRY.filter(w=>yrOK(w)&&String(w.status)==='Live');
-      if(CLI_FC.well&&lwC.some(w=>w.id===CLI_FC.well))FC.id=CLI_FC.well;
+    if(CLI_FC||(AUTH&&AUTH.role==='customer')){try{const lwC=REGISTRY.filter(w=>yrOK(w)&&String(w.status)==='Live');
+      if(CLI_FC&&CLI_FC.well&&lwC.some(w=>w.id===CLI_FC.well))FC.id=CLI_FC.well;
       show('fc');}catch(_){}}
     // ⚡ BOOT NO-BLOQUEANTE: el pozo activo NO detiene la pintura del shell/Resumen.
     // (1) warm-start: si hay caché local del activo → se pinta AL INSTANTE (pill CACHÉ LOCAL);

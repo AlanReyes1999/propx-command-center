@@ -1,4 +1,9 @@
-/** MEDS · PropX Live API — Code.gs v9.8. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v10.0. PEGAR TAL CUAL → Nueva versión.
+ *  v10.0 AUTH / USUARIOS: hoja "Users" en el Hub (se crea sola), login con hash
+ *  salteado, token HMAC de 7 días y 3 roles: admin · operative · customer. Con un
+ *  admin activo creado, TODA acción de datos exige token; sin admin aún, la API
+ *  queda abierta (bootstrap) y el portal ofrece crear el primer admin. Emergencia:
+ *  Script property AUTH_OFF=1 la reabre sin tocar código. Cero scopes nuevos.
  *  v9.8 UN PUMPING DAY YA ENSEÑA: con historia (no-NEW: 3+ días calendario y 2+
  *  turnos), UN solo día bombeado CERRADO posterior al día-1 de ESTE pozo ya define
  *  la ventana del driver y gana a prefill y a la herencia cross-well. NEW sigue
@@ -153,7 +158,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v9.8';
+const API_VERSION='v10.0';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -306,9 +311,155 @@ function _cGet(key){try{
   const raw=Utilities.ungzip(Utilities.newBlob(Utilities.base64Decode(gz),'application/x-gzip')).getDataAsString();
   return JSON.parse(raw);
 }catch(_){return null;}}
+/* ══════════ v10.0 · AUTH — usuarios, login y token (hoja "Users" del Hub) ══════════
+ *  Roles: admin (todo + Access) · operative (todo el dashboard) · customer (solo Forecast).
+ *  El password viaja SOLO por HTTPS como parámetro; se guarda hash salteado (SHA-256 ×800).
+ *  Token = payload.b64 + '.' + HMAC-SHA256(payload, AUTH_SECRET) · vigencia 7 días.     */
+const AUTH_ROLES=['admin','operative','customer'];
+function _aB64(b){return Utilities.base64EncodeWebSafe(b);}
+function _aHash(pass,salt){let b=Utilities.newBlob(String(salt)+'\u0000'+String(pass),'application/octet-stream').getBytes();
+  for(let i=0;i<800;i++)b=Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,b);
+  return _aB64(b);}
+function _aSecret(){const P=PropertiesService.getScriptProperties();
+  let s=P.getProperty('AUTH_SECRET');
+  if(!s){s=Utilities.getUuid()+'.'+Utilities.getUuid();P.setProperty('AUTH_SECRET',s);}
+  return s;}
+function _aSheet(){const hub=SpreadsheetApp.getActive();
+  let sh=hub.getSheetByName('Users');
+  if(!sh){sh=hub.insertSheet('Users');
+    sh.appendRow(['email','name','role','status','salt','hash','created','last_login','note']);
+    try{sh.setFrozenRows(1);}catch(_){}}
+  return sh;}
+function _aAll(){const v=_aSheet().getDataRange().getValues();const out=[];
+  for(let i=1;i<v.length;i++){const em=String(v[i][0]||'').trim().toLowerCase();if(!em)continue;
+    out.push({row:i+1,email:em,name:String(v[i][1]||''),role:String(v[i][2]||'').toLowerCase(),
+      status:String(v[i][3]||'').toLowerCase(),salt:String(v[i][4]||''),hash:String(v[i][5]||''),
+      created:String(v[i][6]||''),last:String(v[i][7]||''),note:String(v[i][8]||'')});}
+  return out;}
+function _aIdxBust(){try{CacheService.getScriptCache().remove('au1');}catch(_){}}
+function _aIdx(){ /* índice 120 s: email → rol/estado + candado activo (hay admin activo) */
+  try{const c=CacheService.getScriptCache().get('au1');if(c)return JSON.parse(c);}catch(_){}
+  const m={};let on=false;
+  _aAll().forEach(function(u){m[u.email]={r:u.role,s:u.status};
+    if(u.role==='admin'&&u.status==='active')on=true;});
+  const idx={on:on,map:m};
+  try{CacheService.getScriptCache().put('au1',JSON.stringify(idx),120);}catch(_){}
+  return idx;}
+function _aToken(u){const pl=_aB64(Utilities.newBlob(JSON.stringify({e:u.email,r:u.role,x:Date.now()+7*864e5})).getBytes());
+  const sg=_aB64(Utilities.computeHmacSha256Signature(pl,_aSecret()));
+  return pl+'.'+sg;}
+function _aVerify(tk){try{
+  if(!tk)return null;const p=String(tk).split('.');if(p.length!==2)return null;
+  const sg=_aB64(Utilities.computeHmacSha256Signature(p[0],_aSecret()));
+  if(sg!==p[1])return null;
+  const pl=JSON.parse(Utilities.newBlob(Utilities.base64DecodeWebSafe(p[0])).getDataAsString());
+  if(!(pl&&pl.e&&pl.x>Date.now()))return null;
+  return pl;}catch(_){return null;}}
+function _aGate(e,a){ /* null = pasa · objeto = respuesta de error (se evalúa ANTES de la caché) */
+  const DATA={well:1,status:1,portfolio:1,registry:1,snapshot:1};
+  if(!DATA[a])return null;
+  try{if(PropertiesService.getScriptProperties().getProperty('AUTH_OFF')==='1')return null;}catch(_){}
+  let idx;try{idx=_aIdx();}catch(_){return null;}
+  if(!idx.on)return null;
+  const v=_aVerify(e&&e.parameter&&e.parameter.tk);
+  if(!v)return {error:'auth_required',api_version:API_VERSION};
+  const u=idx.map[String(v.e).toLowerCase()];
+  if(!u||u.s!=='active')return {error:'auth_required',api_version:API_VERSION};
+  return null;}
+function _aAdmin(e){const v=_aVerify(e&&e.parameter&&e.parameter.tk);
+  if(!v)return null;
+  const me=_aAll().filter(function(u){return u.email===String(v.e).toLowerCase();})[0];
+  return (me&&me.role==='admin'&&me.status==='active')?me:null;}
+function _aLogin(e){
+  const em=String((e&&e.parameter&&e.parameter.email)||'').trim().toLowerCase();
+  const pw=String((e&&e.parameter&&e.parameter.pass)||'');
+  const all=_aAll();
+  if(!all.some(function(u){return u.role==='admin'&&u.status==='active';}))return {error:'no_users'};
+  const u=all.filter(function(x){return x.email===em;})[0];
+  Utilities.sleep(250);
+  if(!u||_aHash(pw,u.salt)!==u.hash)return {error:'bad_credentials'};
+  if(u.status==='pending'||u.role==='pending')return {error:'pending_approval'};
+  if(u.status!=='active')return {error:'account_disabled'};
+  try{_aSheet().getRange(u.row,8).setValue(new Date().toISOString());}catch(_){}
+  return {ok:true,token:_aToken(u),role:u.role,name:u.name,email:u.email,exp:Date.now()+7*864e5};}
+function _aRegister(e){
+  const nm=String((e&&e.parameter&&e.parameter.name)||'').trim().slice(0,60);
+  const em=String((e&&e.parameter&&e.parameter.email)||'').trim().toLowerCase();
+  const pw=String((e&&e.parameter&&e.parameter.pass)||'');
+  if(!nm||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)||pw.length<8)return {error:'bad_request'};
+  const lock=LockService.getScriptLock();try{lock.waitLock(5000);}catch(_){return {error:'busy'};}
+  try{const all=_aAll();
+    if(all.length>500)return {error:'user_limit'};
+    if(all.some(function(x){return x.email===em;}))return {error:'exists'};
+    const salt=Utilities.getUuid();
+    _aSheet().appendRow([em,nm,'pending','pending',salt,_aHash(pw,salt),new Date().toISOString(),'','self-register']);
+    _aIdxBust();return {ok:true,pending:true};
+  }finally{try{lock.releaseLock();}catch(_){}}}
+function _aBootstrap(e){
+  const all=_aAll();
+  if(all.some(function(u){return u.role==='admin';}))return {error:'already_setup'};
+  const nm=String((e&&e.parameter&&e.parameter.name)||'Admin').trim().slice(0,60);
+  const em=String((e&&e.parameter&&e.parameter.email)||'').trim().toLowerCase();
+  const pw=String((e&&e.parameter&&e.parameter.pass)||'');
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)||pw.length<8)return {error:'bad_request'};
+  const salt=Utilities.getUuid();
+  _aSheet().appendRow([em,nm,'admin','active',salt,_aHash(pw,salt),new Date().toISOString(),'','bootstrap']);
+  _aIdxBust();
+  return {ok:true,token:_aToken({email:em,role:'admin'}),role:'admin',name:nm,email:em,exp:Date.now()+7*864e5};}
+function _aMe(e){const v=_aVerify(e&&e.parameter&&e.parameter.tk);
+  if(!v)return {error:'auth_required'};
+  const u=_aIdx().map[String(v.e).toLowerCase()];
+  if(!u||u.s!=='active')return {error:'auth_required'};
+  return {ok:true,role:u.r,email:v.e};}
+function _aChpass(e){const v=_aVerify(e&&e.parameter&&e.parameter.tk);
+  if(!v)return {error:'auth_required'};
+  const u=_aAll().filter(function(x){return x.email===String(v.e).toLowerCase();})[0];
+  if(!u||u.status!=='active')return {error:'auth_required'};
+  const op=String((e&&e.parameter&&e.parameter.old)||'');
+  const np=String((e&&e.parameter&&e.parameter.pass)||'');
+  if(_aHash(op,u.salt)!==u.hash)return {error:'bad_credentials'};
+  if(np.length<8)return {error:'bad_request'};
+  const salt=Utilities.getUuid();
+  _aSheet().getRange(u.row,5,1,2).setValues([[salt,_aHash(np,salt)]]);
+  _aIdxBust();return {ok:true};}
+function _aUsersList(e){if(!_aAdmin(e))return {error:'forbidden'};
+  return {ok:true,users:_aAll().map(function(u){return {email:u.email,name:u.name,role:u.role,status:u.status,created:u.created,last:u.last,note:u.note};})};}
+function _aUserSet(e){const me=_aAdmin(e);if(!me)return {error:'forbidden'};
+  const p=(e&&e.parameter)||{};const op=String(p.op||'');
+  const em=String(p.email||'').trim().toLowerCase();
+  const sh=_aSheet();const all=_aAll();
+  const admins=all.filter(function(u){return u.role==='admin'&&u.status==='active';}).length;
+  const u=all.filter(function(x){return x.email===em;})[0];
+  const lastAdmin=!!(u&&u.role==='admin'&&u.status==='active'&&admins<=1);
+  if(op==='create'){
+    if(all.some(function(x){return x.email===em;}))return {error:'exists'};
+    const rl=String(p.role||'operative').toLowerCase();
+    if(AUTH_ROLES.indexOf(rl)<0)return {error:'bad_request'};
+    const pw=String(p.pass||'');if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)||pw.length<8)return {error:'bad_request'};
+    const salt=Utilities.getUuid();
+    sh.appendRow([em,String(p.name||'').slice(0,60),rl,'active',salt,_aHash(pw,salt),new Date().toISOString(),'','created by '+me.email]);
+    _aIdxBust();return {ok:true};}
+  if(!u)return {error:'not_found'};
+  if(op==='role'){const rl=String(p.role||'').toLowerCase();
+    if(AUTH_ROLES.indexOf(rl)<0)return {error:'bad_request'};
+    if(lastAdmin&&rl!=='admin')return {error:'last_admin'};
+    sh.getRange(u.row,3,1,2).setValues([[rl,'active']]);_aIdxBust();return {ok:true};}
+  if(op==='status'){const st=String(p.status||'').toLowerCase();
+    if(st!=='active'&&st!=='disabled')return {error:'bad_request'};
+    if(lastAdmin&&st!=='active')return {error:'last_admin'};
+    sh.getRange(u.row,4).setValue(st);_aIdxBust();return {ok:true};}
+  if(op==='resetpass'){const pw=String(p.pass||'');if(pw.length<8)return {error:'bad_request'};
+    const salt=Utilities.getUuid();
+    sh.getRange(u.row,5,1,2).setValues([[salt,_aHash(pw,salt)]]);_aIdxBust();return {ok:true};}
+  if(op==='delete'){if(lastAdmin)return {error:'last_admin'};
+    sh.deleteRow(u.row);_aIdxBust();return {ok:true};}
+  return {error:'bad_request'};}
 function doGet(e){
   const a=(e&&e.parameter&&e.parameter.action)||'registry';
   const fresh=!!(e&&e.parameter&&e.parameter.fresh);
+  /* v10.0: el candado va ANTES de la caché — sin token válido no se sirve ni cache */
+  const AERR=_aGate(e,a);
+  if(AERR)return ContentService.createTextOutput(JSON.stringify(AERR)).setMimeType(ContentService.MimeType.JSON);
   const ck=(a==='well')?('w5:'+((e&&e.parameter&&e.parameter.id)||''))
           :(a==='status')?('s5:'+((e&&e.parameter&&e.parameter.days)||''))
           :(a==='portfolio')?'p5':null;
@@ -318,6 +469,13 @@ function doGet(e){
   let out;
   try{
     out=(a==='ping')?{ok:true,time:new Date().toISOString()}
+       :(a==='login')?_aLogin(e)
+       :(a==='register')?_aRegister(e)
+       :(a==='bootstrap_admin')?_aBootstrap(e)
+       :(a==='me')?_aMe(e)
+       :(a==='chpass')?_aChpass(e)
+       :(a==='users_list')?_aUsersList(e)
+       :(a==='user_set')?_aUserSet(e)
        :(a==='snapshot')?runSnapshot()
        :(a==='portfolio')?getPortfolio(e&&e.parameter&&e.parameter.fresh)
        :(a==='well')?wellFrozen(e&&e.parameter&&e.parameter.id, e&&e.parameter&&e.parameter.fresh)
