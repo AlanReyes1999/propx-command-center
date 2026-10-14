@@ -261,6 +261,30 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .acc-act{font:700 10px 'Plus Jakarta Sans';color:#2b6a92;cursor:pointer;margin-right:10px;white-space:nowrap}
 .acc-act.red{color:#b23b3b}
 .acc-sel{font:700 10px 'Plus Jakarta Sans';border:1px solid #dde6ef;border-radius:8px;padding:4px 6px;background:#fff;color:#17293a}
+/* ── .123 · Sourcing: toolbar del weight trend + tabla rica ── */
+.wt-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.wt-pills{display:flex;gap:6px;flex-wrap:wrap;margin-left:6px}
+.wt-pill{font:700 9.5px 'Plus Jakarta Sans';letter-spacing:.03em;padding:4px 9px;border-radius:999px;border:1px solid #dde6ef;background:#fff;color:#51606f;cursor:pointer;transition:border-color .15s,background .15s,color .15s,transform .15s}
+.wt-pill .wt-pn{margin-left:5px;font-weight:800;color:#8a97a6}
+.wt-pill.on{background:#17293A;border-color:#17293A;color:#fff}
+.wt-pill.on .wt-pn{color:#9fc3dd}
+.wt-pill:hover:not(.on){border-color:#9fb6c9;transform:translateY(-1px)}
+.wt-ctl{display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap}
+.wt-seg{display:inline-flex;border:1px solid #dde6ef;border-radius:9px;overflow:hidden}
+.wt-sg{font:700 9.5px 'Plus Jakarta Sans';padding:4px 10px;border:0;background:#fff;color:#51606f;cursor:pointer}
+.wt-sg+.wt-sg{border-left:1px solid #e8eef4}
+.wt-sg.on{background:#2F4A63;color:#fff}
+.wt-chip{font:700 9.5px 'Plus Jakarta Sans';padding:4px 10px;border-radius:999px;border:1px dashed #c9d6e2;background:#fbfdff;color:#8a97a6;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+.wt-chip.on{border-style:solid;border-color:#4ca882;background:#eef9f3;color:#2F7A45}
+.wt-chip.bk{border-style:solid;border-color:#2F4A63;background:#eef4fa;color:#2F4A63}
+.wt-sub{margin:-2px 0 8px}
+.tbl-x{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px}
+.wt-tbl{min-width:820px}
+.wt-tbl thead th{position:sticky;top:0;background:#fff;z-index:2;box-shadow:0 1px 0 #e4e9ef}
+.wt-tbl tbody tr:nth-child(odd):not(:last-child){background:#fafcfe}
+.wt-tbl tbody tr:hover:not(:last-child){background:#f1f6fb}
+.wt-hv{cursor:help;border-bottom:1px dotted #b9c6d2;padding-bottom:1px}
+@media(max-width:700px){.wt-ctl{margin-left:0}.wt-tbl{min-width:760px}}
 /* .117: Access rediseñado */
 .acc-stat{background:#fff;border:1px solid var(--border,#e4e9ef);border-radius:14px;padding:12px 14px}
 .acc-stat .v{font:800 22px/1.1 'Plus Jakarta Sans';color:#17293a}
@@ -1332,6 +1356,18 @@ const _regSort=(a,b)=>{const al=String(a.status).toLowerCase()==='live',bl=Strin
   return String(b.start||b.end||'').localeCompare(String(a.start||a.end||''));};
 let REGISTRY=[], CURRENT_ID=CONFIG.DEFAULT_WELL, RANGE={i0:0,i1:0}, CARR_SEL=null, PAD_SEL=null, LAT_SEL='';
 let WT_SCOPE='ALL'; /* .116: planta seleccionada en el trend Net/Gross */
+/* .123: preferencias del weight trend — serie (default GROSS), bandas de referencia,
+   línea Income/Truck·Day. Persisten en localStorage; fallback silencioso en sims. */
+const WT_PREF=(function(){try{const v=JSON.parse(localStorage.getItem('meds_wt:v1')||'{}');
+  return {series:(v.series==='net'||v.series==='both')?v.series:'gross',refs:v.refs!==false,inc:v.inc!==false};}
+  catch(_){return {series:'gross',refs:true,inc:true};}})();
+const _wtSave=()=>{try{localStorage.setItem('meds_wt:v1',JSON.stringify(WT_PREF));}catch(_){}};
+window.wtSeries=s2=>{WT_PREF.series=s2;_wtSave();bSrc();};
+window.wtTog=k=>{WT_PREF[k]=!WT_PREF[k];_wtSave();bSrc();};
+window.wtScope=t2=>{WT_SCOPE=t2;bSrc();};
+window.wtBack=()=>{const p=window._wtPrevR;if(!p)return;window._wtPrevR=null;
+  const d0=$('w-d0'),d1=$('w-d1');if(d0)d0.value=p.d0||'';if(d1)d1.value=p.d1||'';
+  document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));renderPozo();};
 let WELL_EPOCH=0;
 let APPLIED_ID=null; // qué pozo está efectivamente pintado ahora mismo   // token de vigencia: cada cambio de pozo lo incrementa; toda respuesta async lo verifica al aterrizar
 let _wellCtl=null;  // cancela el fetch del pozo anterior al cambiar (libera red y GAS)
@@ -1377,7 +1413,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.122';
+const VBUILD='2026-10-12.123';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -2245,9 +2281,10 @@ function buildM(){
   const _wtD=_wt?(_wt.days||[]).filter(r=>_inR(r[0])):[];
   const _wtH=_wt?(_wt.hrs||[]).filter(r=>_inR(r[0])):[];
   const _wtDD=_wt?(_wt.dd||[]).filter(r=>_inR(r[0])):[];
+  const _wtOv=_wt?(_wt.ovL||[]).filter(r=>_inR(r[0])):[]; /* .123: cargas >80k con driver */
   let _gS=0,_gL=0,_nS=0,_nL=0,_ovS=0,_lwS=0;
   _wtD.forEach(r=>{if(+r[4]>0){_gS+=r[4]*r[2];_gL+=r[2];}if(+r[3]>0){_nS+=r[3]*r[2];_nL+=r[2];}_ovS+=(+r[5]||0);_lwS+=(+r[6]||0);});
-  const WT={has:!!(_wt&&_wtD.length),days:_wtD,hrs:_wtH,dd:_wtDD,avail:!!_wt,
+  const WT={has:!!(_wt&&_wtD.length),days:_wtD,hrs:_wtH,dd:_wtDD,ovL:_wtOv,ovAvail:!!(_wt&&_wt.ovL),avail:!!_wt,
     gAvg:_gL?Math.round(_gS/_gL):0,nAvg:_nL?Math.round(_nS/_nL):0,ov:_ovS,lw:_lwS,
     terms:Array.from(new Set(_wtD.map(r=>String(r[1]))))};
   const SRC=btAll.map(b=>{const key=termKeyFor(b.terminal,T);
@@ -2917,6 +2954,52 @@ function bSrc(){
   const _TG={};((m.WT&&m.WT.days)||[]).forEach(r=>{const g=_TG[r[1]]=_TG[r[1]]||{l:0,gs:0,ov:0};
     if(+r[4]>0){g.gs+=r[4]*r[2];g.l+=r[2];}g.ov+=(+r[5]||0);});
   const _tg=t2=>{const g=_TG[t2];return g&&g.l?{avg:Math.round(g.gs/g.l),ov:g.ov}:(g&&g.ov?{avg:0,ov:g.ov}:null);};
+  /* .123: data-tips ricos de la tabla + toolbar del trend */
+  const _kk=v=>v>=1000?(v/1000).toFixed(1).replace(/\.0$/,'')+'k':String(v);
+  const _ovByT={};((m.WT&&m.WT.ovL)||[]).forEach(r=>{(_ovByT[r[1]]=_ovByT[r[1]]||[]).push(r);});
+  const _ovTip=t2=>{const L2=(_ovByT[t2]||[]).slice().sort((a,b)=>b[3]-a[3]);
+    if(!L2.length)return m.WT&&!m.WT.ovAvail?encodeURIComponent('<b>Over-80k loads</b>\nPaste Code v10.2 (GAS) to list the exact trucks and drivers here.'):'';
+    return encodeURIComponent('<b>'+t2+' — over 80k ('+L2.length+')</b>\n'+
+      L2.slice(0,8).map(r=>'• <b>'+r[2]+'</b> — '+fmt(r[3])+' lbs · '+String(r[0]).slice(5)+(r[4]?' · #'+r[4]:'')).join('\n')+
+      (L2.length>8?'\n+'+(L2.length-8)+' more':''));};
+  const _ovTipAll=()=>{const L2=((m.WT&&m.WT.ovL)||[]).slice();
+    if(!L2.length)return m.WT&&!m.WT.ovAvail&&m.WT.ov?encodeURIComponent('<b>Over-80k loads</b>\nPaste Code v10.2 (GAS) to list the exact trucks and drivers here.'):'';
+    const by={};L2.forEach(r=>{const e=by[r[2]]=by[r[2]]||{n:0,mx:0};e.n++;if(r[3]>e.mx)e.mx=r[3];});
+    return encodeURIComponent('<b>Over 80k — by driver</b>\n'+Object.entries(by).sort((a,b)=>b[1].n-a[1].n).slice(0,8)
+      .map(e=>'• <b>'+e[0]+'</b> — '+e[1].n+' load'+(e[1].n===1?'':'s')+' · worst '+fmt(e[1].mx)+' lbs').join('\n'));};
+  const _revTipT=s2=>{const d2=((m.WT&&m.WT.days)||[]).filter(r=>String(r[1])===s2.t);
+    let best=null;d2.forEach(r=>{if(!best||(+r[7]||0)>(+best[7]||0))best=r;});
+    return encodeURIComponent('<b>'+s2.t+' billed — $'+fmt(s2.rev)+'</b>\nrate $'+fmt(Math.max(0,s2.rev-s2.fsc))+' + FSC $'+fmt(s2.fsc)+
+      '\n$/load: $'+fmt(Math.round(s2.rev/Math.max(s2.loads,1)))+
+      (best&&+best[7]?'\nBest day: '+String(best[0]).slice(5)+' — $'+fmt(best[7])+' · '+best[2]+' lds':''));};
+  const _bdFull=(((RES_DATA[CURRENT_ID]||{}).w||{}).byDriver)||[];
+  const _revTipTop=()=>{const bd=_bdFull.filter(x=>+x.revenue>0).slice().sort((a,b)=>b.revenue-a.revenue).slice(0,5);
+    if(!bd.length)return '';
+    return encodeURIComponent('<b>Top billed drivers — full well</b>\n'+bd.map(x=>'• <b>'+x.driver+'</b> — $'+fmt(x.revenue)+
+      ((+x.avg_gross>0)?' · gross '+_kk(x.avg_gross):'')+((+x.avg_net>0)?' · net '+_kk(x.avg_net):'')).join('\n'));};
+  const _gwTipTop=()=>{const bd=_bdFull.filter(x=>+x.avg_gross>0).slice().sort((a,b)=>b.avg_gross-a.avg_gross).slice(0,5);
+    if(!bd.length)return '';
+    return encodeURIComponent('<b>Heaviest avg gross — full well</b>\n'+bd.map(x=>'• <b>'+x.driver+'</b> — '+fmt(x.avg_gross)+' lbs ('+gwBand(x.avg_gross).t.toLowerCase()+')').join('\n'));};
+  const _tgTip=t2=>{const d2=((m.WT&&m.WT.days)||[]).filter(r=>String(r[1])===t2);
+    if(!d2.length)return '';
+    return encodeURIComponent('<b>'+t2+' — avg gross by day</b>\n'+d2.slice(-6).map(r=>'• '+String(r[0]).slice(5)+' — '+
+      (+r[4]>0?fmt(r[4])+' lbs':'—')+((+r[5]||0)?' · <b>'+r[5]+' over</b>':'')).join('\n'));};
+  const _ser=WT_PREF.series,_oneD=m.n===1;
+  const _tCnt={};((m.WT&&m.WT.days)||[]).forEach(r=>{_tCnt[r[1]]=(_tCnt[r[1]]||0)+(+r[2]||0);});
+  const _allL=Object.values(_tCnt).reduce((s2,v)=>s2+v,0);
+  const wtPills=m.WT&&m.WT.has?['ALL'].concat(m.WT.terms).map(t2=>'<button class="wt-pill'+((WT_SCOPE===t2)?' on':'')+
+    '" onclick="wtScope(\''+String(t2).replace(/'/g,'')+'\')">'+(t2==='ALL'?'All plants':t2)+
+    '<span class="wt-pn">'+fmt(t2==='ALL'?_allL:(_tCnt[t2]||0))+'</span></button>').join(''):'';
+  const wtSeg=['gross','net','both'].map(s2=>'<button class="wt-sg'+(_ser===s2?' on':'')+
+    '" onclick="wtSeries(\''+s2+'\')">'+(s2==='gross'?'Gross':s2==='net'?'Net':'Both')+'</button>').join('');
+  const wtChips=(_ser!=='net'?'<button class="wt-chip'+(WT_PREF.refs?' on':'')+'" onclick="wtTog(\'refs\')" data-tip="'+
+      encodeURIComponent('Reference bands: 80k legal limit · 78k efficiency floor · 70k under-loaded')+'">Limits</button>':'')
+    +((!_oneD)?'<button class="wt-chip'+(WT_PREF.inc?' on':'')+'" onclick="wtTog(\'inc\')" data-tip="'+
+      encodeURIComponent('Dashed $ line = Income/Truck·Day (billed rate + FSC ÷ unique drivers that day)')+'">$ / truck·day</button>':'')
+    +((_oneD&&window._wtPrevR)?'<button class="wt-chip bk" onclick="wtBack()">◂ Back to range</button>':'');
+  const wtLeg=(_ser!=='net'?'78–80k in-window green · >80k over red · <70k light':'Net payload per load delivered')
+    +((!_oneD&&WT_PREF.inc)?' · dashed $ = Income/Truck·Day (rate + FSC)':'');
+  const wtSub=_oneD?'Hour-by-hour averages for this day':'Click any day on the chart to drill into its hours';
   const anAvg=Math.round(m.SRC.reduce((s,x)=>s+x.an*x.loads,0)/Math.max(m.SRC.reduce((s,x)=>s+x.loads,0),1));
   $('pz-cl-src').innerHTML=`
     <div class="st"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11a7 7 0 1 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg> Sourcing — ${m.SRC.map(s=>`${s.t} ${s.aPct}%`).join(' · ')} <span class="ssub">${m.SRC_RANGED?'· range '+m.n+'d':'· full-well range — paste Code v6.7 to filter by dates'}</span></div>
@@ -2929,16 +3012,18 @@ function bSrc(){
       <div class="card"><div class="card-t">Design vs Actual Mix (%)</div><div class="ch ch-s"><canvas id="chSrcComp"></canvas></div></div>
       <div class="card"><div class="card-t">Loads by Terminal: Design vs Actual</div><div class="ch ch-s"><canvas id="chSrcLoads"></canvas></div></div>
     </div>
-    ${m.WT&&m.WT.has&&m.WT.ov?`<div class="note" style="background:#fdecec;border:1px solid #f1c8c8;color:#b23b3b;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-weight:700">Overweight alert — ${fmt(m.WT.ov)} load${m.WT.ov===1?'':'s'} above 80,000 lbs gross in this range. Hover the weight trend to find the exact ${m.n===1?'hours':'days'}.</div>`:''}
-    ${m.WT&&m.WT.has?`<div class="card mb"><div class="card-t" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">Net & Gross weight — ${m.n===1?'by hour':'by day'}
-      <select id="wt-scope" class="acc-sel" onchange="WT_SCOPE=this.value;bSrc()"><option value="ALL"${WT_SCOPE==='ALL'?' selected':''}>General — all plants</option>${m.WT.terms.map(t2=>`<option value="${t2}"${WT_SCOPE===t2?' selected':''}>${t2}</option>`).join('')}</select>
-      <span class="sb" style="margin-left:auto">78–80k green · <78k amber · >80k / <70k red${m.n>1?' · $ dashed = Income/Truck·Day (rate + FSC)':''}</span></div>
+    ${m.WT&&m.WT.has&&m.WT.ov?`<div class="note" style="background:#fdecec;border:1px solid #f1c8c8;color:#b23b3b;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-weight:700">Overweight alert — ${fmt(m.WT.ov)} load${m.WT.ov===1?'':'s'} above 80,000 lbs gross in this range. Hover the weight trend to find the exact ${m.n===1?'hours':'days'}${m.WT.ovAvail?' — the <b>Over 80k</b> column below names the trucks':''}.</div>`:''}
+    ${m.WT&&m.WT.has?`<div class="card mb"><div class="card-t wt-bar">Weight trend — ${m.n===1?'by hour':'by day'}
+      <span class="wt-pills">${wtPills}</span>
+      <span class="wt-ctl"><span class="wt-seg">${wtSeg}</span>${wtChips}</span></div>
+      <div class="sb wt-sub">${wtLeg} · ${wtSub}</div>
       <div class="ch"><canvas id="chWt"></canvas></div></div>`
      :(m.WT&&m.WT.avail?'':`<div class="note" style="margin-bottom:12px">Gross/Net weight trend lands with <b>Code v10.1</b> — paste the new GAS and hit Refresh.</div>`)}
-    <div class="card"><table><thead><tr><th>Terminal</th><th>Mix Design</th><th>Actual Mix</th><th>Loads</th><th>Avg Net (lbs)</th><th>Avg Gross</th><th>Over 80k</th><th>Lbs Delivered</th><th>Revenue Est.</th></tr></thead><tbody>
-      ${m.SRC.map(s=>{const g2=_tg(s.t);return `<tr><td>${s.t}</td><td>${s.dPct}%</td><td class="mono">${s.aPct}%</td><td class="mono">${fmt(s.loads)}</td><td class="mono">${fmt(s.an)}</td><td class="mono" style="color:${g2?gwBand(g2.avg).col:'#8a97a6'}">${g2?fmt(g2.avg):'—'}</td><td class="mono">${g2&&g2.ov?('<strong style="color:#b23b3b">'+fmt(g2.ov)+'</strong>'):'0'}</td><td class="mono">${fmt(s.lbs)}</td><td class="mono"><strong>${s.rev?'$'+fmt(s.rev):'—'}</strong></td></tr>`;}).join('')}
-      <tr style="background:#f0fdf4"><td><strong>TOTAL</strong></td><td>100%</td><td><strong>100%</strong></td><td class="mono"><strong>${fmt(m.SRC.reduce((s,x)=>s+x.loads,0))}</strong></td><td class="mono">${fmt(anAvg)}</td><td class="mono" style="color:${m.WT&&m.WT.gAvg?gwBand(m.WT.gAvg).col:'#8a97a6'}"><strong>${m.WT&&m.WT.gAvg?fmt(m.WT.gAvg):'—'}</strong></td><td class="mono"><strong>${m.WT?fmt(m.WT.ov):'0'}</strong></td><td class="mono">${fmt(m.SRC.reduce((s,x)=>s+x.lbs,0))}</td><td class="mono"><strong>$${fmt(m.SRC.reduce((s,x)=>s+x.rev,0))}</strong></td></tr>
-    </tbody></table></div>`;
+    <div class="card"><div class="tbl-x"><table class="wt-tbl"><thead><tr><th>Terminal</th><th>Mix Design</th><th>Actual Mix</th><th>Loads</th><th>Avg Net (lbs)</th><th>Avg Gross</th><th>Over 80k</th><th>Lbs Delivered</th><th>Revenue Est.</th></tr></thead><tbody>
+      ${m.SRC.map(s=>{const g2=_tg(s.t);const gt=_tgTip(s.t);return `<tr><td>${s.t}</td><td>${s.dPct}%</td><td class="mono">${s.aPct}%</td><td class="mono">${fmt(s.loads)}</td><td class="mono">${fmt(s.an)}</td><td class="mono" style="color:${g2?gwBand(g2.avg).col:'#8a97a6'}">${g2?(gt?`<span class="wt-hv" data-tip="${gt}">${fmt(g2.avg)}</span>`:fmt(g2.avg)):'—'}</td><td class="mono">${g2&&g2.ov?(`<span class="wt-hv" data-tip="${_ovTip(s.t)}"><strong style="color:#b23b3b">${fmt(g2.ov)}</strong></span>`):'0'}</td><td class="mono">${fmt(s.lbs)}</td><td class="mono">${s.rev?`<span class="wt-hv" data-tip="${_revTipT(s)}"><strong>$${fmt(s.rev)}</strong></span>`:'—'}</td></tr>`;}).join('')}
+      <tr style="background:#f0fdf4"><td><strong>TOTAL</strong></td><td>100%</td><td><strong>100%</strong></td><td class="mono"><strong>${fmt(m.SRC.reduce((s,x)=>s+x.loads,0))}</strong></td><td class="mono">${fmt(anAvg)}</td><td class="mono" style="color:${m.WT&&m.WT.gAvg?gwBand(m.WT.gAvg).col:'#8a97a6'}">${m.WT&&m.WT.gAvg?(_gwTipTop()?`<span class="wt-hv" data-tip="${_gwTipTop()}"><strong>${fmt(m.WT.gAvg)}</strong></span>`:`<strong>${fmt(m.WT.gAvg)}</strong>`):'<strong>—</strong>'}</td><td class="mono">${m.WT&&m.WT.ov?`<span class="wt-hv" data-tip="${_ovTipAll()}"><strong>${fmt(m.WT.ov)}</strong></span>`:'<strong>0</strong>'}</td><td class="mono">${fmt(m.SRC.reduce((s,x)=>s+x.lbs,0))}</td><td class="mono">${_revTipTop()?`<span class="wt-hv" data-tip="${_revTipTop()}"><strong>$${fmt(m.SRC.reduce((s,x)=>s+x.rev,0))}</strong></span>`:`<strong>$${fmt(m.SRC.reduce((s,x)=>s+x.rev,0))}</strong>`}</td></tr>
+    </tbody></table></div></div>`;
+  _fcTipBind($('pz-cl-src')); /* .123: tooltips ricos de la tabla (delegación, sobrevive re-renders) */
   const totDL=m.T.total_loads||m.totL;
   mkChart('chSrcComp',{type:'bar',data:{labels:m.SRC.map(s=>s.t),datasets:[
     {label:'Design %',data:m.SRC.map(s=>s.dPct),backgroundColor:'rgba(203,213,225,.6)',borderRadius:6,borderSkipped:false},
@@ -2972,14 +3057,27 @@ function bSrc(){
         if(!row||!+row[1])return null;incParts[d]={dr:+row[1],rev:+row[2]||0,fsc:+row[3]||0};
         return Math.round(row[2]/row[1]);});if(!inc.some(v=>v!=null))inc=null;}}
     const TH=v=>labels.map(()=>v);
-    const dsArr=[
-      {label:'Avg Net',data:net,borderColor:'#4ca882',backgroundColor:'rgba(76,168,130,.12)',tension:.35,spanGaps:true,pointRadius:3,yAxisID:'y'},
-      {label:'Avg Gross',data:gw,borderColor:'#2d5a7b',backgroundColor:'rgba(45,90,123,.10)',tension:.35,spanGaps:true,pointRadius:3,yAxisID:'y'},
+    /* .123: series según WT_PREF — default GROSS solo; Net; o combinado. Las bandas de
+       referencia (80/78/70) acompañan al gross y se apagan con el chip Limits; la línea
+       Income/Truck·Day con su chip. Puntos del gross coloreados por banda (semáforo). */
+    const SER=WT_PREF.series,showG=SER!=='net',showN=SER!=='gross';
+    const refsOn=WT_PREF.refs&&showG,incOn=(!oneD)&&WT_PREF.inc&&!!inc;
+    const solo=showG!==showN; /* una sola serie → trazo más protagonista */
+    const dsArr=[];
+    if(showN)dsArr.push({label:'Avg Net',data:net,borderColor:'#4ca882',backgroundColor:'rgba(76,168,130,.12)',tension:.35,spanGaps:true,pointRadius:solo?4:3,pointHoverRadius:6,borderWidth:solo?2.5:2,yAxisID:'y'});
+    if(showG)dsArr.push({label:'Avg Gross',data:gw,borderColor:'#2d5a7b',backgroundColor:'rgba(45,90,123,.10)',tension:.35,spanGaps:true,pointRadius:solo?4.5:3,pointHoverRadius:7,borderWidth:solo?2.5:2,yAxisID:'y',
+      pointBackgroundColor:gw.map(v=>v==null?'#2d5a7b':gwBand(v).col),pointBorderColor:gw.map(v=>v==null?'#2d5a7b':gwBand(v).col)});
+    if(refsOn){dsArr.push(
       {label:'80k limit',data:TH(80000),borderColor:'rgba(212,114,114,.85)',borderWidth:1.5,pointRadius:0,yAxisID:'y'},
       {label:'78k floor',data:TH(78000),borderColor:'rgba(76,168,130,.5)',borderWidth:1,borderDash:[3,4],pointRadius:0,yAxisID:'y'},
-      {label:'70k light',data:TH(70000),borderColor:'rgba(224,166,62,.8)',borderWidth:1.2,borderDash:[5,4],pointRadius:0,yAxisID:'y'}];
-    if(!oneD&&inc)dsArr.push({label:'Income/Truck·Day',data:inc,borderColor:'#9b8ec4',borderDash:[6,4],borderWidth:2,pointRadius:3,tension:.3,spanGaps:true,yAxisID:'y2'});
+      {label:'70k light',data:TH(70000),borderColor:'rgba(224,166,62,.8)',borderWidth:1.2,borderDash:[5,4],pointRadius:0,yAxisID:'y'});}
+    if(incOn)dsArr.push({label:'Income/Truck·Day',data:inc,borderColor:'#9b8ec4',borderDash:[6,4],borderWidth:2,pointRadius:3,tension:.3,spanGaps:true,yAxisID:'y2'});
     mkChart('chWt',{type:'line',data:{labels:labels,datasets:dsArr},options:{interaction:{mode:'index',intersect:false},
+      onHover:(e,els)=>{try{if(e.native&&e.native.target)e.native.target.style.cursor=(!oneD&&els&&els.length)?'pointer':'default';}catch(_){}},
+      onClick:(e,els)=>{try{if(oneD||!els||!els.length)return;const d=dayKeys[els[0].index];if(!d)return;
+        window._wtPrevR={d0:$('w-d0').value,d1:$('w-d1').value};
+        $('w-d0').value=d;$('w-d1').value=d;
+        document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));renderPozo();}catch(_){}},
       plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9},filter:it=>!/limit|floor|light/.test(it.text)}},
         tooltip:{filter:it=>!/limit|floor|light/.test(it.dataset.label),callbacks:{
           title:c=>c[0].label+' — '+(sc==='ALL'?'all plants':sc),
@@ -2990,9 +3088,10 @@ function bSrc(){
             const out=[sep,'Loads: '+fmt(lds[i2])+(ovA[i2]?' · OVER 80k: '+ovA[i2]:'')];
             if(!oneD&&inc&&inc[i2]!=null){const p2=incParts[dayKeys[i2]];
               if(p2&&p2.dr)out.push('Income mix: rate $'+fmt(Math.round((p2.rev-p2.fsc)/p2.dr))+' + FSC $'+fmt(Math.round(p2.fsc/p2.dr))+' per truck');}
+            if(!oneD)out.push('Click to open this day hour-by-hour');
             return out;}}}},
       scales:{x:{...gO},y:{...gO,title:{display:true,text:'lbs',font:{size:8}},ticks:{callback:v=>fmt(v)}},
-        ...((!oneD&&inc)?{y2:{position:'right',grid:{display:false},ticks:{callback:v=>'$'+fmt(v),font:{size:8}},title:{display:true,text:'$/truck·day',font:{size:8}}}}:{})}}});}
+        ...(incOn?{y2:{position:'right',grid:{display:false},ticks:{callback:v=>'$'+fmt(v),font:{size:8}},title:{display:true,text:'$/truck·day',font:{size:8}}}}:{})}}});}
 }
 
 /* ═══════ DOWNTIME ═══════ */

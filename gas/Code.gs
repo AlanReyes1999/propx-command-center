@@ -1,4 +1,7 @@
-/** MEDS · PropX Live API — Code.gs v10.1. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v10.2. PEGAR TAL CUAL → Nueva versión.
+ *  v10.2 OVERWEIGHT DETAIL: wt gana ovL — la lista de cargas >80k lbs del rango
+ *  [fecha, terminal, driver, gross lbs, load #] (cap 80) para que el portal
+ *  muestre al pasar el cursor QUÉ trucks van pasados y de quién son.
  *  v10.1 PESOS (Sourcing): lee la columna "Gross Weight" del Loads Report (col R
  *  como fallback literal) y publica wt{days,hrs,dd}: promedios NET/GROSS por día×
  *  terminal y por hora×terminal, overweight (>80k) / light (<70k) por load, y la
@@ -163,7 +166,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v10.1';
+const API_VERSION='v10.2';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -647,7 +650,7 @@ function getWell(id){
   const ix=L?colmap(L.H,['Load #','Load ID','Carrier Name','Truck #','Driver Name','Product','Stage#','At Terminal','In Transit','At Staging','At Dest.','Delivered','Terminal','Mileage','Load Weight','Gross Weight']):{};
   const gwIx=(ix['Gross Weight']!=null&&ix['Gross Weight']>=0)?ix['Gross Weight']:17; /* v10.1: header literal o col R */
   const byDay={},drvByDay={},tonsByDay={},maxStageByDay={},revByDay={},cycDay={},byTerm={},byTermDay={},cycDayT={},byCarrier={},byProd={},byDriver={},driversAll=new Set(),cyc={},byHourDay={},rosterEv={};
-  const wtDay={},wtHr={};let gwTot=0,gwN=0,ovTot=0,lwTot=0; /* v10.1 pesos NET/GROSS */
+  const wtDay={},wtHr={},ovList=[];let gwTot=0,gwN=0,ovTot=0,lwTot=0; /* v10.1 pesos NET/GROSS · v10.2 ovL */
   let aMoves=0,aRev=0,aCost=0; const aByDay={},aRevByDay={},aEvents=[];
   const partDay={}; let gMinNo=9e15,gMaxNo=-9e15;
   const rateMixDay={}; // {fecha: {"17.76":{loads,tons,revenue}, "19.00":{...}}} — qué tarifa cobró cada carga
@@ -721,6 +724,7 @@ function getWell(id){
       const wk2=d+'|'+term; const WD=wtDay[wk2]=wtDay[wk2]||{d:d,t:term,l:0,nw:0,nn:0,gw:0,gn:0,ov:0,lw:0,rev:0,fsc:0};
       WD.l++; WD.rev+=revL; WD.fsc+=fscL; if(netW>1000){WD.nw+=netW;WD.nn++;}
       if(gwOk){WD.gw+=gwL;WD.gn++; if(gwL>80000)WD.ov++; else if(gwL<70000)WD.lw++;}
+      if(gwOk&&gwL>80000&&ovList.length<80)ovList.push([dDel,term,(_dk.name||'—'),Math.round(gwL),loadNo]); /* v10.2 */
       const _no=parseInt(loadNo,10);
       if(isFinite(_no)&&_no>0){const pn=partDay[d]=partDay[d]||{min:_no,max:_no}; if(_no<pn.min)pn.min=_no; if(_no>pn.max)pn.max=_no; if(_no<gMinNo)gMinNo=_no; if(_no>gMaxNo)gMaxNo=_no;} (drvByDay[d]=drvByDay[d]||new Set()).add(drv); tonsByDay[d]=(tonsByDay[d]||0)+t; revByDay[d]=(revByDay[d]||0)+revL; if(stg>(maxStageByDay[d]||0))maxStageByDay[d]=stg; if(drv)byDriver[drv].dates[d]=(byDriver[drv].dates[d]||0)+1;}
     // tiempos de ciclo (min) por terminal
@@ -916,7 +920,8 @@ function getWell(id){
     cycleTimes:Object.entries(cyc).map(([k,v])=>({terminal:k,load:avg2(v.load),transit:avg2(v.transit),unload:avg2(v.unload),full:avg2(v.full)})),
     wt:{days:Object.values(wtDay).map(function(v){return [v.d,v.t,v.l,v.nn?Math.round(v.nw/v.nn):0,v.gn?Math.round(v.gw/v.gn):0,v.ov,v.lw,Math.round(v.rev),Math.round(v.fsc)];}).sort(function(a,b){return a[0]<b[0]?-1:a[0]>b[0]?1:(a[1]<b[1]?-1:1);}),
         hrs:Object.values(wtHr).map(function(v){return [v.d,v.h,v.t,v.l,v.nn?Math.round(v.nw/v.nn):0,v.gn?Math.round(v.gw/v.gn):0,v.ov];}).sort(function(a,b){return a[0]<b[0]?-1:a[0]>b[0]?1:(a[1]-b[1]);}),
-        dd:Object.keys(revByDay).sort().map(function(d){return [d,(drvByDay[d]?drvByDay[d].size:0),Math.round(revByDay[d]||0),Math.round(fscByDay[d]||0)];})},
+        dd:Object.keys(revByDay).sort().map(function(d){return [d,(drvByDay[d]?drvByDay[d].size:0),Math.round(revByDay[d]||0),Math.round(fscByDay[d]||0)];}),
+        ovL:ovList},
     stages, inventory,
     roster:(function(){
       let R=_rosterBuild(rosterEv,byDriver,new Set(Object.keys(stagesByDay||{})));
