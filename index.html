@@ -284,6 +284,16 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .wt-tbl tbody tr:nth-child(odd):not(:last-child){background:#fafcfe}
 .wt-tbl tbody tr:hover:not(:last-child){background:#f1f6fb}
 .wt-hv{cursor:help;border-bottom:1px dotted #b9c6d2;padding-bottom:1px}
+/* .124 · Score v2: badges, chips de alerta y barras animadas */
+.fcr-alb{font:800 7.5px 'Plus Jakarta Sans';border-radius:999px;padding:1px 4px;margin-left:3px;vertical-align:super}
+.fcr-alb.b{background:#fdecec;color:#b23b3b;border:1px solid #f1c8c8}
+.fcr-alb.w{background:#fdf5e2;color:#9a6b1f;border:1px solid #ecd9a8}
+.dvp-chip.al-b{background:rgba(212,114,114,.3);border:1px solid rgba(243,160,160,.45);color:#ffd9d9}
+.dvp-chip.al-w{background:rgba(224,166,62,.22);border:1px solid rgba(232,197,111,.4);color:#f3e3b5}
+@media (prefers-reduced-motion:no-preference){
+  .dvp-bar>div{animation:dvpGrow .7s cubic-bezier(.2,.8,.3,1) backwards;transform-origin:left}
+  @keyframes dvpGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+}
 @media(max-width:700px){.wt-ctl{margin-left:0}.wt-tbl{min-width:760px}}
 /* .117: Access rediseñado */
 .acc-stat{background:#fff;border:1px solid var(--border,#e4e9ef);border-radius:14px;padding:12px 14px}
@@ -1413,7 +1423,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.123';
+const VBUILD='2026-10-12.124';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -3470,7 +3480,11 @@ function buildStgTable(){
 }
 
 /* ═══════ ROSTER GRID ═══════ */
-function dSc(d){const m=M;const act=d.slice(5).filter(x=>x>0).length;return Math.round((d[4]/m.DTR)*100*0.4+(d[2]/m.VMAX)*100*0.4+(act/Math.max(d[3],1))*100*0.2);}
+function dSc(d){const m=M;const act=d.slice(5).filter(x=>x>0).length; /* .124: Score v2 */
+  const bm=m._bdM||(m._bdM=(function(){const o={};((((RES_DATA[CURRENT_ID]||{}).w)||{}).byDriver||[]).forEach(x=>{o[String(x.driver).toUpperCase()]=x;});return o;})());
+  const bd=bm[String(d[0]).replace(/\s*↔\s*$/,'').trim().toUpperCase()]||null;
+  const T=((((RES_DATA[CURRENT_ID]||{}).w)||{}).targets)||null;
+  return fcScore2({tp:+d[4]||0,n:+d[2]||0,days:act,sp:null,gwA:(bd&&+bd.avg_gross)||0},[{n:m.VMAX}],m.DTR,Math.max(1,(m.D||[]).length),T,bd).s;}
 function dBd(tr){const m=M;return tr>=m.DTR?'star':tr>=m.DTR*0.85?'good':'review';}
 function cCls(v){return v>=7?'c7':v>=5?'c56':v>=3?'c34':v>=1?'c12':'c0';}
 function fR(v){return '$'+Math.round(v).toLocaleString('en-US');}
@@ -3521,11 +3535,11 @@ function bRost(){
       <span><span class="leg-sq" style="background:#e2e8f0"></span>Prefill</span><span><span class="leg-sq" style="background:rgba(58,124,165,.1)"></span>Running</span><span><span class="leg-sq" style="background:rgba(148,163,184,.12)"></span>EOJ</span>
       <span style="margin-left:6px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Cell:</span>
       <span><span class="leg-sq" style="background:#86EFAC"></span>≥7</span><span><span class="leg-sq" style="background:#BBF7D0"></span>5–6</span><span><span class="leg-sq" style="background:#FDE68A"></span>3–4</span><span><span class="leg-sq" style="background:#FECACA"></span>1–2</span>
-      <span style="margin-left:6px;color:#94a3b8;font-style:italic">Score = TR 40% + Volume 40% + Consistency 20% · Target TR ${m.DTR} · Avg TR ${m.trAll}</span></div>
+      <span style="margin-left:6px;color:#94a3b8;font-style:italic">Score v2 = TR 25 · Volume 20 · Consistency 10 · Revenue vs design 20 · Weight 15 · Window 10 (weights renormalize to available data) · Target TR ${m.DTR} · Avg TR ${m.trAll}</span></div>
     <div style="overflow-x:auto;border-radius:12px;border:1px solid var(--border);box-shadow:var(--sh-card)">
       <table id="perfGrid"><thead id="perfHead"></thead><tbody id="perfBody"></tbody></table></div>
     <div class="grid g2 mb" style="margin-top:14px">
-      <div class="card"><div class="card-t">Loads by Carrier — filtered by current selection · click para filtrar</div><div class="ch ch-s"><canvas id="chCarr"></canvas></div></div>
+      <div class="card"><div class="card-t">Loads by Carrier — filtered by current selection · click to filter</div><div class="ch ch-s"><canvas id="chCarr"></canvas></div></div>
       <div class="card"><div class="card-t">Loads vs TR — Driver map (click for detail)</div><div class="ch ch-s"><canvas id="chScat"></canvas></div></div>
     </div>`;
   ensureDetailCard();
@@ -3622,6 +3636,17 @@ window.rowExpand=function(tr,data){
         const gb=gwBand(bdr.avg_gross||0);
         return (bdr.avg_net?'<span style="font-size:8.5px;background:#eef3f9;color:#2E4057;padding:2px 8px;border-radius:6px;font-weight:700">Net avg '+fmt(bdr.avg_net)+' lbs</span>':'')
          +(bdr.avg_gross?'<span style="font-size:8.5px;background:#fff;border:1px solid #e4e9ef;color:'+gb.col+';padding:2px 8px;border-radius:6px;font-weight:800" title="'+gb.t+'">Gross avg '+fmt(bdr.avg_gross)+' lbs</span>':'');}catch(_e){return '';}})()}
+      ${(function(){try{const nm4=String(data.n||'').replace(/\s*↔\s*$/,'').trim();
+        const w4=((RES_DATA[CURRENT_ID]||{}).w||{});
+        const bd4=(w4.byDriver||[]).find(x=>String(x.driver||'').toUpperCase()===nm4.toUpperCase())||null;
+        const act4=(data.dl||[]).filter(v=>v>0).length;
+        const lds4=(data.dl||[]).reduce((a,v)=>a+(+v||0),0);
+        const o4=fcScore2({tp:+data.tr||0,n:lds4,days:act4,sp:null,gwA:(bd4&&+bd4.avg_gross)||0},[{n:m.VMAX}],m.DTR,Math.max(1,(m.D||[]).length),w4.targets,bd4);
+        const tip4=encodeURIComponent('<b>Score '+o4.s+' — how it is built</b>\n'
+          +o4.parts.map(p=>'• '+p.label+' · '+p.w+'% — <b>'+Math.min(100,p.pct)+'%</b>'+(p.note?' · '+p.note:'')).join('\n')
+          +(o4.alerts.length?'\n<b>Alerts</b>\n'+o4.alerts.map(a=>'! '+a.t).join('\n'):''));
+        return '<span class="wt-hv" style="font-size:8.5px;background:#eef3f9;color:#17293a;padding:2px 8px;border-radius:6px;font-weight:800" data-tip="'+tip4+'">Score '+o4.s
+          +(o4.alerts.length?' <sup class="fcr-alb '+(o4.alerts.some(a=>a.k==='bad')?'b':'w')+'">'+o4.alerts.length+'</sup>':'')+'</span>';}catch(_e){return '';}})()}
       <span class="acc-act" style="font-size:9.5px" onclick="event.stopPropagation();drvProfile('${String(data.n||'').replace(/\s*↔\s*$/,'').trim().replace(/'/g,"\\'")}',CURRENT_ID)">Open profile ↗</span>
       <span style="font-size:8px;color:#94a3b8;margin-left:auto">▼ click again to collapse</span></div></td>
     <td colspan="${daily.length+2}" style="padding:6px 4px 6px 0;border-top:1.5px dashed #bfdbfe;vertical-align:middle"><table style="border-collapse:collapse;width:100%"><tr>${bars}</tr></table></td>`;
@@ -4346,10 +4371,43 @@ function fcHistHour(w,now){
     for(let h2=0;h2<24;h2++){const v=(d.dr&&+d.dr[h2])||0;byH[h2].push(v);if(v>0)any=true;}});
   if(!any)return null;
   return byH.map(a=>{if(!a.length)return 0;const q=a.slice().sort((x,y)=>x-y);return q[Math.floor(q.length/2)];});}
-/* Score del grid (misma fórmula, rango completo del pozo): TR 40 + Volumen 40 + Consistencia 20 */
-function fcScore(row,rows,dtr,padDays){
-  const vmax=Math.max(1,...rows.map(x=>x.n));
-  return Math.round((row.tp/Math.max(0.1,dtr))*100*0.4+(row.n/vmax)*100*0.4+(row.days/Math.max(1,padDays))*100*0.2);}
+/* ── .124 · SCORE v2 — compuesto renormalizado: solo puntúa lo que tiene dato real.
+   Pesos: TR 25 · Volume 20 · Consistency 10 · Revenue vs design 20 · Weight 15 · Window 10.
+   Un componente sin dato (p.ej. revenue sin targets, window sin turnos) se EXCLUYE y los
+   pesos restantes se renormalizan — nunca castiga por datos que no existen. */
+function fcScore2(row,rows,dtr,padDays,T,bd){
+  row=row||{};const vmax=Math.max(1,...(rows&&rows.length?rows:[{n:1}]).map(x=>+x.n||0));
+  const P=[];
+  const add=(k,label,w,pct,note)=>{if(pct==null||!isFinite(pct))return;
+    P.push({k,label,w,pct:Math.max(0,Math.round(pct)),note:note||''});};
+  add('tr','Turn rate',25,(row.tp!=null&&row.tp>0&&dtr>0)?(row.tp/Math.max(.1,dtr))*100:null,
+    'vs well target '+(+dtr||0).toFixed(2)+'/day');
+  add('vol','Volume',20,row.n!=null?(+row.n/vmax)*100:null,'vs top driver ('+vmax+' lds)');
+  add('con','Consistency',10,row.days!=null?(+row.days/Math.max(1,padDays))*100:null,
+    'days worked vs pad days');
+  let rvPct=null,rvNote='';
+  if(bd&&+bd.revenue>0&&+bd.days>0&&T&&+T.total_revenue>0&&+T.duration_days>0&&+T.drivers_day>0){
+    const design=T.total_revenue/(T.duration_days*T.drivers_day);
+    rvPct=(bd.revenue/bd.days)/design*100;
+    rvNote='$'+fmt(Math.round(bd.revenue/bd.days))+'/day vs design $'+fmt(Math.round(design));}
+  add('rev','Revenue pace',20,rvPct,rvNote);
+  const gwA=+((bd&&bd.avg_gross)||row.gwA||0);
+  add('wt','Weight',15,gwA>0?(gwA>80000?40:gwA>=78000?100:gwA>=70000?70:40):null,
+    gwA>0?(gwA>80000?'avg OVER 80k — overweight risk':gwA>=78000?'in the 78–80k window':gwA>=70000?'below the 78k efficiency floor':'under-loaded <70k'):'');
+  const sp=+row.sp||0;
+  add('win','Work window',10,sp>0?((sp>=11&&sp<=14)?100:((sp>=9&&sp<11)||(sp>14&&sp<=16))?70:40):null,
+    sp>0?(sp.toFixed(1)+' h/day — '+((sp>=11&&sp<=14)?'healthy':((sp>=9&&sp<11)||(sp>14&&sp<=16))?'watch':'out of range')):'');
+  const wSum=P.reduce((a,p)=>a+p.w,0)||1;
+  const sc=Math.min(100,Math.round(P.reduce((a,p)=>a+Math.min(100,p.pct)*p.w,0)/wSum));
+  const AL=[];
+  if(dtr>0&&row.tp>0&&row.tp/dtr<0.85)AL.push({t:'Below TR target — '+(+row.tp).toFixed(2)+' vs '+(+dtr).toFixed(2),k:'bad'});
+  if(gwA>80000)AL.push({t:'Avg gross OVER 80k ('+fmt(gwA)+' lbs)',k:'bad'});
+  else if(gwA>0&&gwA<70000)AL.push({t:'Under-loaded — avg gross '+fmt(gwA)+' lbs',k:'warn'});
+  else if(gwA>0&&gwA<78000)AL.push({t:'Gross below the 78k efficiency floor',k:'warn'});
+  if(sp>0&&(sp<9||sp>16))AL.push({t:'Work window '+sp.toFixed(1)+' h/day — out of healthy range',k:'warn'});
+  if(rvPct!=null&&rvPct<85)AL.push({t:'Revenue pace at '+Math.round(rvPct)+'% of design',k:'warn'});
+  return {s:sc,parts:P,alerts:AL};}
+function fcScore(row,rows,dtr,padDays,T,bd){return fcScore2(row,rows,dtr,padDays,T||null,bd||null).s;}
 /* ── burn real por ventana desde Stages (start/end + used tons, prorrateo por solape) ── */
 function fcBurnWin(w,hrs,now){
   const st=(w&&w.stages)||[];const a=now-hrs*36e5;let tons=0,any=false;
@@ -5208,7 +5266,9 @@ function fcPinShow(i,F){
     return '<div class="fcp-row"><span class="dt" style="background:'+e.col+'"></span>'
       +e.name+': <b>'+fmt(v)+'</b> lbs · need <b>'+rq3+'</b> '
       +(crew>=rq3?'<b class="ok2">✓</b>':'<b class="bad2">short '+(rq3-crew)+'</b>')+'</div>';}).join('');
-  const drv=on.length?on.map(r=>{const sc=fcScore(r,rows,dtr,padDays);const wb=fcHrsBand(r.sp);
+  const _wP=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
+  const _bdP={};(((_wP||{}).byDriver)||[]).forEach(x=>{_bdP[String(x.driver).toUpperCase()]=x;});
+  const drv=on.length?on.map(r=>{const sc=fcScore2(r,rows,dtr,padDays,_wP&&_wP.targets,_bdP[String(r.d).toUpperCase()]||null).s;const wb=fcHrsBand(r.sp);
     return '<div class="fcp-drv"><span class="fcr-nm" onclick="fcGotoDriver(\''+String(r.d).replace(/'/g,"\\'")+'\')">'+r.d+'</span>'
       +'<span style="color:#8a97a6">'+r.c+'</span>'
       +(r.nw?'<span class="fcr-new">NEW +12H</span>':'')
@@ -5335,11 +5395,14 @@ function _dvData(){const wid=(DRVP&&DRVP.wid)||FC.id; /* .120: perfil desde cual
     dtr=(w.targets&&+w.targets.turn_rate_target)||4;
     padDays=Math.max(1,(w.daily||[]).length);}
   const r=rows.find(x=>x.d===name)||null;
-  const sc=r?Math.min(100,fcScore(r,rows,dtr,padDays)):0; /* cap 100 */
-  const rank=rows.map(x=>({d:x.d,s:Math.min(100,fcScore(x,rows,dtr,padDays))})).sort((a,b)=>b.s-a.s);
+  const _bdM3={};((w.byDriver)||[]).forEach(x=>{_bdM3[String(x.driver).toUpperCase()]=x;}); /* .124 */
+  const S2=fcScore2(r||{tp:null,n:(bd&&+bd.loads)||0,days:(bd&&+bd.days)||0,sp:null,gwA:(bd&&+bd.avg_gross)||0},
+    rows,dtr,padDays,w.targets,bd);
+  const sc=S2.s;
+  const rank=rows.map(x=>({d:x.d,s:fcScore2(x,rows,dtr,padDays,w.targets,_bdM3[String(x.d).toUpperCase()]||null).s})).sort((a,b)=>b.s-a.s);
   const rk=Math.max(1,rank.findIndex(x=>x.d===name)+1);
   const tgt=(w.targets&&+w.targets.turn_rate_target)||0;
-  return {wid,w,bd,r,sc,rk,nR:rank.length||1,dtr,padDays,tgt};}
+  return {wid,w,bd,r,sc,rk,nR:rank.length||1,dtr,padDays,tgt,parts:S2.parts,alerts:S2.alerts};}
 window.drvProfile=function(name,wid){const ov=$('drv-ov');if(!ov)return;
   DRVP={d:name,wid:wid||FC.id,day:'',met:DRVP.met||'loads'};
   const D=_dvData();if(!D||!(D.bd||D.r)){return;}
@@ -5389,6 +5452,7 @@ function drvRender(){
    +(srcTxt?'<span class="dvp-chip">'+srcTxt+'</span>':'')
    +(r.aS!=null&&r.sp?'<span class="dvp-chip">window '+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+' · '+(+r.sp).toFixed(1)+' h/day</span>':'')
    +(r.hwA&&_fcPkHrs(r.hwA)?'<span class="dvp-chip">most active '+_fcPkHrs(r.hwA)+'</span>':'')
+   +((D.alerts&&D.alerts.length)?D.alerts.map(a=>'<span class="dvp-chip '+(a.k==='bad'?'al-b':'al-w')+'">! '+a.t+'</span>').join(''):'')
    +'</div></div>'
    +'<div class="dvp-kpis">'
    +kp('TR · pump days','<span style="color:'+trCol+'">'+((+r.tp||0).toFixed(2))+trMark+'</span>',D.tgt?('target '+D.tgt.toFixed(2)+'/day'):'no target set')
@@ -5406,10 +5470,11 @@ function drvRender(){
    +'<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">'
    +'<div class="dvp-donut" style="background:conic-gradient(#2d5a7b '+(D.sc*3.6)+'deg,#e8eef4 0)"><div><b class="dvp-dnum">'+D.sc+'</b><span class="dvp-drank">#'+D.rk+' of '+D.nR+'</span></div></div>'
    +'<div style="flex:1;min-width:200px">'
-   +'<div class="dvp-row"><span style="width:92px">Turn rate <span style="color:#8a97a6">· 40%</span></span><div class="dvp-bar"><div style="width:'+pTR+'%;background:'+(pTR>=100?'#3fa272':pTR>=70?'#4ca882':'#d49a6a')+'"></div></div><b style="width:40px;text-align:right">'+pTR+'%</b></div>'
-   +'<div class="dvp-row"><span style="width:92px">Volume <span style="color:#8a97a6">· 40%</span></span><div class="dvp-bar"><div style="width:'+pVol+'%;background:'+(pVol>=100?'#3fa272':pVol>=70?'#4ca882':'#d49a6a')+'"></div></div><b style="width:40px;text-align:right">'+pVol+'%</b></div>'
-   +'<div class="dvp-row"><span style="width:92px">Consistency <span style="color:#8a97a6">· 20%</span></span><div class="dvp-bar"><div style="width:'+pCon+'%;background:'+(pCon>=100?'#3fa272':pCon>=70?'#4ca882':'#d49a6a')+'"></div></div><b style="width:40px;text-align:right">'+pCon+'%</b></div>'
-   +'<div class="sb" style="margin-top:6px">TR vs the pad input ('+D.dtr+'/day) · volume vs the top driver · consistency = days worked vs pad days.</div>'
+   +(D.parts||[]).map(p=>{const pc=Math.min(100,p.pct);
+      return '<div class="dvp-row"><span style="width:110px">'+p.label+' <span style="color:#8a97a6">· '+p.w+'%</span></span>'
+       +'<div class="dvp-bar"><div style="width:'+pc+'%;background:'+(pc>=100?'#3fa272':pc>=70?'#4ca882':pc>=50?'#d49a6a':'#c96a6a')+'"'+(p.note?' title="'+String(p.note).replace(/"/g,'&quot;')+'"':'')+'></div></div>'
+       +'<b style="width:40px;text-align:right">'+pc+'%</b></div>';}).join('')
+   +'<div class="sb" style="margin-top:6px">Score v2 — TR vs target · volume vs top driver · consistency · revenue pace vs design · gross-weight band · work-window health. Weights renormalize to the data this driver actually has.</div>'
    +'</div></div></div>'
    +(hasBD?'<div class="card"><div class="card-t">Driver vs pad — loads per day</div><div class="ch ch-s"><canvas id="chDrvB"></canvas></div>'
    +'<div class="sb">bars = his loads · dashed = pad average per active driver that day'+(D.tgt?' · red line = TR target':'')+'</div></div>'
@@ -5441,7 +5506,7 @@ function drvCharts(D,bd,dates,rpl){
     {label:'Pad avg / driver',data:padAvg,type:'line',borderColor:'#9b8ec4',borderDash:[5,4],borderWidth:2,pointRadius:3,tension:.3,spanGaps:true,order:1}];
   if(D.tgt)bds.push({label:'TR target',data:dates.map(()=>D.tgt),type:'line',borderColor:'rgba(212,114,114,.8)',borderWidth:1.5,pointRadius:0,order:0});
   mkChart('chDrvB',{type:'bar',data:{labels:lbls,datasets:bds},
-    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},
+    options:{interaction:{mode:'index',intersect:false},animation:{duration:700,easing:'easeOutQuart',delay:c=>(c&&c.type==='data'&&c.mode==='default'?(c.dataIndex||0)*45:0)},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},
       tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+(c.dataset.type==='line'&&c.dataset.label!=='TR target'?' lds/driver':' lds')}}},
       scales:{x:{...gO},y:{...gO,ticks:{callback:v=>v+' lds'}}}}});
   const shdMap={};((D.r&&D.r.shd)||[]).forEach(s2=>{shdMap[s2[0]]=(shdMap[s2[0]]||0)+(+s2[2]||0);});
@@ -5451,12 +5516,23 @@ function drvCharts(D,bd,dates,rpl){
   const ds2=[{label:met==='loads'?'Loads':met==='revenue'?'Revenue est.':'Hours',data:serie,backgroundColor:dates.map((d,i)=>d===DRVP.day?'rgba(45,90,123,.95)':col),borderRadius:8,borderSkipped:false}];
   if(met==='loads'&&D.tgt)ds2.push({label:'TR target',data:dates.map(()=>D.tgt),type:'line',borderColor:'rgba(212,114,114,.8)',borderWidth:1.5,pointRadius:0});
   mkChart('chDrvD',{type:'bar',data:{labels:lbls,datasets:ds2},
-    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},
+    options:{interaction:{mode:'index',intersect:false},animation:{duration:700,easing:'easeOutQuart',delay:c=>(c&&c.type==='data'&&c.mode==='default'?(c.dataIndex||0)*45:0)},plugins:{legend:{display:false},
       tooltip:{callbacks:{label:c=>c.dataset.label+': '+(met==='revenue'?'$'+fmt(c.raw):c.raw+(met==='hours'?' h':' lds'))}}},
       scales:{x:{...gO},y:{...gO,ticks:{callback:v=>met==='revenue'?('$'+fmt(v)):v}}}}});
   const dl=$('dvp-dayline');
   if(dl&&DRVP.day){const d=DRVP.day;const l=bd.dates[d]||0;const hv=shdMap[d.slice(5)];
-    dl.innerHTML='<b>'+d+'</b> · '+l+' loads · est. $'+fmt(Math.round(l*rpl))+(hv!=null?' · '+hv.toFixed(1)+' h on the shift log':'')+(D.tgt?(' · target '+D.tgt.toFixed(2)+' → '+(l>=D.tgt?'<b style="color:#2F7A45">met ▲</b>':'<b style="color:#b23b3b">missed ▼</b>')):'');}}
+    dl.innerHTML='<b>'+d+'</b> · '+l+' loads · est. $'+fmt(Math.round(l*rpl))+(hv!=null?' · '+hv.toFixed(1)+' h on the shift log':'')+(D.tgt?(' · target '+D.tgt.toFixed(2)+' → '+(l>=D.tgt?'<b style="color:#2F7A45">met ▲</b>':'<b style="color:#b23b3b">missed ▼</b>')):'');}
+  /* .124: fluidez — count-up del score con llenado del donut (solo navegador) */
+  (function(){try{
+    if(typeof requestAnimationFrame!=='function'||!ov.querySelector)return;
+    const dn=ov.querySelector('.dvp-donut'),el=ov.querySelector('.dvp-dnum');if(!dn||!el)return;
+    const now=()=>((typeof performance!=='undefined'&&performance.now)?performance.now():Date.now());
+    const t0=now();
+    const tick=()=>{const p=Math.min(1,(now()-t0)/650),e2=1-Math.pow(1-p,3),v=Math.round(D.sc*e2);
+      el.textContent=v;dn.style.background='conic-gradient(#2d5a7b '+(v*3.6)+'deg,#e8eef4 0)';
+      if(p<1)requestAnimationFrame(tick);};
+    requestAnimationFrame(tick);
+  }catch(_){}})();}
 window.drvShot=function(){try{const D=_dvData();if(!D)return;
   const bd=D.bd||{loads:0,revenue:0,fsc:0,days:0,dates:{}};const r=D.r||{};
   const dates=Object.keys(bd.dates||{}).sort();
@@ -5518,7 +5594,8 @@ function fcRosterTable(){
   /* .108: flecha de cumplimiento vs turn rate objetivo del pozo (Targets) */
   const _wT=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
   const trT=(_wT&&_wT.targets&&+_wT.targets.turn_rate_target)||0;
-  host.innerHTML=rows.map(r=>{const sc=fcScore(r,rows,dtr,padDays);
+  const _bdM2={};(((_wT||{}).byDriver)||[]).forEach(x=>{_bdM2[String(x.driver).toUpperCase()]=x;}); /* .124 */
+  host.innerHTML=rows.map(r=>{const sc2=fcScore2(r,rows,dtr,padDays,_wT&&_wT.targets,_bdM2[String(r.d).toUpperCase()]||null);const sc=sc2.s;
     const stale=!r.fresh;
     const wb2=fcHrsBand(r.sp);const vr2=_fcVr(r);
     let audit='No shift log yet — projecting defaults';
@@ -5551,7 +5628,11 @@ function fcRosterTable(){
       return '<td class="fcr-trc" data-tip="'+tip2+'">'+r.tp.toFixed(2)+' <span class="fcr-tra '+st[0]+'">'+st[1]+'</span></td>';})()
     +'<td class="fcr-win">'+(r.nwA?fmt(r.nwA):'—')+'</td>'
     +'<td class="fcr-win" style="color:'+gwBand(r.gwA||0).col+'"'+(r.gwA?' data-tip="'+encodeURIComponent('<b>'+r.d+' — avg weights</b>\nNet <b>'+fmt(r.nwA)+' lbs</b> · Gross <b>'+fmt(r.gwA)+' lbs</b>\n'+gwBand(r.gwA).t)+'"':'')+'>'+(r.gwA?fmt(r.gwA):'—')+'</td>'
-    +'<td class="fcr-sc">'+sc+'</td>'
+    +(function(){const tip3=encodeURIComponent('<b>Score '+sc+' — how it is built</b>\n'
+        +sc2.parts.map(p=>'• '+p.label+' · '+p.w+'% — <b>'+Math.min(100,p.pct)+'%</b>'+(p.note?' · '+p.note:'')).join('\n')
+        +(sc2.alerts.length?'\n<b>Alerts</b>\n'+sc2.alerts.map(a=>'! '+a.t).join('\n'):''));
+      return '<td class="fcr-sc" data-tip="'+tip3+'">'+sc
+        +(sc2.alerts.length?'<sup class="fcr-alb '+(sc2.alerts.some(a=>a.k==='bad')?'b':'w')+'">'+sc2.alerts.length+'</sup>':'')+'</td>';})()
     +'<td>'+r.days+'</td>'
     +'<td style="color:'+(stale?'#c24545':'#8a97a6')+'">'+(r.last?r.last.slice(5).replace(' ',' · ')+':00':'—')+(stale?' · off pad':'')+'</td>'
     +'</tr>';}).join('');}
