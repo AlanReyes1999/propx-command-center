@@ -1328,7 +1328,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.119';
+const VBUILD='2026-10-12.120';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -3468,6 +3468,13 @@ window.rowExpand=function(tr,data){
         const rx=rr.find(x=>String(x.d||'').toUpperCase()===nm);if(!rx)return '';
         const wb=fcHrsBand(+rx.sp||0);
         return '<span class="fcw '+wb.cls+'" title="learned from this pad: mean first→last load per shift">Work window '+_fcHM(+rx.aS||0)+'–'+_fcHM((+rx.aS||0)+(+rx.sp||0))+' · avg '+(+rx.sp||0).toFixed(1)+' h</span>';}catch(_e){return '';}})()}
+      ${(function(){try{const nm2=String(data.n||'').replace(/\s*↔\s*$/,'').trim();
+        const bdr=(((RES_DATA[CURRENT_ID]||{}).w||{}).byDriver||[]).find(x=>String(x.driver||'').toUpperCase()===nm2.toUpperCase());
+        if(!bdr||(!bdr.avg_net&&!bdr.avg_gross))return '';
+        const gb=gwBand(bdr.avg_gross||0);
+        return (bdr.avg_net?'<span style="font-size:8.5px;background:#eef3f9;color:#2E4057;padding:2px 8px;border-radius:6px;font-weight:700">Net avg '+fmt(bdr.avg_net)+' lbs</span>':'')
+         +(bdr.avg_gross?'<span style="font-size:8.5px;background:#fff;border:1px solid #e4e9ef;color:'+gb.col+';padding:2px 8px;border-radius:6px;font-weight:800" title="'+gb.t+'">Gross avg '+fmt(bdr.avg_gross)+' lbs</span>':'');}catch(_e){return '';}})()}
+      <span class="acc-act" style="font-size:9.5px" onclick="event.stopPropagation();drvProfile('${String(data.n||'').replace(/\s*↔\s*$/,'').trim().replace(/'/g,"\\'")}',CURRENT_ID)">Open profile ↗</span>
       <span style="font-size:8px;color:#94a3b8;margin-left:auto">▼ click again to collapse</span></div></td>
     <td colspan="${daily.length+2}" style="padding:6px 4px 6px 0;border-top:1.5px dashed #bfdbfe;vertical-align:middle"><table style="border-collapse:collapse;width:100%"><tr>${bars}</tr></table></td>`;
   tr.insertAdjacentElement('afterend',det);
@@ -5101,32 +5108,39 @@ function _fcTipBind(host){if(!host||host._tipB||!host.addEventListener)return;ho
 /* ══════════ .118 · DRIVER PROFILE — overlay con score, benchmark, día a día y export ══════════ */
 let DRVP={d:null,day:'',met:'loads'};
 function _dvCls(el,on){const c=el&&el.classList;if(c&&c.add){if(on)c.add('on');else c.remove('on');}}
-function _dvData(name){
-  const w=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;if(!w)return null;
+function _dvData(){const wid=(DRVP&&DRVP.wid)||FC.id; /* .120: perfil desde cualquier pestaña/pozo */
+  const w=RES_DATA[wid]&&RES_DATA[wid].ok&&RES_DATA[wid].w;if(!w)return null;
+  const name=DRVP.d;
   const bd=((w.byDriver)||[]).find(x=>x.driver===name)||null;
-  const rows=(FC._proj&&FC._proj.rows)||[];
+  let rows,dtr,padDays;
+  if(wid===FC.id&&FC._proj){rows=FC._proj.rows||[];
+    dtr=(FC.pf&&FC.pf.dtr)||((w.targets&&+w.targets.turn_rate_target)||4);
+    padDays=(FC.pf&&FC.pf.padDays)||Math.max(1,(w.daily||[]).length);}
+  else{const sv=FC.id;try{FC.id=wid;rows=((fcRosterProj(w,Date.now(),24)||{}).rows)||[];}catch(_){rows=[];}FC.id=sv;
+    dtr=(w.targets&&+w.targets.turn_rate_target)||4;
+    padDays=Math.max(1,(w.daily||[]).length);}
   const r=rows.find(x=>x.d===name)||null;
-  const dtr=(FC.pf&&FC.pf.dtr)||4,padDays=(FC.pf&&FC.pf.padDays)||1;
   const sc=r?Math.min(100,fcScore(r,rows,dtr,padDays)):0; /* cap 100 */
   const rank=rows.map(x=>({d:x.d,s:Math.min(100,fcScore(x,rows,dtr,padDays))})).sort((a,b)=>b.s-a.s);
   const rk=Math.max(1,rank.findIndex(x=>x.d===name)+1);
   const tgt=(w.targets&&+w.targets.turn_rate_target)||0;
-  return {w,bd,r,sc,rk,nR:rank.length||1,dtr,padDays,tgt};}
-window.drvProfile=function(name){const ov=$('drv-ov');if(!ov)return;
-  DRVP={d:name,day:'',met:DRVP.met||'loads'};
-  const D=_dvData(name);if(!D||!(D.bd||D.r)){return;}
+  return {wid,w,bd,r,sc,rk,nR:rank.length||1,dtr,padDays,tgt};}
+window.drvProfile=function(name,wid){const ov=$('drv-ov');if(!ov)return;
+  DRVP={d:name,wid:wid||FC.id,day:'',met:DRVP.met||'loads'};
+  const D=_dvData();if(!D||!(D.bd||D.r)){return;}
   drvRender();_dvCls(ov,true);try{document.body.style.overflow='hidden';}catch(_){}};
 window.drvClose=function(){const ov=$('drv-ov');_dvCls(ov,false);try{document.body.style.overflow='';}catch(_){}};
 window.drvDay=function(d){DRVP.day=d;drvRender();};
 window.drvMet=function(m2){DRVP.met=m2;drvRender();};
 window.drvLocate=function(){const n=DRVP.d;drvClose();
+  if(DRVP.wid&&DRVP.wid!==FC.id)return; /* .120: abierto desde el grid de otro contexto — solo cerrar */
   const host=$('fcr-body');
   if(!(host&&host.querySelectorAll))return (typeof fcGotoDriver==='function')?fcGotoDriver(n):null;
   let row=null;host.querySelectorAll('tr').forEach(tr=>{if(tr.textContent.indexOf(n)>=0)row=tr;});
   if(row){try{row.scrollIntoView({block:'center',behavior:'smooth'});row.style.background='#fff6d8';
     setTimeout(function(){row.style.background='';},1800);}catch(_){}}};
 function drvRender(){
-  const ov=$('drv-ov');const D=DRVP.d?_dvData(DRVP.d):null;if(!ov||!D)return;
+  const ov=$('drv-ov');const D=DRVP.d?_dvData():null;if(!ov||!D)return;
   const bd=D.bd||{driver:DRVP.d,loads:(D.r&&D.r.n)||0,revenue:0,fsc:0,days:(D.r&&D.r.days)||0,dates:{},carriers:[],avg_net:(D.r&&D.r.nwA)||0,avg_gross:(D.r&&D.r.gwA)||0};
   const r=D.r||{};
   const dates=Object.keys(bd.dates||{}).sort();
@@ -5151,7 +5165,7 @@ function drvRender(){
   const eN=String(DRVP.d).replace(/'/g,"\'");
   ov.innerHTML='<div class="dvp-wrap">'
    +'<div class="dvp-hero"><div style="min-width:210px;max-width:330px">'
-   +'<div class="dvp-sub">DRIVER PROFILE · '+FC.id+'</div>'
+   +'<div class="dvp-sub">DRIVER PROFILE · '+D.wid+'</div>'
    +'<div class="dvp-nm">'+DRVP.d+'</div>'
    +'<div class="dvp-sub" style="margin-top:4px">'+((bd.carriers&&bd.carriers[0])||r.c||'—')+(bd.carriers&&bd.carriers.length>1?' · switched carrier':'')+'</div>'
    +'<div style="margin-top:8px">'
@@ -5228,7 +5242,7 @@ function drvCharts(D,bd,dates,rpl){
   const dl=$('dvp-dayline');
   if(dl&&DRVP.day){const d=DRVP.day;const l=bd.dates[d]||0;const hv=shdMap[d.slice(5)];
     dl.innerHTML='<b>'+d+'</b> · '+l+' loads · est. $'+fmt(Math.round(l*rpl))+(hv!=null?' · '+hv.toFixed(1)+' h on the shift log':'')+(D.tgt?(' · target '+D.tgt.toFixed(2)+' → '+(l>=D.tgt?'<b style="color:#2F7A45">met ▲</b>':'<b style="color:#b23b3b">missed ▼</b>')):'');}}
-window.drvShot=function(){try{const D=_dvData(DRVP.d);if(!D)return;
+window.drvShot=function(){try{const D=_dvData();if(!D)return;
   const bd=D.bd||{loads:0,revenue:0,fsc:0,days:0,dates:{}};const r=D.r||{};
   const dates=Object.keys(bd.dates||{}).sort();
   const W=1000,H=640,cv=document.createElement('canvas');cv.width=W*2;cv.height=H*2;
@@ -5236,7 +5250,7 @@ window.drvShot=function(){try{const D=_dvData(DRVP.d);if(!D)return;
   x.fillStyle='#f6f8fb';x.fillRect(0,0,W,H);
   const grd=x.createLinearGradient(0,0,W,0);grd.addColorStop(0,'#17293a');grd.addColorStop(1,'#24506f');
   x.fillStyle=grd;x.fillRect(0,0,W,150);
-  x.fillStyle='#9fb4c6';x.font="700 11px 'Plus Jakarta Sans',sans-serif";x.fillText('DRIVER PROFILE · '+FC.id+' · '+new Date().toISOString().slice(0,10),28,36);
+  x.fillStyle='#9fb4c6';x.font="700 11px 'Plus Jakarta Sans',sans-serif";x.fillText('DRIVER PROFILE · '+D.wid+' · '+new Date().toISOString().slice(0,10),28,36);
   x.fillStyle='#fff';x.font="800 34px 'Plus Jakarta Sans',sans-serif";x.fillText(String(DRVP.d).slice(0,30),28,78);
   x.font="700 13px 'Plus Jakarta Sans',sans-serif";x.fillStyle='#dce8f2';
   x.fillText(((bd.carriers&&bd.carriers[0])||r.c||'—')+(r.aS!=null&&r.sp?('  ·  window '+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)):''),28,106);
