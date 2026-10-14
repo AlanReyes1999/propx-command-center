@@ -9,9 +9,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MEDS PropX">
 <title>MEDS · PropX Command Center</title>
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link rel="icon" type="image/png" sizes="64x64" href="/icon-64.png">
-<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" sizes="48x48" href="/favicon.ico?v=126">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg?v=126">
+<link rel="icon" type="image/png" sizes="64x64" href="/icon-64.png?v=126">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=126">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#17293A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1435,7 +1436,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.125';
+const VBUILD='2026-10-12.126';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -2131,6 +2132,58 @@ const fK=v=>{v=+v||0;return v>=1e6?'$'+(v/1e6).toFixed(2)+'M':v>=1000?'$'+(v/100
 const sep='────────────────';
 const gO={grid:{color:"rgba(0,0,0,.04)",lineWidth:1},border:{display:false},ticks:{font:{size:9,weight:'500'}}};
 const tO={maxTicksLimit:12,maxRotation:0};
+/* ── .126 · Capa estándar de interacción Chart.js (aplica a TODAS las gráficas) ──
+   Crosshair: afterEvent SOLO marca args.changed, el trazo va en afterDraw — jamás chart.draw().
+   Tooltips unificados vía Object.assign sobre los defaults (nunca asignación directa).
+   interaction {index,intersect:false} global; los doughnuts conservan su dCenter propio;
+   hover-dimming de datasets desde la leyenda (update('none'), sin loops). */
+if(typeof Chart!=='undefined'&&Chart.register){try{
+  Object.assign(Chart.defaults.interaction,{mode:'index',intersect:false});
+  Object.assign(Chart.defaults.plugins.tooltip,{
+    backgroundColor:'rgba(18,38,58,.94)',titleColor:'#fff',bodyColor:'#eaf2f8',
+    borderColor:'rgba(188,211,226,.35)',borderWidth:1,cornerRadius:10,padding:10,
+    boxPadding:4,usePointStyle:true,
+    titleFont:{family:"'Plus Jakarta Sans',sans-serif",size:11,weight:'800'},
+    bodyFont:{family:"'Plus Jakarta Sans',sans-serif",size:10,weight:'600'}});
+  const _NOCROSS={doughnut:1,pie:1,polarArea:1,radar:1};
+  Chart.register({id:'ppxCross',
+    afterEvent(c,args){try{
+      if(_NOCROSS[c.config.type])return;
+      if(c.options.plugins&&c.options.plugins.crosshair)return; /* el chart ya trae el suyo */
+      const e=args.event,A=c.chartArea;let nx=null;
+      if(e&&A&&e.x>=A.left&&e.x<=A.right&&e.y>=A.top&&e.y<=A.bottom){
+        const act=c.tooltip&&c.tooltip.getActiveElements&&c.tooltip.getActiveElements();
+        nx=(act&&act.length)?act[0].element.x:e.x;}
+      if(c.$ppxX!==nx){c.$ppxX=nx;args.changed=true;}
+    }catch(_){}},
+    afterDraw(c){try{
+      if(c.$ppxX==null||_NOCROSS[c.config.type])return;
+      if(c.options.plugins&&c.options.plugins.crosshair)return;
+      const A=c.chartArea,ctx=c.ctx;
+      ctx.save();ctx.setLineDash([3,3]);ctx.lineWidth=1;ctx.strokeStyle='rgba(23,41,58,.38)';
+      ctx.beginPath();ctx.moveTo(c.$ppxX,A.top);ctx.lineTo(c.$ppxX,A.bottom);ctx.stroke();ctx.restore();
+    }catch(_){}}});
+  Object.assign(Chart.defaults.plugins.legend,{
+    onHover:function(e,item,lg){try{const c=lg.chart;
+      if(e&&e.native&&e.native.target)e.native.target.style.cursor='pointer';
+      if(c.config.type!=='line'&&c.config.type!=='bar')return;
+      if((c.data.datasets||[]).length<2)return;
+      if(c.$dimI!==item.datasetIndex){c.$dimI=item.datasetIndex;c.update('none');}
+    }catch(_){}},
+    onLeave:function(e,item,lg){try{const c=lg.chart;
+      if(e&&e.native&&e.native.target)e.native.target.style.cursor='default';
+      if(c.$dimI!=null){c.$dimI=null;c.update('none');}
+    }catch(_){}}});
+  Chart.register({id:'ppxDim',
+    beforeDatasetDraw(c,args){try{
+      if(c.$dimI==null||args.index===c.$dimI)return;
+      c.ctx.save();c.ctx.globalAlpha=.22;
+    }catch(_){}},
+    afterDatasetDraw(c,args){try{
+      if(c.$dimI==null||args.index===c.$dimI)return;
+      c.ctx.restore();
+    }catch(_){}}});
+}catch(e){console.error('[chart-layer]',e);}}
 const PZ={P:'#3a7ca5',A:'#d4956a',B:'#6a9ec8',R:'#d47272',G:'#6ab89a',Gr:'#cbd5e1',Pu:'#9b8ec4'};
 function mkGrad(id,c1,c2,h){const el=document.getElementById(id);if(!el||!el.getContext)return c1;const g=el.getContext('2d').createLinearGradient(0,0,0,h||300);g.addColorStop(0,c1);g.addColorStop(1,c2);return g;}
 function mul32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -4113,7 +4166,7 @@ function renderStatus(soft){
   $('sts-padsel').innerHTML=ps.map((p,i)=>{const[tc,tl]=padTag(p);const on=selSet.has(p.well);
     return `<div class="padchip ${on?'':'off'}" onclick="stsTogglePad('${p.well.replace(/'/g,"\\'")}')" title="${p.well}\n${keyDate(p.first)} → ${keyDate(p.last)}">
       <span class="dot ${p.live?'live':''}"></span><span>${p.well_id||p.well.slice(0,18)}</span><span class="ptag ${tc}">${tl}</span></div>`;}).join('')
-    +(ps.length?`<span style="font-size:9px;color:#94a3b8;margin-left:4px;cursor:pointer;font-weight:700" onclick="stsSelAll(true)">todos</span>`:'');
+    +(ps.length?`<span style="font-size:9px;color:#94a3b8;margin-left:4px;cursor:pointer;font-weight:700" onclick="stsSelAll(true)">all</span>`:'');
   /* empty state */
   if(!ps.length){
     $('sts-body').style.display='none';const past=psAll.filter(p=>p.well_id&&!p.live);
@@ -4693,7 +4746,7 @@ window.authMenu=function(ev){try{ev&&ev.stopPropagation&&ev.stopPropagation();}c
   if(!pop){try{pop=document.createElement('div');pop.id='auth-pop';document.body.appendChild(pop);}catch(_){return;}}
   if(pop.classList&&pop.classList.contains('on')){pop.classList.remove('on');return;}
   if(!AUTH)return;
-  const ini=String(AUTH.name||AUTH.email||'?').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase();
+  const ini=String(AUTH.name||AUTH.email||'?').trim().charAt(0).toUpperCase(); /* .126: una sola letra */
   pop.innerHTML='<div class="ap-hd"><span class="ap-av">'+ini+'</span><div style="min-width:0">'
    +'<div class="ap-nm">'+(AUTH.name||'—')+'</div><div class="ap-em">'+(AUTH.email||'')+'</div>'
    +'<div style="margin-top:5px"><span class="acc-chip '+(AUTH.role||'')+'">'+(AUTH.role||'')+'</span></div></div></div>'
@@ -4749,7 +4802,7 @@ function renderAccess(){const pane=$('p-acc');if(!pane)return;
    +'<div id="acc-pop"></div>';
   accLoad();}
 window.accFil=function(r9){ACC_F.r=r9;['ALL','admin','operative','customer','pending'].forEach(x=>{const e9=$('accf-'+x);if(e9&&e9.classList)e9.classList.toggle('on',x===r9);});accPaint();};
-function _accIni(n,em){const p9=String(n||em||'?').trim().split(/\s+/);return ((p9[0]||'?')[0]+(p9[1]?p9[1][0]:'')).toUpperCase();}
+function _accIni(n,em){return String(n||em||'?').trim().charAt(0).toUpperCase()||'?';} /* .126: una sola letra */
 window.accMenu=function(ev,em){ev.stopPropagation();const pop=$('acc-pop');if(!pop)return;
   const u=(window.ACC_USERS||[]).find(x=>x.email===em);if(!u)return;
   const roles=['admin','operative','customer'].filter(r9=>r9!==u.role);
