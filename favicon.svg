@@ -1,20 +1,77 @@
-<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#F7F3EA"/><stop offset="1" stop-color="#EFE6D4"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FBF7EE"/><stop offset="1" stop-color="#F1E8D6"/>
     </linearGradient>
-    <linearGradient id="dback" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#16293A"/><stop offset="1" stop-color="#1F4258"/>
+    <linearGradient id="silo" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#2E5878"/><stop offset=".5" stop-color="#1F4258"/><stop offset="1" stop-color="#16293A"/>
     </linearGradient>
-    <linearGradient id="dfront" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#3E8E6B"/><stop offset="1" stop-color="#55AC87"/>
+    <linearGradient id="silo2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4A748F"/><stop offset="1" stop-color="#2E5878"/>
+    </linearGradient>
+    <linearGradient id="cone" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16293A"/><stop offset="1" stop-color="#0E1D2B"/>
+    </linearGradient>
+    <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#EDC97B"/><stop offset="1" stop-color="#D9A94A"/>
+    </linearGradient>
+    <linearGradient id="pad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#55AC87"/><stop offset="1" stop-color="#3E8E6B"/>
     </linearGradient>
   </defs>
-  <rect width="512" height="512" rx="116" fill="url(#sky)"/>
-  <circle cx="338" cy="178" r="78" fill="#E7BF66"/>
-  <circle cx="338" cy="178" r="78" fill="none" stroke="#D9A94A" stroke-width="6" opacity=".55"/>
-  <path d="M-10 368 C 96 242 206 240 296 324 C 352 376 438 388 522 350 L522 522 L-10 522 Z" fill="url(#dback)"/>
-  <path d="M164 300 C 206 262 258 266 300 306 L 262 326 C 230 300 196 296 164 300 Z" fill="#2C566E" opacity=".9"/>
-  <path d="M-10 430 C 86 338 232 322 338 386 C 408 428 470 430 522 408 L522 522 L-10 522 Z" fill="url(#dfront)"/>
-  <path d="M60 400 C 150 342 260 336 350 390 L 318 404 C 240 360 150 364 60 400 Z" fill="#7FC7A6" opacity=".85"/>
+
+  <!-- squircle -->
+  <rect x="8" y="8" width="496" height="496" rx="116" fill="url(#bg)"/>
+
+  <!-- pad (suelo) -->
+  <path d="M8 438 Q140 418 268 430 Q396 442 504 426 L504 388 Q504 504 388 504 L124 504 Q8 504 8 388 Z" fill="url(#pad)"/>
+  <path d="M8 432 Q150 414 276 426 Q398 436 504 422 L504 400 L8 408 Z" fill="#6DBE99" opacity=".45"/>
+
+  <!-- ══ silo secundario (detrás, derecha) ══ -->
+  <g>
+    <rect x="330" y="150" width="104" height="172" rx="14" fill="url(#silo2)"/>
+    <rect x="330" y="142" width="104" height="18" rx="9" fill="#5A84A0"/>
+    <path d="M344 322 L420 322 L396 368 L368 368 Z" fill="#24455E"/>
+    <rect x="336" y="322" width="12" height="104" rx="6" fill="#24455E"/>
+    <rect x="416" y="322" width="12" height="104" rx="6" fill="#1B374C"/>
+    <rect x="330" y="206" width="104" height="6" fill="#FFFFFF" opacity=".12"/>
+    <rect x="330" y="258" width="104" height="6" fill="#FFFFFF" opacity=".10"/>
+  </g>
+
+  <!-- ══ silo principal ══ -->
+  <g>
+    <!-- patas en A -->
+    <rect x="102" y="300" width="18" height="140" rx="9" fill="#13283A"/>
+    <rect x="268" y="300" width="18" height="140" rx="9" fill="#0F2231"/>
+    <!-- cuerpo -->
+    <rect x="88" y="86" width="212" height="226" rx="18" fill="url(#silo)"/>
+    <!-- tapa plana + hatch -->
+    <rect x="88" y="76" width="212" height="22" rx="11" fill="#2E5878"/>
+    <circle cx="194" cy="86" r="17" fill="#17293A" stroke="#4A748F" stroke-width="6"/>
+    <!-- costillas -->
+    <rect x="88" y="150" width="212" height="7" fill="#FFFFFF" opacity=".11"/>
+    <rect x="88" y="214" width="212" height="7" fill="#FFFFFF" opacity=".09"/>
+    <!-- brillo -->
+    <rect x="102" y="104" width="22" height="190" rx="11" fill="#FFFFFF" opacity=".10"/>
+    <!-- ventana de nivel con arena -->
+    <rect x="236" y="134" width="38" height="130" rx="17" fill="#0E1D2B"/>
+    <rect x="242" y="196" width="26" height="62" rx="11" fill="url(#sand)"/>
+    <!-- cono de descarga -->
+    <path d="M104 312 L284 312 L222 382 L166 382 Z" fill="url(#cone)"/>
+    <!-- válvula (volante) -->
+    <circle cx="246" cy="352" r="16" fill="#E7BF66" stroke="#B88B35" stroke-width="6"/>
+    <circle cx="246" cy="352" r="4" fill="#B88B35"/>
+    <!-- boca -->
+    <rect x="174" y="382" width="40" height="22" rx="7" fill="#0B1722"/>
+  </g>
+
+  <!-- chorro de arena cayendo -->
+  <path d="M182 404 L206 404 L216 448 L172 448 Z" fill="url(#sand)"/>
+  <circle cx="168" cy="420" r="5" fill="#D9A94A"/>
+  <circle cx="214" cy="414" r="4" fill="#E7BF66"/>
+  <circle cx="164" cy="442" r="4" fill="#E7BF66"/>
+
+  <!-- montículo de arena sobre el pad -->
+  <path d="M96 464 Q194 414 292 464 L292 472 Q194 460 96 472 Z" fill="url(#sand)"/>
+  <path d="M96 464 Q194 414 292 464 Q242 450 194 434 Q148 448 96 464 Z" fill="#F2D896" opacity=".6"/>
 </svg>

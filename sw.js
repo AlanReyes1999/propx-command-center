@@ -1,5 +1,5 @@
 /* MEDS PropX Command Center - offline shell (network-first document, cached fallback) */
-const CV='ppx-shell-v2';
+const CV='ppx-shell-v3';
 const PRE=['/','/index.html','/favicon.ico','/favicon.svg','/manifest.webmanifest','/icon-192.png','/icon-512.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CV).then(c=>c.addAll(PRE)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CV).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
