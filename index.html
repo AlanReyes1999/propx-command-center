@@ -295,6 +295,18 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
   @keyframes dvpGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 }
 @media(max-width:700px){.wt-ctl{margin-left:0}.wt-tbl{min-width:760px}}
+/* .125 · Forecast móvil: botonera en fila + leyenda colapsable */
+.fc-btns{display:contents}
+@media(max-width:700px){
+  #p-fc .fbar{align-items:stretch!important}
+  .fc-btns{display:flex;gap:8px;width:100%}
+  .fc-btns .rbtn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;margin:0}
+  #p-fc .fbar>.sb{margin-left:0!important}
+  .fc-legend{max-height:3.1em;overflow:hidden;position:relative;cursor:pointer}
+  .fc-legend:not(.open)::after{content:'… tap to read the full legend ▾';position:absolute;right:0;bottom:0;background:linear-gradient(90deg,rgba(255,255,255,0),#fff 30%);padding-left:30px;color:#3a7ca5;font-weight:800}
+  .fc-legend.open{max-height:none;padding-bottom:4px}
+  .fc-legend.open::after{content:'collapse ▴';position:static;background:none;padding-left:6px;color:#3a7ca5;font-weight:800}
+}
 /* .117: Access rediseñado */
 .acc-stat{background:#fff;border:1px solid var(--border,#e4e9ef);border-radius:14px;padding:12px 14px}
 .acc-stat .v{font:800 22px/1.1 'Plus Jakarta Sans';color:#17293a}
@@ -907,17 +919,17 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
 <div class="hdr">
   <div>
     <h1>MEDS LOGISTICS — PROPX COMMAND CENTER</h1>
-    <div class="sub">Portal operativo · Frac Sand · TX/NM · <span id="hd-sub">real-time multi-well</span> · <span id="vbuild" style="opacity:.65;font-weight:700">build 2026-07-02.7</span></div>
+    <div class="sub">Operations portal · Frac Sand · TX/NM · <span id="hd-sub">real-time multi-well</span> · <span id="vbuild" style="opacity:.65;font-weight:700">build 2026-07-02.7</span></div>
   </div>
   <div class="pills">
     <span class="pill p-grn" id="pill-wells">— live wells</span>
     <span class="pill" id="pill-loads">— loads</span>
-    <span class="pill p-gold" id="pill-api">Modo demo</span>
+    <span class="pill p-gold" id="pill-api">Demo mode</span>
     <span class="pill" id="pill-upd">—</span>
     <button class="rbtn" id="yrPill" onclick="openYrGate()" title="Operating year">— ▾</button>
     <button class="rbtn ghost" id="btn-auth" style="display:none"></button>
     <button class="rbtn" id="btn-refresh"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Refresh</span></button>
-    <button class="rbtn" id="btn-export" title="Exportar informe PDF de la vista actual"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><span class="btxt"> PDF</span></button>
+    <button class="rbtn" id="btn-export" title="Export a PDF report of the current view"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v11m0 0l-4-4m4 4l4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><span class="btxt"> PDF</span></button>
   </div>
 </div>
 
@@ -967,7 +979,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
     <div class="chips" style="margin-left:auto"><div class="chip" id="f-clear">Clear filters</div></div>
   </div>
   <div class="mb" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:relative">
-    <button id="rs-dropbtn" class="seg-btn" style="display:flex;align-items:center;gap:8px;padding:8px 14px;font-size:11px" onclick="rsDropToggle()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg> <span id="rs-dropcount">Pozos</span> <span style="font-size:9px">▾</span></button>
+    <button id="rs-dropbtn" class="seg-btn" style="display:flex;align-items:center;gap:8px;padding:8px 14px;font-size:11px" onclick="rsDropToggle()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg> <span id="rs-dropcount">Wells</span> <span style="font-size:9px">▾</span></button>
     <div id="rs-droppanel" style="display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:60;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 14px 40px rgba(28,61,84,.16);padding:12px;min-width:290px;max-height:340px;overflow:auto">
       <div style="display:flex;gap:8px;margin-bottom:10px">
         <input id="rs-dropsearch" placeholder="Search well..." oninput="rsDropRender()" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:10.5px;font-family:inherit">
@@ -999,18 +1011,18 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
     <div class="card"><div class="card-tl">Sourcing — mix por terminal <span class="sb">(full-well range)</span></div><div class="ch"><canvas id="rSrc"></canvas></div></div>
   </div>
   <div class="grid g2 mb">
-    <div class="card"><div class="card-tl">Aporte por Pozo — loads · revenue <span class="sb">clic abre el detalle</span></div><div class="ch"><canvas id="r_bywell"></canvas></div></div>
+    <div class="card"><div class="card-tl">Contribution by Well — loads · revenue <span class="sb">click opens the detail</span></div><div class="ch"><canvas id="r_bywell"></canvas></div></div>
     <div class="card"><div class="card-tl">Efficiency per Day <span class="sb">— delivered tons vs stage design (%)</span></div><div class="ch"><canvas id="rEff"></canvas></div></div>
   </div>
 
-  <div class="st">Pozos <span class="ssub">— toca una tarjeta para abrir el detalle</span></div>
+  <div class="st">Wells <span class="ssub">— tap a card to open its detail</span></div>
   <div class="grid g3" id="wcards"></div>
 </div>
 
 <!-- ============ POZO DETALLE ============ -->
 <div class="pane" id="p-pozo">
   <div class="fbar" style="align-items:flex-start">
-    <div class="fld"><label>Pozo</label><select id="w-sel"></select></div>
+    <div class="fld"><label>Well</label><select id="w-sel"></select></div>
     <div class="fld" style="flex:1;min-width:340px"><label>Day / Range</label>
       <div class="dstrip-row">
         <button class="darr" id="ds-prev" title="7 days back">‹</button>
@@ -1026,7 +1038,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
         </div>
       </div>
       <div class="dsub">
-        <div class="chips chips-mini"><div class="chip rng" data-d="H">Hoy</div><div class="chip rng" data-d="Y">Ayer</div><div class="chip rng" data-d="7">7d</div><div class="chip rng" data-d="14">14d</div><div class="chip rng" data-d="30">30d</div><div class="chip rng on" data-d="0">Todo</div></div>
+        <div class="chips chips-mini"><div class="chip rng" data-d="H">Today</div><div class="chip rng" data-d="Y">Yesterday</div><div class="chip rng" data-d="7">7d</div><div class="chip rng" data-d="14">14d</div><div class="chip rng" data-d="30">30d</div><div class="chip rng on" data-d="0">Todo</div></div>
         <span class="dleg"><span style="color:#58a05f">●</span> ≥ target · <span style="color:#e0a63e">●</span> 80–99% · <span style="color:#d47272">●</span> &lt; 80% · <span style="color:#cbd5e1">●</span> sin data</span>
         <span class="sb" id="w-range-note" style="margin-left:auto"></span>
       </div>
@@ -1075,7 +1087,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
       <input type="date" id="sts-d1" class="ctrl-inp" style="min-width:120px" onchange="stsRange()">
       <div class="seg-ctrl"><button class="seg-btn" id="sp-0" onclick="stsPreset(0)">Today</button><button class="seg-btn" id="sp--1" onclick="stsPreset(-1)">Yesterday</button><button class="seg-btn seg-on" id="sp-1" onclick="stsPreset(1)">24h</button><button class="seg-btn" id="sp-2" onclick="stsPreset(2)">48h</button><button class="seg-btn" id="sp-7" onclick="stsPreset(7)">7d</button><button class="seg-btn" id="sp-14" onclick="stsPreset(14)">14d</button><button class="seg-btn" id="sp-99" onclick="stsPreset(99)">All</button></div><span id="sts-filterchip" class="sb" style="margin-left:8px"></span></div>
     <div class="ctrl-sep"></div>
-    <div style="display:flex;align-items:center;gap:6px"><span class="ctrl-label">Hora</span>
+    <div style="display:flex;align-items:center;gap:6px"><span class="ctrl-label">Hour</span>
       <input type="number" id="sts-h0" class="ctrl-inp" style="min-width:56px;width:56px" min="0" max="23" value="0" onchange="stsHours()">
       <span style="color:#94a3b8">–</span>
       <input type="number" id="sts-h1" class="ctrl-inp" style="min-width:56px;width:56px" min="0" max="23" value="23" onchange="stsHours()"></div>
@@ -1090,7 +1102,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
     <div id="sts-ratio" class="mb"></div>
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-        <div><div class="card-t" style="margin:0">Timeline consolidado — on-duty por hora</div><div class="sb">clic en la leyenda para alternar series</div></div>
+        <div><div class="card-t" style="margin:0">Consolidated timeline — on-duty by hour</div><div class="sb">click the legend to toggle series</div></div>
         <div style="display:flex;align-items:center;gap:8px"><span class="ctrl-label">Compare to</span>
           <div class="seg-ctrl"><button id="cmp-0" class="seg-btn seg-on" onclick="stsCmp(0)">None</button><button id="cmp-24" class="seg-btn" onclick="stsCmp(24)">−24h</button><button id="cmp-168" class="seg-btn" onclick="stsCmp(168)">−7d</button><button id="cmp-720" class="seg-btn" onclick="stsCmp(720)">−30d</button></div></div>
       </div>
@@ -1098,7 +1110,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
     </div>
     <div class="grid g2 mb">
       <div class="card" id="sts-growth"></div>
-      <div class="card"><div class="card-t">Distribution — latest snapshot in range</div><div class="sb" style="margin-bottom:6px">clic en un segmento filtra el bucket</div><div class="ch"><canvas id="cSDist"></canvas></div></div>
+      <div class="card"><div class="card-t">Distribution — latest snapshot in range</div><div class="sb" style="margin-bottom:6px">click a segment to filter that bucket</div><div class="ch"><canvas id="cSDist"></canvas></div></div>
     </div>
     <div class="st">Pad Detail <span class="ssub">— click a card to isolate the pad · click again to restore</span></div>
     <div class="grid g2 mb" id="padcards"></div>
@@ -1423,7 +1435,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.124';
+const VBUILD='2026-10-12.125';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -1440,7 +1452,7 @@ function _authSave(o){AUTH=o;try{if(o)localStorage.setItem('meds_auth:v1',JSON.s
 let _authAsked=false;
 function _authNeed(){if(_authAsked)return;_authAsked=true;_authSave(null);try{lgShow();}catch(_){}}
 const BOOT=[];function blog(step,ok,extra){BOOT.push((ok?'✓':'✗')+step+(extra?'‹'+String(extra&&extra.message||extra).slice(0,120)+'›':''));(ok?console.log:console.error)('[BOOT]',step,extra||'');}console.log('[MEDS Command Center] build',VBUILD);
-window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Error de script: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
+window.addEventListener('error',ev=>{if(API_STATE&&API_STATE.mode!=='live'){API_STATE={mode:'error',reason:'Script error: '+(ev.message||ev.error)+' — build '+VBUILD};try{paintHeader();}catch(_){}}});
 window.addEventListener('unhandledrejection',ev=>{if(API_STATE&&API_STATE.mode!=='live'){apiFail(ev.reason||ev);API_STATE.reason+=' — build '+VBUILD;try{paintHeader();}catch(_){}}});
 let API_STATE={mode:CONFIG.API_URL?'checking':'demo', reason:CONFIG.API_URL?'':'No API URL configured (CONFIG.API_URL empty) — this file is an unconnected build.'};
 function apiFail(e){
@@ -1862,7 +1874,7 @@ function renderResumen(){
   // chips compactos: solo los seleccionados (máx 6 visibles), el dropdown gestiona la selección completa
   const selArr=ws.filter(w=>selSet.has(w.id));
   $('rs-chips').innerHTML=selArr.slice(0,6).map(w=>{
-    return `<div class="padchip" onclick="rsToggle('${w.id}')" title="${w.name} · clic para quitar">
+    return `<div class="padchip" onclick="rsToggle('${w.id}')" title="${w.name} · click to remove">
       <span class="dot ${w.status==='Live'?'live':''}" style="${w.status==='Live'?'':(w.status==='Closed'?'background:#d4956a':'background:#e2c04a')}"></span><span>${w.id}</span>
       <span style="font-size:8px;color:#94a3b8">✕</span></div>`;}).join('')
     +(selArr.length>6?`<span class="sb">+${selArr.length-6} more</span>`:'')
@@ -1982,7 +1994,7 @@ function drawResCharts(m){
   }else if(m.nptC.length){
     /* eventos sin fecha: panel útil = horas por responsable */
     const cats=m.nptC.slice(0,8);
-    mkChart('rNptD',{type:'bar',data:{labels:cats.map(x=>x[0]),datasets:[{label:'Horas',data:cats.map(x=>+x[1].toFixed(2)),backgroundColor:cats.map((_,i)=>hexA(PASTEL[i%PASTEL.length],.85)),borderRadius:8,maxBarThickness:26}]},
+    mkChart('rNptD',{type:'bar',data:{labels:cats.map(x=>x[0]),datasets:[{label:'Hours',data:cats.map(x=>+x[1].toFixed(2)),backgroundColor:cats.map((_,i)=>hexA(PASTEL[i%PASTEL.length],.85)),borderRadius:8,maxBarThickness:26}]},
       options:{indexAxis:'y',plugins:{legend:{display:false},
         tooltip:{callbacks:{title:c=>c[0].label,label:c=>[' '+fmtMin((+c.raw)*60),' '+(m.nptTot?Math.round(c.raw/m.nptTot*100):0)+'% of total NPT']}},
         subtitle:{display:true,text:'Undated events in the sheet — breakdown by responsible (add the year in DATE to see them by day)',font:{size:8.5},color:'#94a3b8',padding:{bottom:6}}},
@@ -2500,7 +2512,7 @@ function bExec(){
   ].join('');
   // ═══ GRUPO TIEMPOS — filtrable por arenera (mismos datos que Cycle Times) ═══
   const termBtns=_exTerms.length?('<button class="seg-btn '+(!_exTerm?'seg-on':'')+'" onclick="exTerm(\'\')">Total</button>'+_exTerms.map(tk=>'<button class="seg-btn '+(_exTerm===tk?'seg-on':'')+'" onclick="exTerm(\''+String(tk).replace(/'/g,"\\'")+'\')">'+tk+'</button>').join('')):'';
-  const TMEHDR='<div class="grp-h gh-ctrl"><span><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4.5l3 1.5M9.5 2h5"/></svg></span>Tiempos de Ciclo<span class="grp-sub">· promedio del range vs design'+(_exTerm?' · <b style="color:#3a7ca5">'+_exTerm+'</b>':'')+'</span><span style="flex:1"></span>'+(termBtns?'<span class="seg-ctrl">'+termBtns+'</span>':'')+'</div>';
+  const TMEHDR='<div class="grp-h gh-ctrl"><span><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4.5l3 1.5M9.5 2h5"/></svg></span>Cycle Times<span class="grp-sub">· range average vs design'+(_exTerm?' · <b style="color:#3a7ca5">'+_exTerm+'</b>':'')+'</span><span style="flex:1"></span>'+(termBtns?'<span class="seg-ctrl">'+termBtns+'</span>':'')+'</div>';
   const maxBar=Math.max(AVGx.dest,DSNx.dest,AVGx.trans,DSNx.trans,AVGx.term,DSNx.term)*1.15||1;
   const ovCT=+(AVGx.tot-dBufX).toFixed(0);
   const TME='<div class="card kpi" style="display:flex;flex-direction:column;justify-content:center">'+
@@ -2846,7 +2858,7 @@ function bFin(){
       <div class="card"><div class="card-t">Asset Moves por day</div><div class="ch ch-s"><canvas id="chAstDaily"></canvas></div></div>
     </div>
     <div class="card mb"><div class="card-tl"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.2 6.8l2.1 2.1M17.7 15.1l2.1 2.1M2.5 12h3M18.5 12h3M4.2 17.2l2.1-2.1M17.7 8.9l2.1-2.1"/></svg> Movimientos de equipo — aparte de loads</div>
-      ${m.AST.events.length?`<table><thead><tr><th>Load #</th><th>Fecha</th><th>Driver</th><th>Millas</th><th>Revenue</th></tr></thead><tbody>
+      ${m.AST.events.length?`<table><thead><tr><th>Load #</th><th>Date</th><th>Driver</th><th>Miles</th><th>Revenue</th></tr></thead><tbody>
         ${m.AST.events.map(e=>`<tr title="Load ID: ${e.load_id||'—'}"><td style="font-weight:700;color:#c27d4f">${e.load_no||'A·'}</td><td>${String(e.date||'—').slice(0,10)}</td><td>${e.driver||'—'}</td><td class="mono">${e.miles||'—'}</td><td class="mono"><strong>$${fmt(e.revenue||0)}</strong></td></tr>`).join('')}
         <tr style="background:#f0fdf4"><td colspan="3"><strong>Total range</strong></td><td class="mono">${m.AST.moves} mov</td><td class="mono"><strong>$${fmt(m.AST.rev)}</strong></td></tr>
       </tbody></table>`:`<div class="note">No equipment moves in the selected range.</div>`}
@@ -3745,8 +3757,8 @@ function bPreOps(){
   const m=M,T=m.T;
   $('pz-pre-ops').innerHTML=`<div class="st"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg> Ops Targets</div>
     <div class="card"><table><thead><tr><th>Metric</th><th>Target</th><th>Note</th></tr></thead><tbody>
-      <tr><td>Steady-state loads/day</td><td class="mono">${m.dTgt}</td><td>${Math.round(m.dTgt/2)} por turno</td></tr>
-      <tr><td>Drivers/day</td><td class="mono">${T.drivers_day||m.dDrv}</td><td>${Math.round((T.drivers_day||m.dDrv)/2)} por turno</td></tr>
+      <tr><td>Steady-state loads/day</td><td class="mono">${m.dTgt}</td><td>${Math.round(m.dTgt/2)} per shift</td></tr>
+      <tr><td>Drivers/day</td><td class="mono">${T.drivers_day||m.dDrv}</td><td>${Math.round((T.drivers_day||m.dDrv)/2)} per shift</td></tr>
       <tr><td>Turn rate</td><td class="mono">${m.DTR}</td><td>technical ${m.techTR}</td></tr>
       <tr><td>Weighted cycle</td><td class="mono">${m.dCT} min</td><td>buffered ${m.dCTbuf} min</td></tr>
       <tr><td>Stages/day</td><td class="mono">${m.stagesDayD}</td><td>${fmtMin(m.durStageD)}/stage</td></tr>
@@ -3803,7 +3815,7 @@ function buildStrip(){
   const selD=(_v0&&_v0===_v1)?_v0:'';
   let h='';
   for(let k=6;k>=0;k--){const iso=addD(STRIP_END,-k),d=new Date(iso+'T12:00'),isT=iso===tI,dd=dayDot(iso);
-    h+=`<div class="dcard${isT?' today':''}${selD===iso?' sel':''}" onclick="dsPick('${iso}')" title="${dd[1]}"><span class="dw">${isT?'HOY':WD_ES[d.getDay()]}</span><span class="dd">${d.getDate()} ${MO_ES[d.getMonth()]}</span><span class="ddot" style="background:${dd[0]}"></span></div>`;}
+    h+=`<div class="dcard${isT?' today':''}${selD===iso?' sel':''}" onclick="dsPick('${iso}')" title="${dd[1]}"><span class="dw">${isT?'TODAY':WD_ES[d.getDay()]}</span><span class="dd">${d.getDate()} ${MO_ES[d.getMonth()]}</span><span class="ddot" style="background:${dd[0]}"></span></div>`;}
   el.innerHTML=h;
   const pv=$('ds-prev'),nx=$('ds-next');
   if(pv)pv.disabled=addD(STRIP_END,-6)<=first;
@@ -3825,7 +3837,7 @@ function buildPadMini(){
     if(L)rows.push({id:(typeof CURRENT_ID!=='undefined'&&CURRENT_ID)||'active well',L,tr:Dr?+(L/Dr).toFixed(2):0,live:true});}
   rows.sort((a,b)=>b.L-a.L);
   const extraLive=(REGISTRY||[]).filter(w=>w.status==='Live'&&!seen[w.id]&&!((typeof RES_DATA!=='undefined')&&RES_DATA[w.id]&&RES_DATA[w.id].ok)).length;
-  el.innerHTML=`<div class="pm-t">Pozos activos <span>· ${lbl||'—'}</span></div>`+
+  el.innerHTML=`<div class="pm-t">Active wells <span>· ${lbl||'—'}</span></div>`+
     (rows.length?rows.slice(0,4).map(r=>`<div class="pm-r"><span class="pm-dot${r.live?' live':''}"></span><b>${r.id}</b><span>${fmt(r.L)} lds</span><span class="pm-tr">${trSem(r.tr)} TR ${r.tr||'—'}</span></div>`).join(''):'<div class="pm-r" style="color:#94a3b8">no loads in range</div>')+
     (rows.length>4?`<div class="pm-more">+${rows.length-4} more with activity</div>`:'')+
     (extraLive?`<div class="pm-more">+${extraLive} live sin detalle · abre Resumen para cargarlos</div>`:'');}
@@ -4012,7 +4024,7 @@ setInterval(function(){const el=$('sts-cd');if(!el)return;const ms=Math.max(0,RE
   el.textContent=('0'+Math.floor(ms/60000)).slice(-2)+':'+('0'+Math.floor(ms/1000)%60).slice(-2);},1000);
 window.stsHours=function(){SF.h0=Math.max(0,Math.min(23,+$('sts-h0').value||0));SF.h1=Math.max(SF.h0,Math.min(23,+$('sts-h1').value===0?0:+$('sts-h1').value||23));renderStatus(true);};
 window.stsRefresh=async function(){try{STATUS=await apiStatus(true);REFRESH_AT=Date.now()+((CONFIG.REFRESH_MIN||5)*60000);renderStatus();}catch(e){console.warn(e);}};
-window.stsSnap=async function(btn){const m=$('sts-snapmsg');if(m)m.textContent='ejecutando…';
+window.stsSnap=async function(btn){const m=$('sts-snapmsg');if(m)m.textContent='running…';
   try{const j=await fetchJSON(CONFIG.API_URL+'?action=snapshot');
     if(m)m.textContent=j&&j.ok?('✓ snapshot '+(j.time||'').slice(11,16)):('✗ '+String(j&&j.error||'error').slice(0,90));
     if(j&&j.ok)await stsRefresh();}
@@ -4086,7 +4098,7 @@ function renderStatus(soft){
           <span style="font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:42px;font-weight:700;color:#3f8a4c;line-height:1">${nowA}</span>
           <span class="chip" style="cursor:default;background:${dY==null?'#f1f5f9':dY>=0?'#e7f5ec':'#fdecec'};color:${dY==null?'#64748b':dY>=0?'#166534':'#b91c1c'};font-weight:700;font-size:10.5px">${yt}${yA!=null?' vs yesterday ('+yA+')':' vs yesterday'}</span></div>
         <div style="font-size:10px;margin-top:6px;color:${dA==null?'#94a3b8':dA>=0?'#16a34a':'#dc2626'};font-weight:600">${dA==null?'no 24h average':((dA>=0?'+':'')+dA.toFixed(0)+'% vs 24h average (avg: '+avg24.toFixed(0)+')')}</div>
-        <div style="font-size:9px;color:#94a3b8;margin-top:2px">on-duty ahora: <b class="mono">${nowO}</b> · ${lps.length} pad(s) corriendo</div></div>
+        <div style="font-size:9px;color:#94a3b8;margin-top:2px">on-duty now: <b class="mono">${nowO}</b> · ${lps.length} pad(s) running</div></div>
       <div style="flex:1;min-width:260px"><div style="font-size:8.5px;font-weight:800;color:#94a3b8;letter-spacing:.6px;text-align:right;margin-bottom:2px">ACTIVE · LAST 24H</div>
         <div style="height:78px"><canvas id="cHero"></canvas></div></div>`;
     const lbs=spark.map(x=>fmtHr(x.k));
@@ -4251,7 +4263,7 @@ function renderStatus(soft){
   const mx=Math.max(1,...dl.flatMap(d=>days[d].filter(v=>v!=null)));
   $('s-hmsub').textContent='· '+selPads.length+' pad(s) · '+dl.length+' day(s)'+(capped?' (last 21)':'');
   $('heatmap').innerHTML=`<div class="hmrow"><div class="hmlbl"></div>${Array.from({length:24},(_,h)=>`<div class="hmv" style="background:none;color:#94a3b8;font-weight:700">${('0'+h).slice(-2)}</div>`).join('')}</div>`+
-    dl.map(d=>`<div class="hmrow"><div class="hmlbl" onclick="stsDay('${d}')">${d.slice(5)}</div>${days[d].map(v=>`<div class="hmv ${heatColor(v,mx)}" title="${d} ${v==null?'· no data':'· '+v+' activos'}">${v==null?'':v}</div>`).join('')}</div>`).join('');
+    dl.map(d=>`<div class="hmrow"><div class="hmlbl" onclick="stsDay('${d}')">${d.slice(5)}</div>${days[d].map(v=>`<div class="hmv ${heatColor(v,mx)}" title="${d} ${v==null?'· no data':'· '+v+' active'}">${v==null?'':v}</div>`).join('')}</div>`).join('');
 }
 function stsPresetInit(S){const lD=keyDate(S.latest);SF.d0=keyDate(keyShift(S.latest,23));SF.d1=lD;
   const a=$('sts-d0'),b=$('sts-d1');if(a)a.value=SF.d0;if(b)b.value=SF.d1;}
@@ -5692,9 +5704,11 @@ function renderFc(){
         <button id="fch24" class="seg-btn${FC.hz===24?' seg-on':''}" onclick="fcHz(24)">24 h</button>
         <button id="fch48" class="seg-btn${FC.hz===48?' seg-on':''}" onclick="fcHz(48)">48 h</button>
         <button id="fch72" class="seg-btn${FC.hz===72?' seg-on':''}" onclick="fcHz(72)">72 h</button></div></div>
+      <div class="fc-btns">
       <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver board and relearn the roster"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
       <button class="rbtn ghost" id="fc-reset" onclick="fcReset()" disabled title="Already at the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
       <button class="rbtn ghost" id="fc-share" onclick="fcShare()" title="Open link to share"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.7l6.8-4.4M8.6 13.3l6.8 4.4"/></svg></button>
+      </div>
       <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')):pf.invType==='pila'?(pf.pilaT>0?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')+' · bellydump'):'sandpile cell EMPTY at last pull (shift change) — re-pulling live · enter lbs if it persists'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
     </div>
     <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· learned truck roster drives the crew curve · 6/12/24 h + avg pace projections</span></div>
@@ -5740,7 +5754,7 @@ function renderFc(){
       ${kpi('fck-net','Net right now')}
     </div>
     <div class="card mb"><div class="card-t">Pounds on location — roster crew curve × four frac paces</div>
-      <div class="sb" style="margin-bottom:4px">Navy = ACTUAL last 12 h (rebuilt from hourly deliveries − stage burn) · solid teal = avg pace (editable) · dashed red/amber/green = last 6 / 12 / 24 h pace · grey area = crew (past = live board ACTIVES → projected roster) · Crew Δ = one candle per crew rise/drop (stable hours stay clean) · Δ marks layer adds the ▲▼ +N/−N labels · click a pace chip to anchor the KPIs · legend toggles each line · click any hour for the detail panel</div>
+      <div class="sb fc-legend" onclick="this.classList.toggle('open')" style="margin-bottom:4px">Navy = ACTUAL last 12 h (rebuilt from hourly deliveries − stage burn) · solid teal = avg pace (editable) · dashed red/amber/green = last 6 / 12 / 24 h pace · grey area = crew (past = live board ACTIVES → projected roster) · Crew Δ = one candle per crew rise/drop (stable hours stay clean) · Δ marks layer adds the ▲▼ +N/−N labels · click a pace chip to anchor the KPIs · legend toggles each line · click any hour for the detail panel</div>
       <div id="fc-alert"></div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px">
         <div class="fc-esc" id="fc-esc" style="margin:0"></div>
@@ -5866,7 +5880,7 @@ function paintHeader(){
   renderHint();
   try{if($('pill-api'))$('pill-api').className='pill '+(API_STATE.mode==='live'?'p-grn':'p-gold');}catch(_){}
   setT('vbuild','build '+VBUILD);
-  try{setT('pill-upd','act. '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}));}catch(_){setT('pill-upd','act.');}
+  try{setT('pill-upd','upd '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}));}catch(_){setT('pill-upd','upd');}
 }
 function fillSelectors(){
   $('w-sel').innerHTML=REGISTRY.filter(yrOK).map(w=>`<option value="${w.id}">${w.id} — ${(w.name||'').slice(0,44)}</option>`).join('');
