@@ -199,6 +199,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fc-src{float:right;font:700 8.5px/1.4 'Plus Jakarta Sans';letter-spacing:.04em;color:#8a97a6;text-transform:none}
 .fc-src.live{color:#2F7A45}.fc-src.fb{color:#b45309}
 .rbtn.ghost{opacity:.42}
+#drv-ov .rbtn{background:#fff;color:#2E4057;border:1px solid #dfe6ee;opacity:1;box-shadow:0 2px 10px rgba(28,61,84,.10)} /* .122: contraste sobre el backdrop esmerilado */
 .rbtn.alive{animation:rpop .45s ease}
 @keyframes rpop{0%{transform:scale(1)}45%{transform:scale(1.07)}100%{transform:scale(1)}}
 .fc-gc.warn{background:#faf3dc;color:#9a7b2d}.fc-gc.hi{background:#fbeccf;color:#a06514}
@@ -231,7 +232,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .cli-fc .pane#p-fc{visibility:visible}
 .rbtn.okc{color:#2F7A45;border-color:#bfe3d2}
 /* .114: login + roles */
-#login-ov{position:fixed;inset:0;z-index:300;background:#f6f8fb;display:none;align-items:center;justify-content:center;padding:20px}
+#login-ov{position:fixed;inset:0;z-index:300;background:rgba(242,246,250,.93);backdrop-filter:blur(18px) saturate(1.08);-webkit-backdrop-filter:blur(18px) saturate(1.08);display:none;align-items:center;justify-content:center;padding:20px}
 #login-ov.on{display:flex}
 .lg-card{width:min(380px,94vw);background:#fff;border:1px solid var(--border,#e4e9ef);border-radius:18px;box-shadow:0 18px 50px rgba(28,61,84,.12);padding:26px 26px 20px;font-family:'Plus Jakarta Sans',sans-serif}
 .lg-logo{font:800 13px/1 'Plus Jakarta Sans';letter-spacing:.14em;color:#1c3d54}
@@ -276,7 +277,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .acc-dot.on{background:#3fa272}.acc-dot.pd{background:#d9a62e}.acc-dot.off{background:#c24545}
 .acc-dots{cursor:pointer;font:800 15px/1 'Plus Jakarta Sans';color:#8a97a6;padding:4px 10px;border-radius:8px;letter-spacing:.1em}
 .acc-dots:hover{background:#eef3f9;color:#17293a}
-#acc-pop{position:fixed;z-index:400;background:#fff;border:1px solid #e4e9ef;border-radius:14px;box-shadow:0 14px 40px rgba(28,61,84,.16);padding:6px;min-width:190px;display:none}
+#acc-pop{position:fixed;z-index:400;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid #e4e9ef;border-radius:14px;box-shadow:0 14px 40px rgba(28,61,84,.16);padding:6px;min-width:190px;display:none}
 #acc-pop.on{display:block}
 #acc-pop .it{display:block;width:100%;text-align:left;background:none;border:0;font:700 11.5px 'Plus Jakarta Sans';color:#2E4057;padding:9px 12px;border-radius:9px;cursor:pointer}
 #acc-pop .it:hover{background:#f1f6fb}
@@ -288,9 +289,38 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .lgx{background:#fff;border:1px solid #dde6ef;border-radius:10px;padding:9px 11px;font:600 11.5px 'Plus Jakarta Sans';color:#17293a;outline:none}
 @media(max-width:700px){.acc-hide-m{display:none!important}.acc-q{min-width:120px;flex:1}}
 /* .121: menú de usuario */
-#auth-pop{position:fixed;z-index:410;background:#fff;border:1px solid #e4e9ef;border-radius:16px;box-shadow:0 18px 48px rgba(28,61,84,.18);min-width:250px;display:none;overflow:hidden}
+#auth-pop{position:fixed;z-index:410;background:rgba(255,255,255,.95);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid #e4e9ef;border-radius:16px;box-shadow:0 18px 48px rgba(28,61,84,.18);min-width:250px;display:none;overflow:hidden}
 #auth-pop.on{display:block;animation:apIn .16s ease}
 @keyframes apIn{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+/* ── .122 motion layer: view transitions + blur + magnificación ── */
+.hdr{view-transition-name:vt-head}
+#tabbar{view-transition-name:vt-tabs}
+#mnav{view-transition-name:vt-mnav}
+@keyframes lgIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes wrapIn{from{opacity:0;transform:translateY(12px) scale(.975)}to{opacity:1;transform:none}}
+@keyframes vtOut{to{opacity:0}}
+@keyframes vtIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:no-preference){
+  ::view-transition-old(root){animation:vtOut .15s ease both}
+  ::view-transition-new(root){animation:vtIn .22s ease both}
+  ::view-transition-old(vt-head),::view-transition-old(vt-tabs),::view-transition-old(vt-mnav){animation:none;opacity:0}
+  ::view-transition-new(vt-head),::view-transition-new(vt-tabs),::view-transition-new(vt-mnav){animation:none}
+  .lg-card{animation:lgIn .34s cubic-bezier(.2,.9,.3,1)}
+  #drv-ov.on .dvp-wrap{animation:wrapIn .3s cubic-bezier(.2,.9,.3,1)}
+  #acc-pop{animation:apIn .15s ease}
+  .card.kpi,.acc-stat,.dvp-k,.fg-chip,.fc-hvp{transition:transform .16s cubic-bezier(.2,.8,.3,1),box-shadow .2s ease}
+  .card.kpi:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(28,61,84,.12)}
+  .acc-stat:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(28,61,84,.10)}
+  .dvp-k:hover{transform:translateY(-1px) scale(1.02)}
+  .fg-chip:hover{transform:scale(1.07)}
+  .fc-hvp:hover{transform:translateY(-1px) scale(1.05)}
+  .rbtn:active,.seg-btn:active,.tab:active,.mode-btn:active,.rng:active{transform:scale(.955)}
+}
+@supports not ((backdrop-filter:blur(2px)) or (-webkit-backdrop-filter:blur(2px))){
+  #login-ov{background:#f6f8fb}
+  #drv-ov{background:rgba(246,248,251,.985)}
+  #acc-pop,#auth-pop{background:#fff}
+}
 .ap-hd{display:flex;gap:11px;align-items:center;padding:14px 14px 12px;border-bottom:1px solid #eef2f6}
 .ap-av{flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#17293A;color:#fff;display:flex;align-items:center;justify-content:center;font:800 14px 'Plus Jakarta Sans'}
 .ap-nm{font:800 12.5px/1.25 'Plus Jakarta Sans';color:#17293a}
@@ -306,7 +336,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .ap-msg{min-height:14px;font:700 10.5px 'Plus Jakarta Sans';color:#b23b3b;margin-top:2px}
 .ap-msg.okm{color:#2F7A45}
 /* .118 Driver Profile */
-#drv-ov{position:fixed;inset:0;z-index:290;background:rgba(246,248,251,.985);display:none;overflow:auto;padding:18px}
+#drv-ov{position:fixed;inset:0;z-index:290;background:rgba(244,247,250,.9);backdrop-filter:blur(16px) saturate(1.06);-webkit-backdrop-filter:blur(16px) saturate(1.06);display:none;overflow:auto;padding:18px}
 #drv-ov.on{display:block}
 .dvp-wrap{max-width:1180px;margin:0 auto}
 .dvp-hero{position:relative;background:linear-gradient(135deg,#17293a,#1f3b52 55%,#24506f);border-radius:20px;color:#fff;padding:20px 54px 20px 22px;display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start;box-shadow:0 18px 44px rgba(23,41,58,.25)}
@@ -1347,7 +1377,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.121';
+const VBUILD='2026-10-12.122';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -3732,7 +3762,7 @@ function resizeCharts(){const raf=(typeof requestAnimationFrame==='function')?re
   raf(()=>raf(()=>{Object.keys(CH).forEach(function(k){try{const ch=CH[k];if(!ch||!ch.resize)return;
     const cv=ch.canvas;if(!cv||!cv.isConnected||cv.offsetParent===null)return; // NUNCA redimensionar charts en panes ocultos → Chart.js los colapsa a 0×0 y quedan en blanco
     ch.resize();}catch(_){}});}));}
-window.pzShow=function(tab){
+window.pzShow=function(tab){_vt(()=>{
   const prev=_pzTab; _pzTab=tab;
   document.querySelectorAll('#tabBar-pre .tab,#tabBar-close .tab').forEach(t=>t.classList.toggle('active',t.dataset.pz===tab));
   document.querySelectorAll('.subpane').forEach(p=>p.classList.toggle('active',p.id==='pz-'+tab));
@@ -3757,7 +3787,7 @@ window.pzShow=function(tab){
     pane.querySelectorAll('canvas').forEach(cv=>{const ch=CH[cv.id];if(!ch)return;
       if(ch.width<=2||ch.height<=2){try{ch.resize();}catch(_){ } if(ch.width<=2)dead=true;}});
     if(dead&&!pzShow._healing&&!_HEALED[tab]){_HEALED[tab]=1;pzShow._healing=true;_pzDirty[tab]=true;pzShow(tab);pzShow._healing=false;}
-  }catch(_){}}));};
+  }catch(_){}}));});};
 function wirePzTabs(){document.querySelectorAll('#tabBar-pre .tab,#tabBar-close .tab').forEach(t=>{t.onclick=()=>pzShow(t.dataset.pz);});}
 function renderPozo(){
   M=buildM();
@@ -4113,6 +4143,34 @@ function stsPresetInit(S){const lD=keyDate(S.latest);SF.d0=keyDate(keyShift(S.la
    Todo editable; la simulación corre 100% en el navegador.
    ════════════════════════════════════════════════════════════ */
 let FC={id:null,hz:48,mem:{},exc:{},rOpen:false,lay:{hist:1,crew:1,bands:1,t48:1,cd:1,dm:0},kpiEsc:'m'};
+/* .122 · View Transitions: crossfade global con chrome fijo.
+   - Llamada anidada DENTRO del callback (show→renderPozo→pzShow) → corre INLINE, en el
+     mismo orden sincrónico de siempre.
+   - Llamada hecha entre programar la transición y su callback (_gotoSection encadena
+     show + pzShow en el mismo tick) → se ENCOLA y corre dentro del MISMO callback,
+     después del cuerpo principal — así los charts se construyen con su pane ya visible.
+   Fallback 100% sincrónico (sims de node, navegadores sin VT, prefers-reduced-motion). */
+const _vt=f=>{
+  if(_vt._in)return f();
+  if(_vt._on){(_vt._q||(_vt._q=[])).push(f);return;}
+  try{
+    if(typeof document!=='undefined'&&document.startViewTransition
+       &&document.visibilityState!=='hidden'
+       &&!(typeof matchMedia==='function'&&matchMedia('(prefers-reduced-motion:reduce)').matches)){
+      _vt._on=true;_vt._q=[];const tok=(_vt._k=(_vt._k||0)+1);
+      const t=document.startViewTransition(()=>{_vt._in=true;try{
+          try{f();}catch(e){console.error('[vt]',e);}
+          let n=0;while(_vt._q&&_vt._q.length&&n++<60){const g=_vt._q.shift();try{g();}catch(e){console.error('[vt]',e);}}
+        }finally{_vt._in=false;_vt._on=false;_vt._q=null;}});
+      ['ready','finished','updateCallbackDone'].forEach(k=>{try{t&&t[k]&&t[k].catch(()=>{});}catch(_){}});
+      /* watchdog: con el renderer throttled (tab de fondo/ocluido) o un raster lento, el callback
+         puede tardar; skipTransition fuerza el update sin animación — el DOM NUNCA espera >350ms */
+      setTimeout(()=>{if(_vt._on&&_vt._k===tok){try{t.skipTransition();}catch(_){}}},350);
+      return;
+    }
+  }catch(_){_vt._in=false;_vt._on=false;_vt._q=null;}
+  f();
+};
 const FC_PEND={}; /* id → request de workbook EN VUELO (la verdad del spinner) */
 function _fcAt(id){const r2=RES_DATA[id];if(!(r2&&r2.at))return null;
   const d2=new Date(r2.at);const p2=n2=>('0'+n2).slice(-2);
@@ -5186,8 +5244,8 @@ function _dvData(){const wid=(DRVP&&DRVP.wid)||FC.id; /* .120: perfil desde cual
 window.drvProfile=function(name,wid){const ov=$('drv-ov');if(!ov)return;
   DRVP={d:name,wid:wid||FC.id,day:'',met:DRVP.met||'loads'};
   const D=_dvData();if(!D||!(D.bd||D.r)){return;}
-  drvRender();_dvCls(ov,true);try{document.body.style.overflow='hidden';}catch(_){}};
-window.drvClose=function(){const ov=$('drv-ov');_dvCls(ov,false);try{document.body.style.overflow='';}catch(_){}};
+  _vt(()=>{drvRender();_dvCls(ov,true);});try{document.body.style.overflow='hidden';}catch(_){}};
+window.drvClose=function(){const ov=$('drv-ov');_vt(()=>_dvCls(ov,false));try{document.body.style.overflow='';}catch(_){}};
 window.drvDay=function(d){DRVP.day=d;drvRender();};
 window.drvMet=function(m2){DRVP.met=m2;drvRender();};
 window.drvLocate=function(){const n=DRVP.d;drvClose();
@@ -5568,7 +5626,7 @@ function renderCie(){
    NAV + FILTROS + INIT + AUTO-REFRESH
    ════════════════════════════════════════════════════════════ */
 const RENDERED={};
-function show(tab){
+function show(tab){_vt(()=>{
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
   document.querySelectorAll('#mnav button').forEach(b=>b.classList.toggle('on',b.dataset.m===tab));
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
@@ -5577,7 +5635,7 @@ function show(tab){
   if(fn&&!RENDERED[tab]){try{fn();RENDERED[tab]=true;}
     catch(e){console.error('[show]',tab,e);const p=$('p-'+tab);
       if(p)p.innerHTML='<div class="note" style="background:#fdecec;color:#b91c1c;padding:14px;border-radius:12px;margin:14px">This tab did not load ('+String(e&&e.message||e).slice(0,90)+') — <a href="#" style="color:#b91c1c;font-weight:800" onclick="show(\''+tab+'\');return false">Retry ↻</a></div>';}}
-  resizeCharts();
+  resizeCharts();});
 }
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>show(t.dataset.tab));
 document.querySelectorAll('#mnav button').forEach(b=>b.onclick=()=>{show(b.dataset.m);window.scrollTo({top:0,behavior:'smooth'});});
