@@ -3,16 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#1c3d54">
 <meta name="application-name" content="MEDS PropX">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MEDS PropX">
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
-<title>MEDS · PropX Command Center · b7</title>
+<title>MEDS · PropX Command Center</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="icon" type="image/png" sizes="64x64" href="/icon-64.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#17293A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://script.google.com" crossorigin>
 <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
@@ -286,6 +287,24 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .acc-tr-pd{background:#fffaf0}
 .lgx{background:#fff;border:1px solid #dde6ef;border-radius:10px;padding:9px 11px;font:600 11.5px 'Plus Jakarta Sans';color:#17293a;outline:none}
 @media(max-width:700px){.acc-hide-m{display:none!important}.acc-q{min-width:120px;flex:1}}
+/* .121: menú de usuario */
+#auth-pop{position:fixed;z-index:410;background:#fff;border:1px solid #e4e9ef;border-radius:16px;box-shadow:0 18px 48px rgba(28,61,84,.18);min-width:250px;display:none;overflow:hidden}
+#auth-pop.on{display:block;animation:apIn .16s ease}
+@keyframes apIn{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.ap-hd{display:flex;gap:11px;align-items:center;padding:14px 14px 12px;border-bottom:1px solid #eef2f6}
+.ap-av{flex:0 0 40px;width:40px;height:40px;border-radius:50%;background:#17293A;color:#fff;display:flex;align-items:center;justify-content:center;font:800 14px 'Plus Jakarta Sans'}
+.ap-nm{font:800 12.5px/1.25 'Plus Jakarta Sans';color:#17293a}
+.ap-em{font:600 10.5px/1.3 'Plus Jakarta Sans';color:#8a97a6}
+.ap-it{display:block;width:100%;text-align:left;background:none;border:0;font:700 12px 'Plus Jakarta Sans';color:#2E4057;padding:11px 14px;cursor:pointer}
+.ap-it:hover{background:#f1f6fb}
+.ap-it.red{color:#b23b3b;border-top:1px solid #eef2f6}
+.ap-it.red:hover{background:#fdecec}
+.ap-f{padding:10px 14px;border-top:1px solid #eef2f6;display:none}
+.ap-f.on{display:block}
+.ap-f input{width:100%;box-sizing:border-box;margin:4px 0;background:#eef3f9;border:1px solid #dde6ef;border-radius:9px;padding:9px 11px;font:600 11.5px 'Plus Jakarta Sans';color:#17293a;outline:none}
+.ap-f input:focus{border-color:#2d5a7b;background:#fff}
+.ap-msg{min-height:14px;font:700 10.5px 'Plus Jakarta Sans';color:#b23b3b;margin-top:2px}
+.ap-msg.okm{color:#2F7A45}
 /* .118 Driver Profile */
 #drv-ov{position:fixed;inset:0;z-index:290;background:rgba(246,248,251,.985);display:none;overflow:auto;padding:18px}
 #drv-ov.on{display:block}
@@ -1328,7 +1347,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.120';
+const VBUILD='2026-10-12.121';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -4437,11 +4456,50 @@ window.lgOut=function(){_authSave(null);location.reload();};
 function paintAuth(){const b=$('btn-auth');if(!b)return;
   if(!CONFIG.API_URL){b.style.display='none';return;}
   b.style.display='';
-  if(AUTH){b.title='Log out';b.onclick=lgOut;
+  if(AUTH){b.title='Account';b.onclick=authMenu;
     b.innerHTML='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="btxt"> '+String(AUTH.name||AUTH.email).split(' ')[0]+' · '+AUTH.role+'</span>';}
   else{b.title='Sign in';b.onclick=function(){lgMode('login');lgShow();};
     b.innerHTML='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="btxt"> Sign in</span>';}}
+/* .121: menú de cuenta (datos + change password + log out) */
+window.authMenu=function(ev){try{ev&&ev.stopPropagation&&ev.stopPropagation();}catch(_){}
+  let pop=$('auth-pop');
+  if(!pop){try{pop=document.createElement('div');pop.id='auth-pop';document.body.appendChild(pop);}catch(_){return;}}
+  if(pop.classList&&pop.classList.contains('on')){pop.classList.remove('on');return;}
+  if(!AUTH)return;
+  const ini=String(AUTH.name||AUTH.email||'?').trim().split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase();
+  pop.innerHTML='<div class="ap-hd"><span class="ap-av">'+ini+'</span><div style="min-width:0">'
+   +'<div class="ap-nm">'+(AUTH.name||'—')+'</div><div class="ap-em">'+(AUTH.email||'')+'</div>'
+   +'<div style="margin-top:5px"><span class="acc-chip '+(AUTH.role||'')+'">'+(AUTH.role||'')+'</span></div></div></div>'
+   +'<button class="ap-it" onclick="authChTog(event)">Change password</button>'
+   +'<div class="ap-f" id="ap-f">'
+   +'<input id="ap-old" type="password" placeholder="Current password" autocomplete="current-password">'
+   +'<input id="ap-new" type="password" placeholder="New password (8+)" autocomplete="new-password">'
+   +'<div class="ap-msg" id="ap-msg"></div>'
+   +'<button class="rbtn" style="width:100%;justify-content:center" onclick="authChGo(event)">Update password</button></div>'
+   +'<button class="ap-it red" onclick="lgOut()">Log out</button>';
+  pop.classList.add('on');
+  try{const r=ev&&ev.currentTarget&&ev.currentTarget.getBoundingClientRect?ev.currentTarget.getBoundingClientRect():{right:window.innerWidth-14,bottom:54};
+    const vw=window.innerWidth||1200;
+    pop.style.top=(r.bottom+8)+'px';
+    pop.style.left=Math.max(8,Math.min(r.right-250,vw-262))+'px';}catch(_){}
+  setTimeout(function(){try{document.addEventListener('click',function h(e2){
+    if(pop.contains(e2.target))return;pop.classList.remove('on');document.removeEventListener('click',h);});}catch(_){}},0);};
+window.authChTog=function(ev){try{ev&&ev.stopPropagation&&ev.stopPropagation();}catch(_){}
+  const f=$('ap-f');if(f&&f.classList)f.classList.toggle('on');};
+window.authChGo=async function(ev){try{ev&&ev.stopPropagation&&ev.stopPropagation();}catch(_){}
+  const op=($('ap-old')||{}).value||'',np=($('ap-new')||{}).value||'';
+  const m=$('ap-msg');const say=(t,okM)=>{if(m){m.textContent=t;m.classList.toggle('okm',!!okM);}};
+  if(np.length<8)return say('New password needs 8+ characters');
+  say('Updating…',true);
+  let j=null;try{j=await fetchJSON(CONFIG.API_URL+'?action=chpass&old='+encodeURIComponent(op)+'&pass='+encodeURIComponent(np));}
+  catch(e){return say('Could not reach the server');}
+  if(j&&j.ok){say('Password updated ✓',true);const f=$('ap-f');
+    setTimeout(function(){try{if(f&&f.classList)f.classList.remove('on');}catch(_){}},1200);}
+  else say(j&&j.error==='bad_credentials'?'Current password is wrong':(LG_ERRS[j&&j.error]||('Error: '+((j&&j.error)||'no reply'))));};
 try{paintAuth();}catch(_){}
+/* .121: service worker — abre sin señal con el último shell y caché local */
+try{if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))
+  window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}catch(_){}
 /* — Access (User Management, solo admin) — */
 function renderAccess(){const pane=$('p-acc');if(!pane)return;
   if(!(AUTH&&AUTH.role==='admin')){pane.innerHTML='<div class="note" style="margin:14px">Admin only.</div>';return;}

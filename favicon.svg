@@ -1,0 +1,20 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#F7F3EA"/><stop offset="1" stop-color="#EFE6D4"/>
+    </linearGradient>
+    <linearGradient id="dback" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#16293A"/><stop offset="1" stop-color="#1F4258"/>
+    </linearGradient>
+    <linearGradient id="dfront" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#3E8E6B"/><stop offset="1" stop-color="#55AC87"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#sky)"/>
+  <circle cx="338" cy="178" r="78" fill="#E7BF66"/>
+  <circle cx="338" cy="178" r="78" fill="none" stroke="#D9A94A" stroke-width="6" opacity=".55"/>
+  <path d="M-10 368 C 96 242 206 240 296 324 C 352 376 438 388 522 350 L522 522 L-10 522 Z" fill="url(#dback)"/>
+  <path d="M164 300 C 206 262 258 266 300 306 L 262 326 C 230 300 196 296 164 300 Z" fill="#2C566E" opacity=".9"/>
+  <path d="M-10 430 C 86 338 232 322 338 386 C 408 428 470 430 522 408 L522 522 L-10 522 Z" fill="url(#dfront)"/>
+  <path d="M60 400 C 150 342 260 336 350 390 L 318 404 C 240 360 150 364 60 400 Z" fill="#7FC7A6" opacity=".85"/>
+</svg>
