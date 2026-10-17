@@ -1,4 +1,18 @@
-/** MEDS · PropX Live API — Code.gs v10.3. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v10.4. PEGAR TAL CUAL → Nueva versión.
+ *  v10.4 RELOJ CENTRAL AUTOMÁTICO — un día = 12:00 AM–11:59 PM hora Central, siempre:
+ *   · Cada timestamp se lee como el reloj que MUESTRA la celda (Date → en la tz del propio
+ *     workbook; texto → parseado directo: "10/16/2026 9:04:31 p.m.", "a. m.", PM, 24 h,
+ *     ISO, D/M inequívoco) y ese reloj ES Central. Ya no importa la tz del workbook ni la
+ *     del script. Fecha y HORA salen del mismo reloj (antes la hora usaba la tz del script).
+ *   · Red de seguridad: si un workbook en otra zona guarda INSTANTES (sus horas van ADELANTE
+ *     de Central), se convierte a Central y la decisión queda fija para ese workbook.
+ *   · Lector blindado: un encabezado "Load #" repetido (export pegado debajo) YA NO corta la
+ *     lectura; un pie "Transferred" solo se salta hasta el siguiente bloque real; cargas
+ *     duplicadas por pegados encimados se cuentan una vez (gana la fila con Delivered).
+ *   · Fechas D/M mal interpretadas por Sheets (locale es-MX) se reparan si caen fuera de la
+ *     ventana posible del pozo. Snapshot de pozos Live: máx. 10 min aunque Drive no avise.
+ *   · diag: day_tz, tz_sheet, tz_mode, header_repeats, dupes_removed, text_dates,
+ *     unparsed_dates, dm_repaired, ct_today + day_audit en reloj Central.
  *  v10.3 AUDITORÍA DE CORTE DE DÍA: diag gana tz (zona horaria con la que se bucketizan
  *  los días — la del workbook, u override con la key `timezone` en Targets, p. ej.
  *  America/Chicago), day_audit (últimos 4 días con loads y primera/última hora de
@@ -172,7 +186,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v10.3';
+const API_VERSION='v10.4';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -193,6 +207,7 @@ function _wbUpdated(id){ if(!id)return 0;
 function _snapFresh(ssId,s,closed){
   if(!s)return false;
   const ssT=_wbUpdated(ssId);
+  if(ssT&&!closed&&Date.now()-(s.time||0)>6e5)return false; /* v10.4: Live nunca > 10 min (lag de Drive / IMPORTRANGE) */
   if(ssT)return ssT<=s.time;
   const age=Date.now()-(s.time||0);
   return closed ? age<864e5 : age<6e5; }   // 24 h cierres · 10 min lives
@@ -648,7 +663,6 @@ function getWell(id){
   if(T){const ki=colmap(T.H,['key','value']);
   for(const r of T.rows){const k=String(r[ki.key]||'').trim(); if(k&&k.charAt(0)!=='—') targets[k]=r[ki.value];}}
   _DT=declaredTerms(targets); _STRICT=/^(1|true|si|sí|yes)$/i.test(String((targets&&targets.terminals_strict)||''));
-  if(targets.timezone){try{Utilities.formatDate(new Date(),String(targets.timezone).trim(),'yyyy');TZS=String(targets.timezone).trim();}catch(_){/* tz inválida en Targets → se queda la del workbook */}} /* v10.3 */
   const designTonsStage=(+targets.lbs_per_stage||0)/2000;
 
   // Loads Report → loads, drivers, tons, etapas, ciclos, terminales, carriers, products, drivers
@@ -656,6 +670,45 @@ function getWell(id){
   const _sheetNames=ss.getSheets().map(function(x){return x.getName();});
   const ix=L?colmap(L.H,['Load #','Load ID','Carrier Name','Truck #','Driver Name','Product','Stage#','At Terminal','In Transit','At Staging','At Dest.','Delivered','Terminal','Mileage','Load Weight','Gross Weight']):{};
   const gwIx=(ix['Gross Weight']!=null&&ix['Gross Weight']>=0)?ix['Gross Weight']:17; /* v10.1: header literal o col R */
+  /* v10.4 PRE-PASE: clasifica filas (carga / encabezado repetido / pie), deduplica pegados
+     encimados y decide el modo de reloj (pared = Central | instantes → Central). */
+  const _KIND=[],_DUP={};let _hdrRep=0,_footRows=0,_dupN=0,_tzMode='wall';
+  (function(){
+    if(!L)return;
+    const HDR=/^load\s*#$/i, FOOT=/^(transferred|from\s*job|to\s*job|total|totals|grand\s*total|summary|resumen|subtotal)$/i;
+    const nowK=_ctNowK(); let ahead=0, foot=false; const keep={};
+    const hasDel=function(r){return r[ix['Delivered']]!==''&&r[ix['Delivered']]!=null;};
+    L.rows.forEach(function(r,i){
+      const ln=String(r[ix['Load #']]||'').trim();
+      /* encabezado REAL repetido (export pegado debajo) = "Load #" + "Delivered" en su columna;
+         el mini-encabezado del pie ("Load # | From Job | To Job") NO lo es → sigue siendo pie */
+      if(HDR.test(ln)&&ix['Delivered']>=0&&String(r[ix['Delivered']]||'').trim()==='Delivered'){_KIND[i]='hdr';_hdrRep++;foot=false;return;}
+      if(HDR.test(ln)||FOOT.test(ln)){_KIND[i]='foot';_footRows++;foot=true;return;}  // inicio/cuerpo de pie de reporte
+      if(foot){ /* dentro del pie: solo una carga REAL (delivered legible + driver) reabre la lectura */
+        if(_wall(r[ix['Delivered']],TZS,'wall')&&String(r[ix['Driver Name']]||'').trim())foot=false;
+        else{_KIND[i]='foot';_footRows++;return;}}
+      _KIND[i]='load';
+      const lid=(ix['Load ID']>=0)?String(r[ix['Load ID']]||'').trim():'';
+      const key=lid||ln;
+      if(key&&!/^A/i.test(ln)){
+        if(keep[key]!=null){const j=keep[key];
+          if(hasDel(r)||!hasDel(L.rows[j])){_DUP[j]=1;keep[key]=i;} else _DUP[i]=1; /* gana la fila con Delivered; empate → la más reciente */
+          _dupN++;}
+        else keep[key]=i;}
+      const dv=r[ix['Delivered']];
+      if(dv instanceof Date&&!_CT_EQ.test(TZS)){const w=_wall(dv,TZS,'wall');if(w&&w.k>nowK+20*6e4&&w.k<nowK+12*36e5)ahead++;}
+    });
+    let fixed='';try{fixed=PropertiesService.getScriptProperties().getProperty('tzct:'+reg.spreadsheet_id)||'';}catch(_){}
+    if(fixed==='1')_tzMode='ct';
+    else if(ahead>=3&&_tzAheadOfCT(TZS)){_tzMode='ct';try{PropertiesService.getScriptProperties().setProperty('tzct:'+reg.spreadsheet_id,'1');}catch(_){}}
+  })();
+  const _WIN_HI=_isoAdd(_ctToday(),1), _WIN_LO=reg.start_date?_isoAdd(fmtDate(reg.start_date,TZS),-15):'';
+  let _txtD=0,_badD=0,_swpD=0;
+  const _delW=function(v){ /* Delivered → reloj Central, con reparación D/M si la fecha es imposible */
+    let w=_wall(v,TZS,_tzMode);
+    if(w&&w.src==='date'&&(w.d>_WIN_HI||(_WIN_LO&&w.d<_WIN_LO))){const sw=_swapDM(w);
+      if(sw&&sw.d<=_WIN_HI&&(!_WIN_LO||sw.d>=_WIN_LO)){w=sw;_swpD++;}}
+    return w;};
   const byDay={},drvByDay={},tonsByDay={},maxStageByDay={},revByDay={},cycDay={},byTerm={},byTermDay={},cycDayT={},byCarrier={},byProd={},byDriver={},driversAll=new Set(),cyc={},byHourDay={},rosterEv={};
   const wtDay={},wtHr={},ovList=[],_dayAud={};let gwTot=0,gwN=0,ovTot=0,lwTot=0; /* v10.1 pesos · v10.2 ovL · v10.3 audit */
   let aMoves=0,aRev=0,aCost=0; const aByDay={},aRevByDay={},aEvents=[];
@@ -663,13 +716,13 @@ function getWell(id){
   const rateMixDay={}; // {fecha: {"17.76":{loads,tons,revenue}, "19.00":{...}}} — qué tarifa cobró cada carga
   let loads=0,tons=0,revenue=0,cost=0,miles=0,maxStage=0;
   let revenueBase=0,fscTot=0; const fscByDay={}; // FSC (fuel surcharge) por ton: separado del rate, sumado al revenue facturado
-  let _skipNoNum=0, _footerCut=0;
+  let _skipNoNum=0;
   // CORTE DE PIE DE REPORTE: secciones extra al final del export ("Transferred",
   // "Load # / From Job / To Job", totales) entraban como cargas fantasma sin terminal ni millas.
-  const _FOOT=/^(transferred|load\s*#|from\s*job|to\s*job|total|totals|grand\s*total|summary|resumen|subtotal)$/i;
-  if(L) for(const row of L.rows){
-    const _ln=String(row[ix['Load #']]||'').trim();
-    if(_FOOT.test(_ln)){_footerCut=L.rows.length-L.rows.indexOf(row);break;}
+  /* v10.4: el pie y los encabezados repetidos ya NO cortan la lectura — los clasifica el pre-pase */
+  if(L) for(let _ri=0;_ri<L.rows.length;_ri++){
+    const row=L.rows[_ri];
+    if(_KIND[_ri]!=='load'||_DUP[_ri])continue;
     if(!row[ix['Load #']]) {_skipNoNum++; continue;}
     const prodS=String(row[ix['Product']]||'').trim()||'—';
     const loadNo=String(row[ix['Load #']]||'').trim();
@@ -679,7 +732,7 @@ function getWell(id){
     const isAsset=/^A/i.test(loadNo)||( netW>0&&netW<=1000)||CFG.assetMarkers.some(function(m){return prodS.toUpperCase().indexOf(m)>=0||String(row[ix['Terminal']]||'').toUpperCase().indexOf(m)>=0;});
     if(isAsset){
       const miA=num(row[ix['Mileage']]);
-      const dlA=row[ix['Delivered']]; const dA=dlA?fmtDate(dlA,TZS):'';
+      const _wA=_delW(row[ix['Delivered']]); const dA=_wA?_wA.d:''; /* v10.4 */
       const ra=(rates.ASSETS&&rates.ASSETS.length)?rateFor(rates,'ASSETS',miA,dA):{bill:0,pay:0,unit:'load'};
       const tA=netW>1000?netW/2000:+CFG.tonsPerLoadFallback; // solo para tarifas por ton de assets (si existen); no toca tons entregadas
       const revA=(ra.unit==='load')?ra.bill:ra.bill*tA, payA=(ra.unit==='load')?ra.pay:ra.pay*tA;
@@ -695,7 +748,8 @@ function getWell(id){
     const gwL=num(row[gwIx]); const gwOk=gwL>30000&&gwL<120000; /* v10.1: gross plausible de unidad cargada */
     if(gwOk){gwTot+=gwL;gwN++;if(gwL>80000)ovTot++;else if(gwL<70000)lwTot++;}
     const mi=num(row[ix['Mileage']]); miles+=mi;
-    const dl=row[ix['Delivered']]; const dDel=dl?fmtDate(dl,TZS):'';
+    const dl=row[ix['Delivered']]; const _wD=_delW(dl); const dDel=_wD?_wD.d:''; /* v10.4 reloj Central */
+    if(_wD&&_wD.src==='text')_txtD++; else if(!_wD&&dl!==''&&dl!=null)_badD++;
     const rb=rateFor(rates,client,mi,dDel); /* tarifa VIGENTE en la fecha de esta carga */
     const _rbase=(rb.unit==='load')?rb.bill:rb.bill*t;
     const fscL=(rb.unit==='load')?(+rb.fsc||0):(+rb.fsc||0)*t; // FSC de la tarifa vigente (0 si el bracket no trae)
@@ -727,9 +781,9 @@ function getWell(id){
     if(dDel){const _rk=(+rb.bill||0).toFixed(2); const _RM=rateMixDay[dDel]=rateMixDay[dDel]||{};
       const _e=_RM[_rk]=_RM[_rk]||{loads:0,tons:0,revenue:0,fsc:0}; _e.loads++; _e.tons+=t; _e.revenue+=revL; _e.fsc+=fscL;}
     if(dDel){const d=dDel; byDay[d]=(byDay[d]||0)+1;
-      (function(){const A=_dayAud[d]=_dayAud[d]||{l:0,f:'',t:''};A.l++; /* v10.3 */
-        let h='';try{h=(dl instanceof Date)?Utilities.formatDate(dl,TZS,'HH:mm'):((String(dl).match(/(\d{1,2}):(\d{2})/)||[]).length?(('0'+String(dl).match(/(\d{1,2}):(\d{2})/)[1]).slice(-2)+':'+String(dl).match(/(\d{1,2}):(\d{2})/)[2]):'');}catch(_){}
-        if(h){if(!A.f||h<A.f)A.f=h;if(!A.t||h>A.t)A.t=h;}})();
+      (function(){const A=_dayAud[d]=_dayAud[d]||{l:0,f:'',t:''};A.l++; /* v10.3 · v10.4 reloj Central */
+        const h=('0'+_wD.h).slice(-2)+':'+('0'+_wD.mi).slice(-2);
+        if(!A.f||h<A.f)A.f=h;if(!A.t||h>A.t)A.t=h;})();
       const btk=d+'|'+term; byTermDay[btk]=byTermDay[btk]||{date:d,terminal:term,loads:0,tons:0,revenue:0}; byTermDay[btk].loads++; byTermDay[btk].tons+=t; byTermDay[btk].revenue+=revL;
       const wk2=d+'|'+term; const WD=wtDay[wk2]=wtDay[wk2]||{d:d,t:term,l:0,nw:0,nn:0,gw:0,gn:0,ov:0,lw:0,rev:0,fsc:0};
       WD.l++; WD.rev+=revL; WD.fsc+=fscL; if(netW>1000){WD.nw+=netW;WD.nn++;}
@@ -738,7 +792,8 @@ function getWell(id){
       const _no=parseInt(loadNo,10);
       if(isFinite(_no)&&_no>0){const pn=partDay[d]=partDay[d]||{min:_no,max:_no}; if(_no<pn.min)pn.min=_no; if(_no>pn.max)pn.max=_no; if(_no<gMinNo)gMinNo=_no; if(_no>gMaxNo)gMaxNo=_no;} (drvByDay[d]=drvByDay[d]||new Set()).add(drv); tonsByDay[d]=(tonsByDay[d]||0)+t; revByDay[d]=(revByDay[d]||0)+revL; if(stg>(maxStageByDay[d]||0))maxStageByDay[d]=stg; if(drv)byDriver[drv].dates[d]=(byDriver[drv].dates[d]||0)+1;}
     // tiempos de ciclo (min) por terminal
-    const aT=parseTS(row[ix['At Terminal']]),iT=parseTS(row[ix['In Transit']]),aS=parseTS(row[ix['At Staging']]),aD=parseTS(row[ix['At Dest.']]),dv=parseTS(dl);
+    const _K=function(c){const w=(ix[c]>=0)?_wall(row[ix[c]],TZS,_tzMode):null;return w?w.k:null;}; /* v10.4 */
+    const aT=_K('At Terminal'),iT=_K('In Transit'),aS=_K('At Staging'),aD=_K('At Dest.'),dv=_wD?_wD.k:null;
     cyc[term]=cyc[term]||{load:[0,0],transit:[0,0],unload:[0,0],full:[0,0],stage_wait:[0,0]};
     // MODELO DE CICLO (con staging pad):
     //   At Terminal →[CARGA c/espera]→ In Transit →[TRÁNSITO]→ At Staging →[ESPERA POZO]→ At Dest →[DESCARGA]→ Delivered
@@ -761,7 +816,7 @@ function getWell(id){
       {let un=0; if(aD&&dv){const m=(dv-aD)/6e4; if(m>0&&m<1200)un+=m;} if(aS&&aD){const sw=(aD-aS)/6e4; if(sw>0&&sw<1200)un+=sw;} if(un>0){cd.of[0]+=un;cd.of[1]++;ct2.of[0]+=un;ct2.of[1]++;}}
       ct2.n++;}
     // v9.2 SERIE POR HORA (hora del Delivered): loads/drivers/revenue/fsc/tons + ciclo de ESTA carga.
-    if(dDel&&dv){const _hh=dv.getHours();
+    if(dDel&&_wD){const _hh=_wD.h; /* v10.4: antes getHours() en la tz del SCRIPT */
       const HD=byHourDay[dDel]=byHourDay[dDel]||{l:Array(24).fill(0),rv:Array(24).fill(0),fs:Array(24).fill(0),tn:Array(24).fill(0),dr:{},te:Array(24).fill(0),ten:Array(24).fill(0),trh:Array(24).fill(0),trn:Array(24).fill(0),de:Array(24).fill(0),den:Array(24).fill(0)};
       HD.l[_hh]++; HD.rv[_hh]+=revL; HD.fs[_hh]+=fscL; HD.tn[_hh]+=t;
       const wh2=dDel+'|'+_hh+'|'+term; const WH=wtHr[wh2]=wtHr[wh2]||{d:dDel,h:_hh,t:term,l:0,nw:0,nn:0,gw:0,gn:0,ov:0};
@@ -890,10 +945,12 @@ function getWell(id){
     api_version:API_VERSION, well_id:reg.well_id, name:reg.name, customer:client, status:reg.status, targets,
     diag:{ file:ss.getName(), sheets:ss.getSheets().map(function(x){return x.getName();}),
       loads_tab:(reg.sheet_name||CFG.tabs.loads), loads_found:!!L, loads_rows:L?L.rows.length:0,
-      tons_delivered:Math.round(tons), loads_skipped_no_loadnum:_skipNoNum, footer_rows_cut:_footerCut,
+      tons_delivered:Math.round(tons), loads_skipped_no_loadnum:_skipNoNum, footer_rows_cut:_footRows,
       fsc_total:Math.round(fscTot), fsc_applied:fscTot>0,
       rate_fallback:RATE_MISS,
-      tz:TZS, dates_normalized:_FMT_BAD, /* v10.3 */
+      tz:CT_TZ, day_tz:'Central (America/Chicago) · 12:00 AM–11:59 PM', tz_sheet:TZS, tz_mode:_tzMode, ct_today:_ctToday(), /* v10.4 */
+      dates_normalized:_FMT_BAD, text_dates:_txtD, unparsed_dates:_badD, dm_repaired:_swpD,
+      header_repeats:_hdrRep, dupes_removed:_dupN,
       day_audit:Object.keys(_dayAud).sort().slice(-4).map(function(k){var A=_dayAud[k];return {d:k,loads:A.l,first:A.f,last:A.t};}),
       declared_terminals:_DT, terminals_strict:_STRICT, foreign_terminals:FOREIGN_T,
       targets_found:!!T, targets_keys:Object.keys(targets).length,
@@ -1288,12 +1345,45 @@ function parseHMS(v,tz){if(v==null||v==='')return 0;
 function avg2(a){return a[1]?+(a[0]/a[1]).toFixed(1):0;}
 function fmtHM(v,tz){if(v==null||v==='')return ''; if(v instanceof Date)return Utilities.formatDate(v,tz||Session.getScriptTimeZone(),'HH:mm'); const s2=String(v).trim(); const mm=s2.match(/^(\d{1,2}):(\d{2})/); return mm?('0'+mm[1]).slice(-2)+':'+mm[2]:s2;}
 var _FMT_BAD=0; /* v10.3: celdas de fecha en TEXTO detectadas y normalizadas en la corrida */
+/* ══ v10.4 · RELOJ CENTRAL ══ reloj de pared → {d:'YYYY-MM-DD', h, mi, k (ms de pared), src} */
+const CT_TZ='America/Chicago';
+const _CT_EQ=/^(America\/(Chicago|Matamoros|Menominee|Indiana\/(Knox|Tell_City)|North_Dakota\/[A-Za-z_]+)|US\/Central|CST6CDT)$/;
+function _wp(y,mo,d,h,mi,se,src){
+  if(!(y>1990&&y<2100&&mo>=1&&mo<=12&&d>=1&&d<=31&&h>=0&&h<=23&&mi>=0&&mi<=59))return null;
+  const p=function(n){return ('0'+n).slice(-2);};
+  return {d:y+'-'+p(mo)+'-'+p(d),h:h,mi:mi,k:Date.UTC(y,mo-1,d,h,mi,se||0),src:src};}
+function _wall(v,tz,mode){
+  if(v==null||v==='')return null;
+  if(v instanceof Date){
+    if(isNaN(v)||v.getFullYear()<1901)return null; /* celdas de duración / solo-hora (1899) */
+    const f=Utilities.formatDate(v,(mode==='ct')?CT_TZ:(tz||CT_TZ),'yyyy-MM-dd HH:mm:ss').match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+    return f?_wp(+f[1],+f[2],+f[3],+f[4],+f[5],+f[6],'date'):null;}
+  if(typeof v==='number'){if(v>30000&&v<80000){const t=new Date(Date.UTC(1899,11,30)+Math.round(v*864e5));
+      return _wp(t.getUTCFullYear(),t.getUTCMonth()+1,t.getUTCDate(),t.getUTCHours(),t.getUTCMinutes(),t.getUTCSeconds(),'serial');}return null;}
+  const s=String(v).trim().replace(/\s+/g,' ');if(!s)return null;
+  let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+  if(m)return _wp(+m[1],+m[2],+m[3],m[4]!=null?+m[4]:0,m[5]!=null?+m[5]:0,+(m[6]||0),'text');
+  m=s.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})(?:[ ,T]+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s?([ap])\.?\s?m\.?)?)?/i);
+  if(!m)return null;
+  const a=+m[1],b=+m[2];let y=+m[3];if(y<100)y+=2000;
+  let mo=a,d=b;if(a>12&&b<=12){d=a;mo=b;} /* US (PropX) por defecto; D/M solo si es inequívoco */
+  let h=0,mi=0;
+  if(m[4]!=null){h=+m[4];mi=+m[5];const mk=String(m[7]||'').toLowerCase();
+    if(mk==='p'&&h<12)h+=12;else if(mk==='a'&&h===12)h=0;}
+  return _wp(y,mo,d,h,mi,+(m[6]||0),'text');}
+function _swapDM(w){const m=String(w&&w.d||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m||+m[3]>12)return null;
+  const r=_wp(+m[1],+m[3],+m[2],w.h,w.mi,0,'swap');return r;}
+function _ctToday(){return Utilities.formatDate(new Date(),CT_TZ,'yyyy-MM-dd');}
+function _ctNowK(){const f=Utilities.formatDate(new Date(),CT_TZ,'yyyy-MM-dd HH:mm:ss').match(/(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})/);
+  return Date.UTC(+f[1],+f[2]-1,+f[3],+f[4],+f[5],+f[6]);}
+function _isoAdd(iso,n){const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m)return '';
+  const t=new Date(Date.UTC(+m[1],+m[2]-1,+m[3])+n*864e5);const p=function(x){return ('0'+x).slice(-2);};
+  return t.getUTCFullYear()+'-'+p(t.getUTCMonth()+1)+'-'+p(t.getUTCDate());}
+function _tzOffMin(tz){try{const z=Utilities.formatDate(new Date(),tz,'Z');const m=z.match(/([+-])(\d{2})(\d{2})/);
+  return m?(m[1]==='-'?-1:1)*(+m[2]*60+ +m[3]):0;}catch(_){return 0;}}
+function _tzAheadOfCT(tz){return _tzOffMin(tz)>_tzOffMin(CT_TZ);}
 function fmtDate(v,tz){
   if(v instanceof Date)return Utilities.formatDate(v,tz||Session.getScriptTimeZone(),'yyyy-MM-dd');
-  const d=new Date(v);
-  if(!isNaN(d))return Utilities.formatDate(d,tz||Session.getScriptTimeZone(),'yyyy-MM-dd');
-  const s=String(v).split(' ')[0];
-  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); /* v10.3: "10/16/2026 9:04 p.m." pegado como texto */
-  if(m){_FMT_BAD++;return m[3]+'-'+('0'+m[1]).slice(-2)+'-'+('0'+m[2]).slice(-2);}
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(s))_FMT_BAD++;
-  return s;}
+  const w=_wall(v,tz,'wall'); /* v10.4: texto parseado directo — sin viajes de zona horaria */
+  if(w){if(!/^\d{4}-\d{2}-\d{2}/.test(String(v).trim()))_FMT_BAD++;return w.d;}
+  const s=String(v).split(' ')[0];_FMT_BAD++;return s;}

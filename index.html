@@ -1044,7 +1044,7 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
       </div>
       <div class="dsub">
         <div class="chips chips-mini"><div class="chip rng" data-d="H">Today</div><div class="chip rng" data-d="Y">Yesterday</div><div class="chip rng" data-d="7">7d</div><div class="chip rng" data-d="14">14d</div><div class="chip rng" data-d="30">30d</div><div class="chip rng on" data-d="0">All</div></div>
-        <span class="dleg"><span style="color:#58a05f">●</span> ≥ target · <span style="color:#e0a63e">●</span> 80–99% · <span style="color:#d47272">●</span> &lt; 80% · <span style="color:#cbd5e1">●</span> no data</span>
+        <span class="dleg"><span style="color:#58a05f">●</span> ≥ target · <span style="color:#e0a63e">●</span> 80–99% · <span style="color:#d47272">●</span> &lt; 80% · <span style="color:#cbd5e1">●</span> no data · <b style="color:#51606f">days 12:00 AM–11:59 PM CT</b></span>
         <span class="sb" id="w-range-note" style="margin-left:auto"></span>
       </div>
     </div>
@@ -1440,7 +1440,17 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-16.129';
+const VBUILD='2026-10-16.130';
+/* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
+   abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
+const CT_TZ='America/Chicago';
+function _ctISO(ms){const d=(ms!=null)?new Date(ms):new Date();
+  try{const o={};new Intl.DateTimeFormat('en-US',{timeZone:CT_TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d).forEach(p=>{o[p.type]=p.value;});
+    if(o.year&&o.month&&o.day)return o.year+'-'+o.month+'-'+o.day;}catch(_){}
+  const p=n=>('0'+n).slice(-2);return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
+function _isoShift(iso,n){const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m)return iso;
+  const t=new Date(Date.UTC(+m[1],+m[2]-1,+m[3])+n*864e5);const p=x=>('0'+x).slice(-2);
+  return t.getUTCFullYear()+'-'+p(t.getUTCMonth()+1)+'-'+p(t.getUTCDate());}
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -1766,12 +1776,12 @@ function mkDemoRes(){
 window.rsPreset=function(d){RS.preset=d;
   document.querySelectorAll('#p-res .seg-btn').forEach(b=>b.classList.remove('seg-on'));
   const el=document.getElementById('rp-'+d);if(el)el.classList.add('seg-on');
-  const all=rsMaxDates();if(!all.length)return;
-  const mx=all[all.length-1];
-  if(d===0){RS.d0=mx;RS.d1=mx;}
-  else if(d===-1){const y=all[Math.max(0,all.length-2)];RS.d0=y;RS.d1=y;}
-  else if(d===99){RS.d0='';RS.d1='';} // Todo = elástico, jamás congela fechas
-  else{RS.d1=mx;RS.d0=all[Math.max(0,all.length-d)];}
+  /* .130: Today/Yesterday/Nd = días calendario CENTRAL (antes: "último día con data") */
+  const tI=todayISO();
+  if(d===0){RS.d0=tI;RS.d1=tI;}
+  else if(d===-1){const y=addD(tI,-1);RS.d0=y;RS.d1=y;}
+  else if(d===99){RS.d0='';RS.d1='';} // All = elástico, jamás congela fechas
+  else{RS.d1=tI;RS.d0=addD(tI,-d+1);}
   $('rs-d0').value=RS.d0;$('rs-d1').value=RS.d1;renderResumen();};
 window.rsRange=function(){RS.d0=$('rs-d0').value;RS.d1=$('rs-d1').value;RS.preset=-1;
   document.querySelectorAll('#p-res .seg-btn').forEach(b=>b.classList.remove('seg-on'));renderResumen();};
@@ -3854,8 +3864,8 @@ function bPreSens(){
 /* ═══════ DAY-STRIP + PADS MINICARD ═══════ */
 // Fechas SIEMPRE en local — nunca toISOString() (corre el day en TZ negativas)
 const isoLocal=d=>{const p=n=>('0'+n).slice(-2);return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());};
-const todayISO=()=>isoLocal(new Date());
-const addD=(iso,n)=>{const d=new Date(iso+'T12:00');d.setDate(d.getDate()+n);return isoLocal(d);};
+const todayISO=()=>_ctISO(); /* .130: HOY = calendario Central, no el del navegador */
+const addD=(iso,n)=>_isoShift(iso,n);
 let STRIP_END=todayISO();
 const WD_ES=['SUN','MON','TUE','WED','THU','FRI','SAT'],MO_ES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function dayDot(iso){const i=DATES_ISO.indexOf(iso);
@@ -4041,7 +4051,7 @@ function renderPozo(){
     M.AST.moves?`<span class="pill" style="color:#475569;background:#f1f5f9;border-color:#e2e8f0"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.2 6.8l2.1 2.1M17.7 15.1l2.1 2.1M2.5 12h3M18.5 12h3M4.2 17.2l2.1-2.1M17.7 8.9l2.1-2.1"/></svg> ${M.AST.moves} ASSET MOVES</span>`:''
   ].join('');
   _fcTipBind($('wh-pills')); /* .129: tooltip del Data audit */
-  $('w-range-note').innerHTML=M.n+' days in view'+(RANGE_MISS?` · <b style="color:#d97706">▲ no loads on ${shortDay(RANGE_MISS)} — showing ${shortDay(M.ISO[0])}</b>`:'');
+  $('w-range-note').innerHTML=M.n+' day'+(M.n===1?'':'s')+' in view'+(RANGE_MISS?` · <b style="color:#d97706">▲ no loads on ${shortDay(RANGE_MISS)} — showing ${shortDay(M.ISO[0])}</b>`:'');
   buildStrip();buildPadMini();
   if($('dcustom')&&$('dcustom').classList.contains('open'))buildCal();
   Object.keys(PZ_BUILD).forEach(k=>_pzDirty[k]=true);
@@ -4063,7 +4073,7 @@ function mkDemoSts(){
   const mk=(well,id,reg,live,endKey,hours,base)=>{
     const end=new Date(endKey.replace(' ','T')+':00:00');const ts=[],a=[],r=[],ii=[];
     for(let h=hours-1;h>=0;h--){const d=new Date(end-h*36e5);
-      const k=d.toISOString().slice(0,10)+' '+('0'+d.getHours()).slice(-2);
+      const k=isoLocal(d)+' '+('0'+d.getHours()).slice(-2);
       const day=Math.sin((d.getHours()-4)/24*Math.PI*2)*0.35+0.75;
       const A=Math.max(0,Math.round(base*day+(rnd()-0.5)*3));
       const R=Math.max(0,Math.round(base*0.55*(1.3-day)+(rnd()-0.5)*2));
@@ -4090,8 +4100,10 @@ window.stsSnap=async function(btn){const m=$('sts-snapmsg');if(m)m.textContent='
   catch(e){if(m)m.textContent='✗ '+String(e&&e.message||e).slice(0,80);}};
 const keyDate=k=>String(k).slice(0,10);
 const keyHour=k=>+String(k).slice(11,13);
-function keyShift(k,hours){const d=new Date(String(k).replace(' ','T')+':00:00');d.setTime(d.getTime()-hours*36e5);
-  return d.toISOString().slice(0,10)+' '+('0'+d.getHours()).slice(-2);}
+function keyShift(k,hours){ /* .130: aritmética sobre el reloj de la llave — antes fecha UTC + hora local (en la noche no corría el día) */
+  const m=String(k).match(/(\d{4})-(\d{2})-(\d{2}) (\d{2})/);if(!m)return k;
+  const t=new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4])-hours*36e5);const p=n=>('0'+n).slice(-2);
+  return t.getUTCFullYear()+'-'+p(t.getUTCMonth()+1)+'-'+p(t.getUTCDate())+' '+p(t.getUTCHours());}
 function padTag(p){return p.reg_status==='Closed'?['cls','FINISHED']:(p.live?['run','RUNNING']:['nr','SIN REPORTE']);}
 function stsPads(){const S=STATUS||DEMO_STS;return (S.pads||[]).filter(p=>p.well_id).filter(p=>SF.run?p.live:true);}
 function stsSelPads(){const ps=stsPads();if(!SF.sel)return ps;return ps.filter(p=>SF.sel.has(p.well));}
@@ -5440,28 +5452,40 @@ function _fcTipEl(){if(!document.getElementById)return null;
 function _whAudit(){try{
   const dg=(ACTIVE_META&&ACTIVE_META.diag)||null;if(!dg)return '';
   const snap=(ACTIVE_META&&ACTIVE_META.snapshot)||null;
-  const now=new Date();
-  const todayISO=now.getFullYear()+'-'+('0'+(now.getMonth()+1)).slice(-2)+'-'+('0'+now.getDate()).slice(-2);
+  const todayCT=(typeof todayISO==='function')?todayISO():_ctISO(); /* .130: hoy Central */
   const aud=dg.day_audit||[];
-  const fut=aud.filter(a=>String(a.d)>todayISO);
+  const fut=aud.filter(a=>String(a.d)>todayCT);
   const futN=fut.reduce((s2,a)=>s2+(+a.loads||0),0);
-  const skip=+dg.loads_skipped_no_loadnum||0, norm=+dg.dates_normalized||0;
+  const skip=+dg.loads_skipped_no_loadnum||0, unp=+dg.unparsed_dates||0;
   const fT=Object.keys(dg.foreign_terminals||{});
   const fN=fT.reduce((s2,k)=>s2+(((dg.foreign_terminals||{})[k]||{}).loads||0),0);
+  const v104=!!dg.day_tz;
   let age='';try{if(snap&&snap.at){const mm=Math.max(0,Math.round((Date.now()-new Date(snap.at).getTime())/60000));age=mm<1?'just now':mm+' min ago';}}catch(_){}
-  const lines=['<b>Data audit — how the workbook is being read</b>'];
-  if(dg.tz){lines.push('Day-cut timezone: <b>'+dg.tz+'</b>'+(futN?' · <b>AHEAD of the pad clock</b>':''));}
-  else lines.push('Day-cut timezone: ? — paste <b>Code v10.3</b> to audit the day buckets here.');
-  if(futN)lines.push('<b>'+futN+' load'+(futN===1?'':'s')+' already sit in a FUTURE bucket</b> ('+fut.map(a=>String(a.d).slice(5)).join(', ')+') — the workbook timezone cuts the day early, so tonight\'s deliveries land on tomorrow. Fix: Sheets File → Settings → Time zone → Central Time, or key timezone = America/Chicago in Targets.');
-  if(aud.length)lines.push('Recent buckets: '+aud.map(a=>String(a.d).slice(5)+' — <b>'+a.loads+'</b>'+(a.first?(' ('+a.first+'–'+(a.last||a.first)+')'):'')).join(' · '));
-  if(skip)lines.push('<b>'+skip+'</b> delivered row'+(skip===1?'':'s')+' skipped — <b>missing Load #</b> in the Loads Report');
-  if(norm)lines.push('<b>'+norm+'</b> date cell'+(norm===1?'':'s')+' pasted as TEXT — normalized since v10.3');
-  if(fN)lines.push('Foreign-terminal loads: <b>'+fN+'</b> ('+fT.join(', ')+')'+(dg.terminals_strict?' — <b>EXCLUDED</b> (terminals_strict)':' — counted, flagged in Sourcing'));
-  if(age)lines.push('Snapshot age: '+age);
-  const issueN=futN+skip+norm+(dg.terminals_strict?fN:0);
-  if(!issueN&&dg.tz)lines.push('No skipped rows · day buckets align with the pad clock ✓');
+  const L2=['<b>Data audit — how the workbook is being read</b>'];
+  if(v104){
+    L2.push('Days cut at <b>12:00 AM–11:59 PM Central</b> · automatic');
+    L2.push(dg.tz_mode==='ct'
+      ?'Workbook stores instants in <b>'+dg.tz_sheet+'</b> — converted to Central'
+      :'Workbook clock read as shown in the sheet (Central)'+(dg.tz_sheet&&!/Chicago|Matamoros|Central/.test(dg.tz_sheet)?' · sheet zone '+dg.tz_sheet:''));}
+  else L2.push(dg.tz?'Day-cut timezone: <b>'+dg.tz+'</b> — paste <b>Code v10.4</b> for the automatic Central clock':'Paste <b>Code v10.4</b> to audit the day buckets here.');
+  const tA=aud.find(a=>String(a.d)===todayCT);
+  if(tA)L2.push('Today (CT) so far: <b>'+tA.loads+'</b> load'+(tA.loads===1?'':'s')+(tA.first?' · '+tA.first+'–'+(tA.last||tA.first):''));
+  if(futN)L2.push('<b>'+futN+' load'+(futN===1?'':'s')+' in a FUTURE bucket</b> ('+fut.map(a=>String(a.d).slice(5)).join(', ')+')'+(v104?' — check those timestamps in the sheet':' — paste Code v10.4: the Central clock fixes this'));
+  if(aud.length)L2.push('Recent days: '+aud.map(a=>String(a.d).slice(5)+' — <b>'+a.loads+'</b>'+(a.first?(' ('+a.first+'–'+(a.last||a.first)+')'):'')).join(' · '));
+  if(+dg.header_repeats)L2.push(dg.header_repeats+' export block'+(+dg.header_repeats===1?'':'s')+' pasted below the first — all read ✓');
+  if(+dg.dupes_removed)L2.push(dg.dupes_removed+' duplicate row'+(+dg.dupes_removed===1?'':'s')+' from overlapping pastes — counted once ✓');
+  if(+dg.footer_rows_cut)L2.push(dg.footer_rows_cut+' footer row'+(+dg.footer_rows_cut===1?'':'s')+' (Transferred section) skipped');
+  if(+dg.text_dates)L2.push(dg.text_dates+' delivered time'+(+dg.text_dates===1?'':'s')+' typed as text ("p.m.") — read ✓');
+  if(+dg.dm_repaired)L2.push(dg.dm_repaired+' date'+(+dg.dm_repaired===1?'':'s')+' flipped by Sheets (day/month) — repaired ✓');
+  if(!v104&&+dg.dates_normalized)L2.push(dg.dates_normalized+' date cell'+(+dg.dates_normalized===1?'':'s')+' pasted as TEXT');
+  if(unp)L2.push('<b>'+unp+'</b> delivered value'+(unp===1?'':'s')+' unreadable — <b>not counted</b>');
+  if(skip)L2.push('<b>'+skip+'</b> row'+(skip===1?'':'s')+' with data but <b>no Load #</b> — not counted');
+  if(fN)L2.push('Foreign-terminal loads: <b>'+fN+'</b> ('+fT.join(', ')+')'+(dg.terminals_strict?' — <b>EXCLUDED</b> (terminals_strict)':' — counted, flagged in Sourcing'));
+  if(age)L2.push('Snapshot age: '+age);
+  const issueN=futN+skip+unp+(dg.terminals_strict?fN:0)+(!v104?(+dg.dates_normalized||0):0);
+  if(!issueN&&v104)L2.push('Nothing dropped — every delivered row is counted ✓');
   const cls=futN?'aud-bad':(issueN?'aud-warn':'aud-ok');
-  return '<span class="pill wh-aud '+cls+'" data-tip="'+encodeURIComponent(lines.join('\n'))+'">DATA AUDIT'+(issueN?' · '+issueN:' ✓')+'</span>';
+  return '<span class="pill wh-aud '+cls+'" data-tip="'+encodeURIComponent(L2.join('\n'))+'">DATA AUDIT'+(issueN?' · '+issueN:' ✓')+'</span>';
 }catch(_){return '';}}
 function _fcTipBind(host){if(!host||host._tipB||!host.addEventListener)return;host._tipB=1;
   const mv=function(ev){const t=_fcTipEl();if(!t||!t.classList.contains('on'))return;
@@ -5927,7 +5951,7 @@ $('w-sel').addEventListener('change',()=>loadWell($('w-sel').value));
 ['w-d0','w-d1'].forEach(id=>$(id).addEventListener('change',()=>{document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));renderPozo();}));
 document.querySelectorAll('.rng').forEach(ch=>ch.onclick=()=>{
   document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));ch.classList.add('on');
-  const dv=ch.dataset.d;const tI=todayISO(); // HOY = calendario real (local), NO el last day con data
+  const dv=ch.dataset.d;const tI=todayISO(); // HOY = calendario Central (12:00 AM–11:59 PM CT), NO el last day con data
   CAL_PEND='';
   if(dv==='H'){$('w-d0').value=tI;$('w-d1').value=tI;}
   else if(dv==='Y'){const y=addD(tI,-1);$('w-d0').value=y;$('w-d1').value=y;}
