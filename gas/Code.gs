@@ -1,4 +1,10 @@
-/** MEDS · PropX Live API — Code.gs v10.5. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v10.6. PEGAR TAL CUAL → Nueva versión.
+ *  v10.6 RELOJ = LO QUE MUESTRA LA CELDA: Delivered / At Terminal / In Transit / At Staging /
+ *  At Dest. se leen con getDisplayValues() — el texto exacto del doc ("10/16/2026 9:04:31 p.m.")
+ *  parseado directo como hora Central. En producción, convertir el valor de la celda (Date) con
+ *  zonas horarias corría todo −5 h: las entregas de 12:00–4:59 AM caían en el día anterior
+ *  (16-Oct = 63 en vez de 85). Sale el modo de conversión automática (ya no hace falta) y se
+ *  limpia su marca guardada. diag.value_shift_h dice cuántas horas estaba corrido el valor.
  *  v10.5 CERO DATOS DE VERSIONES VIEJAS: el snapshot de un pozo Live solo se sirve si lo
  *  calculó ESTA versión (antes un snapshot de v10.2 hecho minutos antes del deploy se seguía
  *  sirviendo con su día corrido −5 h); la caché corta usa llaves por versión; el portafolio
@@ -193,7 +199,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v10.5';
+const API_VERSION='v10.6';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -682,17 +688,36 @@ function getWell(id){
   const designTonsStage=(+targets.lbs_per_stage||0)/2000;
 
   // Loads Report → loads, drivers, tons, etapas, ciclos, terminales, carriers, products, drivers
-  const L=readTab(ss,reg.sheet_name||CFG.tabs.loads,'Load #');
+  const L=readTabD(ss,reg.sheet_name||CFG.tabs.loads,'Load #'); /* v10.6: + texto mostrado (disp) */
   const _sheetNames=ss.getSheets().map(function(x){return x.getName();});
   const ix=L?colmap(L.H,['Load #','Load ID','Carrier Name','Truck #','Driver Name','Product','Stage#','At Terminal','In Transit','At Staging','At Dest.','Delivered','Terminal','Mileage','Load Weight','Gross Weight']):{};
   const gwIx=(ix['Gross Weight']!=null&&ix['Gross Weight']>=0)?ix['Gross Weight']:17; /* v10.1: header literal o col R */
-  /* v10.4 PRE-PASE: clasifica filas (carga / encabezado repetido / pie), deduplica pegados
-     encimados y decide el modo de reloj (pared = Central | instantes → Central). */
-  const _KIND=[],_DUP={};let _hdrRep=0,_footRows=0,_dupN=0,_tzMode='wall';
+  /* v10.6 · RELOJ = LO QUE MUESTRA LA CELDA. getDisplayValues() da el texto exacto del doc
+     ("10/16/2026 9:04:31 p.m.") → se parsea directo como hora Central, sin zonas horarias.
+     Si el formato oculta la hora, la fecha sale de lo mostrado y la hora del valor. */
+  const _shift={};let _dispN=0;
+  const _wd=function(ri,c){
+    const j=ix[c];if(!(j>=0)||!L)return null;
+    const ds=(L.disp&&L.disp[ri])?String(L.disp[ri][j]==null?'':L.disp[ri][j]).trim():'';
+    const wDs=ds?_wall(ds,TZS,'wall'):null;
+    const val=L.rows[ri][j];
+    if(wDs&&/\d{1,2}:\d{2}/.test(ds)){
+      if(c==='Delivered'&&val instanceof Date){const wv=_wall(val,TZS,'wall');
+        if(wv){const k=String(Math.round((wv.k-wDs.k)/36e5));_shift[k]=(_shift[k]||0)+1;}}
+      wDs.src='disp';return wDs;}
+    const wv=_wall(val,TZS,'wall');
+    if(wDs&&wv){const m=wDs.d.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      const r=m?_wp(+m[1],+m[2],+m[3],wv.h,wv.mi,0,'disp+value'):null;return r||wDs;}
+    if(wDs){wDs.src='disp';return wDs;}
+    if(wv)wv.src='value';
+    return wv;};
+  /* v10.4 PRE-PASE: clasifica filas (carga / encabezado repetido / pie) y deduplica pegados
+     encimados. v10.6: sin modo de conversión — el reloj es el que muestra la celda. */
+  const _KIND=[],_DUP={};let _hdrRep=0,_footRows=0,_dupN=0;
   (function(){
     if(!L)return;
     const HDR=/^load\s*#$/i, FOOT=/^(transferred|from\s*job|to\s*job|total|totals|grand\s*total|summary|resumen|subtotal)$/i;
-    const nowK=_ctNowK(); let ahead=0, foot=false; const keep={};
+    let foot=false; const keep={};
     const hasDel=function(r){return r[ix['Delivered']]!==''&&r[ix['Delivered']]!=null;};
     L.rows.forEach(function(r,i){
       const ln=String(r[ix['Load #']]||'').trim();
@@ -701,7 +726,7 @@ function getWell(id){
       if(HDR.test(ln)&&ix['Delivered']>=0&&String(r[ix['Delivered']]||'').trim()==='Delivered'){_KIND[i]='hdr';_hdrRep++;foot=false;return;}
       if(HDR.test(ln)||FOOT.test(ln)){_KIND[i]='foot';_footRows++;foot=true;return;}  // inicio/cuerpo de pie de reporte
       if(foot){ /* dentro del pie: solo una carga REAL (delivered legible + driver) reabre la lectura */
-        if(_wall(r[ix['Delivered']],TZS,'wall')&&String(r[ix['Driver Name']]||'').trim())foot=false;
+        if(_wd(i,'Delivered')&&String(r[ix['Driver Name']]||'').trim())foot=false;
         else{_KIND[i]='foot';_footRows++;return;}}
       _KIND[i]='load';
       const lid=(ix['Load ID']>=0)?String(r[ix['Load ID']]||'').trim():'';
@@ -711,18 +736,14 @@ function getWell(id){
           if(hasDel(r)||!hasDel(L.rows[j])){_DUP[j]=1;keep[key]=i;} else _DUP[i]=1; /* gana la fila con Delivered; empate → la más reciente */
           _dupN++;}
         else keep[key]=i;}
-      const dv=r[ix['Delivered']];
-      if(dv instanceof Date&&!_CT_EQ.test(TZS)){const w=_wall(dv,TZS,'wall');if(w&&w.k>nowK+20*6e4&&w.k<nowK+12*36e5)ahead++;}
     });
-    let fixed='';try{fixed=PropertiesService.getScriptProperties().getProperty('tzct:'+reg.spreadsheet_id)||'';}catch(_){}
-    if(fixed==='1')_tzMode='ct';
-    else if(ahead>=3&&_tzAheadOfCT(TZS)){_tzMode='ct';try{PropertiesService.getScriptProperties().setProperty('tzct:'+reg.spreadsheet_id,'1');}catch(_){}}
+    try{const PS=PropertiesService.getScriptProperties();if(PS.getProperty('tzct:'+reg.spreadsheet_id))PS.deleteProperty('tzct:'+reg.spreadsheet_id);}catch(_){} /* v10.6: limpia la marca del modo viejo */
   })();
   const _WIN_HI=_isoAdd(_ctToday(),1), _WIN_LO=reg.start_date?_isoAdd(fmtDate(reg.start_date,TZS),-15):'';
   let _txtD=0,_badD=0,_swpD=0;
-  const _delW=function(v){ /* Delivered → reloj Central, con reparación D/M si la fecha es imposible */
-    let w=_wall(v,TZS,_tzMode);
-    if(w&&w.src==='date'&&(w.d>_WIN_HI||(_WIN_LO&&w.d<_WIN_LO))){const sw=_swapDM(w);
+  const _delW=function(ri){ /* v10.6: Delivered = reloj mostrado, con reparación D/M si la fecha es imposible */
+    let w=_wd(ri,'Delivered');if(w)_dispN++;
+    if(w&&(w.d>_WIN_HI||(_WIN_LO&&w.d<_WIN_LO))){const sw=_swapDM(w);
       if(sw&&sw.d<=_WIN_HI&&(!_WIN_LO||sw.d>=_WIN_LO)){w=sw;_swpD++;}}
     return w;};
   const byDay={},drvByDay={},tonsByDay={},maxStageByDay={},revByDay={},cycDay={},byTerm={},byTermDay={},cycDayT={},byCarrier={},byProd={},byDriver={},driversAll=new Set(),cyc={},byHourDay={},rosterEv={};
@@ -751,7 +772,7 @@ function getWell(id){
     const isAsset=/^A/i.test(loadNo)||( netW>0&&netW<=1000)||CFG.assetMarkers.some(function(m){return prodS.toUpperCase().indexOf(m)>=0||String(row[ix['Terminal']]||'').toUpperCase().indexOf(m)>=0;});
     if(isAsset){
       const miA=num(row[ix['Mileage']]);
-      const _wA=_delW(row[ix['Delivered']]); const dA=_wA?_wA.d:''; /* v10.4 */
+      const _wA=_delW(_ri); const dA=_wA?_wA.d:''; /* v10.6 */
       const ra=(rates.ASSETS&&rates.ASSETS.length)?rateFor(rates,'ASSETS',miA,dA):{bill:0,pay:0,unit:'load'};
       const tA=netW>1000?netW/2000:+CFG.tonsPerLoadFallback; // solo para tarifas por ton de assets (si existen); no toca tons entregadas
       const revA=(ra.unit==='load')?ra.bill:ra.bill*tA, payA=(ra.unit==='load')?ra.pay:ra.pay*tA;
@@ -767,8 +788,8 @@ function getWell(id){
     const gwL=num(row[gwIx]); const gwOk=gwL>30000&&gwL<120000; /* v10.1: gross plausible de unidad cargada */
     if(gwOk){gwTot+=gwL;gwN++;if(gwL>80000)ovTot++;else if(gwL<70000)lwTot++;}
     const mi=num(row[ix['Mileage']]); miles+=mi;
-    const dl=row[ix['Delivered']]; const _wD=_delW(dl); const dDel=_wD?_wD.d:''; /* v10.4 reloj Central */
-    if(_wD&&_wD.src==='text')_txtD++; else if(!_wD&&dl!==''&&dl!=null)_badD++;
+    const dl=row[ix['Delivered']]; const _wD=_delW(_ri); const dDel=_wD?_wD.d:''; /* v10.6 reloj = lo que muestra la celda */
+    if(typeof dl==='string'&&dl.trim())_txtD++; if(!_wD&&dl!==''&&dl!=null)_badD++;
     const rb=rateFor(rates,client,mi,dDel); /* tarifa VIGENTE en la fecha de esta carga */
     const _rbase=(rb.unit==='load')?rb.bill:rb.bill*t;
     const fscL=(rb.unit==='load')?(+rb.fsc||0):(+rb.fsc||0)*t; // FSC de la tarifa vigente (0 si el bracket no trae)
@@ -811,7 +832,7 @@ function getWell(id){
       const _no=parseInt(loadNo,10);
       if(isFinite(_no)&&_no>0){const pn=partDay[d]=partDay[d]||{min:_no,max:_no}; if(_no<pn.min)pn.min=_no; if(_no>pn.max)pn.max=_no; if(_no<gMinNo)gMinNo=_no; if(_no>gMaxNo)gMaxNo=_no;} (drvByDay[d]=drvByDay[d]||new Set()).add(drv); tonsByDay[d]=(tonsByDay[d]||0)+t; revByDay[d]=(revByDay[d]||0)+revL; if(stg>(maxStageByDay[d]||0))maxStageByDay[d]=stg; if(drv)byDriver[drv].dates[d]=(byDriver[drv].dates[d]||0)+1;}
     // tiempos de ciclo (min) por terminal
-    const _K=function(c){const w=(ix[c]>=0)?_wall(row[ix[c]],TZS,_tzMode):null;return w?w.k:null;}; /* v10.4 */
+    const _K=function(c){const w=_wd(_ri,c);return w?w.k:null;}; /* v10.6: reloj mostrado */
     const aT=_K('At Terminal'),iT=_K('In Transit'),aS=_K('At Staging'),aD=_K('At Dest.'),dv=_wD?_wD.k:null;
     cyc[term]=cyc[term]||{load:[0,0],transit:[0,0],unload:[0,0],full:[0,0],stage_wait:[0,0]};
     // MODELO DE CICLO (con staging pad):
@@ -967,7 +988,9 @@ function getWell(id){
       tons_delivered:Math.round(tons), loads_skipped_no_loadnum:_skipNoNum, footer_rows_cut:_footRows,
       fsc_total:Math.round(fscTot), fsc_applied:fscTot>0,
       rate_fallback:RATE_MISS,
-      tz:CT_TZ, day_tz:'Central (America/Chicago) · 12:00 AM–11:59 PM', tz_sheet:TZS, tz_mode:_tzMode, ct_today:_ctToday(), /* v10.4 */
+      tz:CT_TZ, day_tz:'Central (America/Chicago) · 12:00 AM–11:59 PM', tz_sheet:TZS, tz_mode:'display', ct_today:_ctToday(), /* v10.4 */
+      clock_source:'display', display_read:_dispN, /* v10.6 */
+      value_shift_h:(function(){let b=0,c=-1;Object.keys(_shift).forEach(function(k){if(_shift[k]>c){c=_shift[k];b=+k;}});return b;})(),
       dates_normalized:_FMT_BAD, text_dates:_txtD, unparsed_dates:_badD, dm_repaired:_swpD,
       header_repeats:_hdrRep, dupes_removed:_dupN, weight_units_fixed:_wFix, /* v10.5 */
       day_audit:Object.keys(_dayAud).sort().slice(-4).map(function(k){var A=_dayAud[k];return {d:k,loads:A.l,first:A.f,last:A.t};}),

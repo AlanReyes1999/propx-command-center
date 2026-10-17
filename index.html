@@ -1442,7 +1442,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-16.131';
+const VBUILD='2026-10-17.132';
 /* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
    abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
 const CT_TZ='America/Chicago';
@@ -5479,9 +5479,12 @@ function _whAudit(){try{
   const L2=['<b>Data audit — how the workbook is being read</b>'];
   if(v104){
     L2.push('Days cut at <b>12:00 AM–11:59 PM Central</b> · automatic');
-    L2.push(dg.tz_mode==='ct'
-      ?'Workbook stores instants in <b>'+dg.tz_sheet+'</b> — converted to Central'
-      :'Workbook clock read as shown in the sheet (Central)'+(dg.tz_sheet&&!/Chicago|Matamoros|Central/.test(dg.tz_sheet)?' · sheet zone '+dg.tz_sheet:''));}
+    if(dg.clock_source==='display'){ /* .132: GAS v10.6 — reloj = lo que muestra la celda */
+      L2.push('Times read <b>exactly as shown in the sheet</b> ✓');
+      if(+dg.value_shift_h)L2.push('Apps Script cell values were '+(+dg.value_shift_h>0?'+':'')+dg.value_shift_h+' h off — ignored, the doc wins ✓');}
+    else L2.push(dg.tz_mode==='ct'
+      ?'Workbook stores instants in <b>'+dg.tz_sheet+'</b> — converted to Central · paste <b>Code v10.6</b>'
+      :'Workbook clock read from cell values · paste <b>Code v10.6</b> to read the times as shown');}
   else L2.push(dg.tz?'Day-cut timezone: <b>'+dg.tz+'</b> — paste <b>Code v10.4</b> for the automatic Central clock':'Paste <b>Code v10.4</b> to audit the day buckets here.');
   const tA=aud.find(a=>String(a.d)===todayCT);
   if(tA)L2.push('Today (CT) so far: <b>'+tA.loads+'</b> load'+(tA.loads===1?'':'s')+(tA.first?' · '+tA.first+'–'+(tA.last||tA.first):''));
