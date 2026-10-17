@@ -1039,8 +1039,8 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
         </div>
       </div>
       <div class="dsub">
-        <div class="chips chips-mini"><div class="chip rng" data-d="H">Today</div><div class="chip rng" data-d="Y">Yesterday</div><div class="chip rng" data-d="7">7d</div><div class="chip rng" data-d="14">14d</div><div class="chip rng" data-d="30">30d</div><div class="chip rng on" data-d="0">Todo</div></div>
-        <span class="dleg"><span style="color:#58a05f">●</span> ≥ target · <span style="color:#e0a63e">●</span> 80–99% · <span style="color:#d47272">●</span> &lt; 80% · <span style="color:#cbd5e1">●</span> sin data</span>
+        <div class="chips chips-mini"><div class="chip rng" data-d="H">Today</div><div class="chip rng" data-d="Y">Yesterday</div><div class="chip rng" data-d="7">7d</div><div class="chip rng" data-d="14">14d</div><div class="chip rng" data-d="30">30d</div><div class="chip rng on" data-d="0">All</div></div>
+        <span class="dleg"><span style="color:#58a05f">●</span> ≥ target · <span style="color:#e0a63e">●</span> 80–99% · <span style="color:#d47272">●</span> &lt; 80% · <span style="color:#cbd5e1">●</span> no data</span>
         <span class="sb" id="w-range-note" style="margin-left:auto"></span>
       </div>
     </div>
@@ -1436,7 +1436,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-12.127';
+const VBUILD='2026-10-16.128';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
