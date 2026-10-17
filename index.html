@@ -286,6 +286,8 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .wt-tbl tbody tr:hover:not(:last-child){background:#f1f6fb}
 .wt-hv{cursor:help;border-bottom:1px dotted #b9c6d2;padding-bottom:1px}
 .wh-aud{cursor:help;letter-spacing:.04em}
+.wh-asof{font-weight:700;color:#51606f}
+.wh-asof.old{color:#9a6b1f;background:#fdf5e2;border:1px solid #ecd9a8;border-radius:6px;padding:1px 6px}
 .wh-aud.aud-ok{color:#51606f!important;background:#f1f5f9!important;border-color:#e2e8f0!important}
 .wh-aud.aud-warn{color:#9a6b1f!important;background:#fdf5e2!important;border-color:#ecd9a8!important}
 .wh-aud.aud-bad{color:#b23b3b!important;background:#fdecec!important;border-color:#f1c8c8!important;animation:apIn .3s ease}
@@ -1440,7 +1442,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-16.130';
+const VBUILD='2026-10-16.131';
 /* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
    abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
 const CT_TZ='America/Chicago';
@@ -1495,7 +1497,7 @@ async function apiRegistry(){
    · Cotejo: un Live cacheado hace more de LIVE_FRESH_MS se considera "viejo pero usable":
      sirve para pintar ya, y dispara revalidación silenciosa.                           */
 const _lsSnapKey=id=>'meds_snap:'+id;
-const _CACHE_V=2, LIVE_FRESH_MS=90000;      // 90s: ventana en que un Live se da por fresco
+const _CACHE_V=3, LIVE_FRESH_MS=90000; /* .131: v3 descarta snapshots locales de GAS ≤ v10.4 */      // 90s: ventana en que un Live se da por fresco
 const _isClosed=st=>String(st||'').toLowerCase()==='closed';
 function _snapRead(id){try{const r=localStorage.getItem(_lsSnapKey(id));if(!r)return null;
   const o=JSON.parse(r); if(!o||o.v!==_CACHE_V||!o.w)return null; return o;}catch(_){return null;}}
@@ -1612,7 +1614,7 @@ function applyWell(w){
   ASSETS_DATA=w.assets||null;
   PART_D=w.daily.map(d=>d.participation==null?null:+d.participation);
   PART_SPAN_D=w.daily.map(d=>+d.pad_span||0);
-  ACTIVE_META={name:w.name,customer:w.customer,status:w.status,equipment:(w.targets&&w.targets.equipment)||'',totals:w.totals||{},targets:w.targets||{},byTerminal:w.byTerminal||[],byTerminalDaily:w.byTerminalDaily||[],stageWaitByTerminal:w.stageWaitByTerminal||[],inventory:w.inventory||null,wt:w.wt||null,diag:w.diag||null,snapshot:w.snapshot||null};
+  ACTIVE_META={name:w.name,customer:w.customer,status:w.status,equipment:(w.targets&&w.targets.equipment)||'',totals:w.totals||{},targets:w.targets||{},byTerminal:w.byTerminal||[],byTerminalDaily:w.byTerminalDaily||[],stageWaitByTerminal:w.stageWaitByTerminal||[],inventory:w.inventory||null,wt:w.wt||null,diag:w.diag||null,snapshot:w.snapshot||null,api_ver:w.api_version||''};
   return true;
 }
 
@@ -4038,7 +4040,10 @@ function renderPozo(){
     const _rw=(REGISTRY||[]).find(x=>x.id===CURRENT_ID);
     if(_rw&&_rw.spreadsheet_id){lk.style.display='inline-block';lk.href='https://docs.google.com/spreadsheets/d/'+encodeURIComponent(_rw.spreadsheet_id);}
     else lk.style.display='none';})();
-  $('wh-meta').textContent=[(ACTIVE_META&&ACTIVE_META.customer),(ACTIVE_META&&ACTIVE_META.equipment),M.ISO[0]+' → '+M.ISO[M.n-1],M.SRC.map(s=>s.t).join(' / ')].filter(Boolean).join(' · ');
+  {const _e=v=>String(v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+   const _ao=_whAsOf();
+   $('wh-meta').innerHTML=[(ACTIVE_META&&ACTIVE_META.customer),(ACTIVE_META&&ACTIVE_META.equipment),M.ISO[0]+' → '+M.ISO[M.n-1],M.SRC.map(s=>s.t).join(' / ')].filter(Boolean).map(_e).join(' · ')
+     +(_ao?' · '+_ao:'');} /* .131: hora del cálculo visible */
   const trPill=M.trAll>=M.DTR?'p-grn':'p-red';
   $('wh-pills').innerHTML=[
     _whAudit(),
@@ -5448,6 +5453,16 @@ function _fcTipEl(){if(!document.getElementById)return null;
   let t=document.getElementById('fcTip');
   if(!t&&document.body&&document.createElement){t=document.createElement('div');t.id='fcTip';document.body.appendChild(t);}
   return t;}
+/* ── .131 · hora a la que el GAS calculó lo que se ve (CT); ámbar si un Live tiene >15 min ── */
+function _whAsOf(){try{
+  const at=ACTIVE_META&&ACTIVE_META.snapshot&&ACTIVE_META.snapshot.at;if(!at)return '';
+  const t=new Date(at);if(isNaN(t))return '';
+  const hm=new Intl.DateTimeFormat('en-US',{timeZone:'America/Chicago',hour:'numeric',minute:'2-digit'}).format(t);
+  const mins=Math.max(0,Math.round((Date.now()-t.getTime())/6e4));
+  const live=String((ACTIVE_META&&ACTIVE_META.status)||'').toLowerCase()!=='closed';
+  const old=live&&mins>15;
+  return '<span class="wh-asof'+(old?' old':'')+'" title="When Apps Script computed these numbers'+(old?' — hit Refresh for live data':'')+'">data '+hm+' CT'+(old?' · '+mins+' min old':'')+'</span>';
+}catch(_){return '';}}
 /* ── .129 · DATA AUDIT — cómo se está leyendo el workbook (corte de día, saltos, TZ) ── */
 function _whAudit(){try{
   const dg=(ACTIVE_META&&ACTIVE_META.diag)||null;if(!dg)return '';
@@ -5481,7 +5496,7 @@ function _whAudit(){try{
   if(unp)L2.push('<b>'+unp+'</b> delivered value'+(unp===1?'':'s')+' unreadable — <b>not counted</b>');
   if(skip)L2.push('<b>'+skip+'</b> row'+(skip===1?'':'s')+' with data but <b>no Load #</b> — not counted');
   if(fN)L2.push('Foreign-terminal loads: <b>'+fN+'</b> ('+fT.join(', ')+')'+(dg.terminals_strict?' — <b>EXCLUDED</b> (terminals_strict)':' — counted, flagged in Sourcing'));
-  if(age)L2.push('Snapshot age: '+age);
+  if(age)L2.push('Snapshot age: '+age+(ACTIVE_META&&ACTIVE_META.api_ver?' · computed by GAS <b>'+ACTIVE_META.api_ver+'</b>':''));
   const issueN=futN+skip+unp+(dg.terminals_strict?fN:0)+(!v104?(+dg.dates_normalized||0):0);
   if(!issueN&&v104)L2.push('Nothing dropped — every delivered row is counted ✓');
   const cls=futN?'aud-bad':(issueN?'aud-warn':'aud-ok');

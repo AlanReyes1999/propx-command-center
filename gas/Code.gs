@@ -1,4 +1,11 @@
-/** MEDS · PropX Live API — Code.gs v10.4. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v10.5. PEGAR TAL CUAL → Nueva versión.
+ *  v10.5 CERO DATOS DE VERSIONES VIEJAS: el snapshot de un pozo Live solo se sirve si lo
+ *  calculó ESTA versión (antes un snapshot de v10.2 hecho minutos antes del deploy se seguía
+ *  sirviendo con su día corrido −5 h); la caché corta usa llaves por versión; el portafolio
+ *  (Overview / Active Wells) se reconstruye si viene de otra versión o tiene >15 min con pozos
+ *  Live (antes: hasta 6 h). congelarCierres re-calcula los cierres de versiones viejas con
+ *  presupuesto de tiempo (avanza por tandas sin chocar con el límite de 6 min).
+ *  Peso capturado en miles de lbs (47.16) o tons (23.5) se lee como lbs — ya no se vuelve "asset".
  *  v10.4 RELOJ CENTRAL AUTOMÁTICO — un día = 12:00 AM–11:59 PM hora Central, siempre:
  *   · Cada timestamp se lee como el reloj que MUESTRA la celda (Date → en la tz del propio
  *     workbook; texto → parseado directo: "10/16/2026 9:04:31 p.m.", "a. m.", PM, 24 h,
@@ -186,7 +193,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v10.4';
+const API_VERSION='v10.5';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -267,7 +274,9 @@ function wellFrozen(id,fresh){
   // Live: de 20-60s por request a ~1-2s; solo el PRIMER request tras una edicion recalcula.
   if(!fresh&&reg&&reg.spreadsheet_id){
     const s=_snapGet(id);
-    if(_snapFresh(reg.spreadsheet_id,s,closed)){try{return JSON.parse(s.text);}catch(_){/* corrupto → regenerar */}}}
+    if(_snapFresh(reg.spreadsheet_id,s,closed)){try{const j=JSON.parse(s.text);
+      /* v10.5: un Live calculado por otra versión NO se sirve (reglas de día/lectura cambian) */
+      if(closed||(j&&j.api_version===API_VERSION))return j;}catch(_){/* corrupto → regenerar */}}}
   const w=getWell(id);
   if(w&&!w.error){
     w.snapshot={frozen:true,at:new Date().toISOString(),live:!closed};
@@ -276,11 +285,14 @@ function wellFrozen(id,fresh){
 /** ▶ CONGELAR AHORA — corre una vez para precalentar todos los cierres (y cada 6h vía trigger). */
 function congelarCierres(){
   const reg=(getRegistry().wells||[]).filter(function(w){return !!w.spreadsheet_id;}); // v7.8: precalienta TODOS (Live incluido)
-  let hechos=0,frescos=0;
+  let hechos=0,frescos=0,pend=0; const t0=Date.now();
   reg.forEach(function(w){
     const s=_snapGet(w.well_id);
-    if(_snapFresh(w.spreadsheet_id,s,String(w.status).toLowerCase()==='closed')){frescos++;return;}
+    let curV=false; try{curV=!!(s&&s.text&&JSON.parse(s.text).api_version===API_VERSION);}catch(_){}
+    if(curV&&_snapFresh(w.spreadsheet_id,s,String(w.status).toLowerCase()==='closed')){frescos++;return;}
+    if(Date.now()-t0>270000){pend++;return;} /* v10.5: presupuesto 4.5 min — la siguiente corrida sigue */
     const wj=wellFrozen(w.well_id,true); if(wj&&!wj.error)hechos++;});
+  if(pend)Logger.log('congelarCierres: '+pend+' pozos pendientes para la siguiente corrida');
   let _pf=0; try{ _pf=buildPortfolio().count; }catch(e){ Logger.log('portfolio: '+e); } // el Resumen queda precocido
   Logger.log('congelarCierres: '+hechos+' regenerados · '+frescos+' ya frescos · '+reg.length+' pozos · portafolio: '+_pf);
   return {ok:true,regenerados:hechos,frescos:frescos,total:reg.length,portafolio:_pf};}
@@ -314,7 +326,11 @@ function buildPortfolio(){
   return pack;
 }
 function getPortfolio(fresh){
-  if(!fresh){ try{ const s=_storeGet('portfolio.json'); if(s&&s.text)return JSON.parse(s.text); }catch(e){} }
+  if(!fresh){ try{ const s=_storeGet('portfolio.json'); if(s&&s.text){const P=JSON.parse(s.text);
+      /* v10.5: misma versión y, si hay pozos Live, menos de 15 min — si no, se reconstruye */
+      const live=(P.wells||[]).some(function(w){return String(w.status||'').toLowerCase()!=='closed';});
+      const age=Date.now()-new Date(P.generated||0).getTime();
+      if(P.api_version===API_VERSION&&(!live||age<9e5))return P;}}catch(e){} }
   return buildPortfolio();
 }
 
@@ -489,9 +505,9 @@ function doGet(e){
   /* v10.0: el candado va ANTES de la caché — sin token válido no se sirve ni cache */
   const AERR=_aGate(e,a);
   if(AERR)return ContentService.createTextOutput(JSON.stringify(AERR)).setMimeType(ContentService.MimeType.JSON);
-  const ck=(a==='well')?('w5:'+((e&&e.parameter&&e.parameter.id)||''))
-          :(a==='status')?('s5:'+((e&&e.parameter&&e.parameter.days)||''))
-          :(a==='portfolio')?'p5':null;
+  const ck=(a==='well')?('w5:'+API_VERSION+':'+((e&&e.parameter&&e.parameter.id)||''))   /* v10.5: llave por versión */
+          :(a==='status')?('s5:'+API_VERSION+':'+((e&&e.parameter&&e.parameter.days)||''))
+          :(a==='portfolio')?('p5:'+API_VERSION):null;
   if(ck&&!fresh){const hit=_cGet(ck);
     if(hit&&typeof hit==='object'){hit.api_version=API_VERSION;hit.action_received=a;hit.served='cache';
       return ContentService.createTextOutput(JSON.stringify(hit)).setMimeType(ContentService.MimeType.JSON);}}
@@ -716,7 +732,7 @@ function getWell(id){
   const rateMixDay={}; // {fecha: {"17.76":{loads,tons,revenue}, "19.00":{...}}} — qué tarifa cobró cada carga
   let loads=0,tons=0,revenue=0,cost=0,miles=0,maxStage=0;
   let revenueBase=0,fscTot=0; const fscByDay={}; // FSC (fuel surcharge) por ton: separado del rate, sumado al revenue facturado
-  let _skipNoNum=0;
+  let _skipNoNum=0, _wFix=0;
   // CORTE DE PIE DE REPORTE: secciones extra al final del export ("Transferred",
   // "Load # / From Job / To Job", totales) entraban como cargas fantasma sin terminal ni millas.
   /* v10.4: el pie y los encabezados repetidos ya NO cortan la lectura — los clasifica el pre-pase */
@@ -726,7 +742,10 @@ function getWell(id){
     if(!row[ix['Load #']]) {_skipNoNum++; continue;}
     const prodS=String(row[ix['Product']]||'').trim()||'—';
     const loadNo=String(row[ix['Load #']]||'').trim();
-    const netW=num(row[ix['Load Weight']]); // col O — libras netas entregadas (arena real: 40–46k lbs)
+    let netW=num(row[ix['Load Weight']]); // col O — libras netas entregadas (arena real: 40–46k lbs)
+    /* v10.5: peso capturado en MILES de lbs (47.16) o en TONS (23.5) → lbs. Antes caía en la regla
+       "≤1000 = asset" y una carga de arena se contaba como asset. Equipment/Generator siguen en "1". */
+    if(netW>=30&&netW<=60){netW=Math.round(netW*1000);_wFix++;} else if(netW>=18&&netW<30){netW=Math.round(netW*2000);_wFix++;}
     // ASSET = Load# 'A…' | Product/Terminal con marker | Load Weight ≤ 1000 (Equipment/Generator ponen "1").
     // Regla de peso: NUNCA tratar peso ≤1000 como arena — antes recibía fallback 21.8t e inflaba tons+revenue.
     const isAsset=/^A/i.test(loadNo)||( netW>0&&netW<=1000)||CFG.assetMarkers.some(function(m){return prodS.toUpperCase().indexOf(m)>=0||String(row[ix['Terminal']]||'').toUpperCase().indexOf(m)>=0;});
@@ -950,7 +969,7 @@ function getWell(id){
       rate_fallback:RATE_MISS,
       tz:CT_TZ, day_tz:'Central (America/Chicago) · 12:00 AM–11:59 PM', tz_sheet:TZS, tz_mode:_tzMode, ct_today:_ctToday(), /* v10.4 */
       dates_normalized:_FMT_BAD, text_dates:_txtD, unparsed_dates:_badD, dm_repaired:_swpD,
-      header_repeats:_hdrRep, dupes_removed:_dupN,
+      header_repeats:_hdrRep, dupes_removed:_dupN, weight_units_fixed:_wFix, /* v10.5 */
       day_audit:Object.keys(_dayAud).sort().slice(-4).map(function(k){var A=_dayAud[k];return {d:k,loads:A.l,first:A.f,last:A.t};}),
       declared_terminals:_DT, terminals_strict:_STRICT, foreign_terminals:FOREIGN_T,
       targets_found:!!T, targets_keys:Object.keys(targets).length,
