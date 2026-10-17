@@ -285,6 +285,10 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .wt-tbl tbody tr:nth-child(odd):not(:last-child){background:#fafcfe}
 .wt-tbl tbody tr:hover:not(:last-child){background:#f1f6fb}
 .wt-hv{cursor:help;border-bottom:1px dotted #b9c6d2;padding-bottom:1px}
+.wh-aud{cursor:help;letter-spacing:.04em}
+.wh-aud.aud-ok{color:#51606f!important;background:#f1f5f9!important;border-color:#e2e8f0!important}
+.wh-aud.aud-warn{color:#9a6b1f!important;background:#fdf5e2!important;border-color:#ecd9a8!important}
+.wh-aud.aud-bad{color:#b23b3b!important;background:#fdecec!important;border-color:#f1c8c8!important;animation:apIn .3s ease}
 /* .124 · Score v2: badges, chips de alerta y barras animadas */
 .fcr-alb{font:800 7.5px 'Plus Jakarta Sans';border-radius:999px;padding:1px 4px;margin-left:3px;vertical-align:super}
 .fcr-alb.b{background:#fdecec;color:#b23b3b;border:1px solid #f1c8c8}
@@ -1436,7 +1440,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-16.128';
+const VBUILD='2026-10-16.129';
 /* .113: share/client mode — #client=fc&well=XXXX abre SOLO el Forecast (sin tabs) */
 const CLI_FC=(function(){try{
   if(!/(^|[#&])client=fc(&|$)/.test(location.hash||''))return null;
@@ -1598,7 +1602,7 @@ function applyWell(w){
   ASSETS_DATA=w.assets||null;
   PART_D=w.daily.map(d=>d.participation==null?null:+d.participation);
   PART_SPAN_D=w.daily.map(d=>+d.pad_span||0);
-  ACTIVE_META={name:w.name,customer:w.customer,status:w.status,equipment:(w.targets&&w.targets.equipment)||'',totals:w.totals||{},targets:w.targets||{},byTerminal:w.byTerminal||[],byTerminalDaily:w.byTerminalDaily||[],stageWaitByTerminal:w.stageWaitByTerminal||[],inventory:w.inventory||null,wt:w.wt||null};
+  ACTIVE_META={name:w.name,customer:w.customer,status:w.status,equipment:(w.targets&&w.targets.equipment)||'',totals:w.totals||{},targets:w.targets||{},byTerminal:w.byTerminal||[],byTerminalDaily:w.byTerminalDaily||[],stageWaitByTerminal:w.stageWaitByTerminal||[],inventory:w.inventory||null,wt:w.wt||null,diag:w.diag||null,snapshot:w.snapshot||null};
   return true;
 }
 
@@ -4027,6 +4031,7 @@ function renderPozo(){
   $('wh-meta').textContent=[(ACTIVE_META&&ACTIVE_META.customer),(ACTIVE_META&&ACTIVE_META.equipment),M.ISO[0]+' → '+M.ISO[M.n-1],M.SRC.map(s=>s.t).join(' / ')].filter(Boolean).join(' · ');
   const trPill=M.trAll>=M.DTR?'p-grn':'p-red';
   $('wh-pills').innerHTML=[
+    _whAudit(),
     `<span class="pill p-gold" style="color:#7a5a1e;background:var(--ora-l);border-color:#eadcc0">${(M.X.max_stage||0)}${T.total_stages?'/'+T.total_stages:''} STAGES${(M.X.max_stage||0)>=(T.total_stages||1e9)?' ✓':''}</span>`,
     `<span class="pill p-grn" style="color:#1f7a56;background:var(--grn-l);border-color:#cbe8db">${fmt(M.totL)} LOADS</span>`,
     `<span class="pill ${trPill}" style="color:${M.trAll>=M.DTR?'#1f7a56':'#a33d3d'};background:${M.trAll>=M.DTR?'var(--grn-l)':'var(--red-l)'};border-color:#eee">TR ${M.trAll} vs ${M.DTR}</span>`,
@@ -4035,6 +4040,7 @@ function renderPozo(){
     M.PART.gen!=null?`<span class="pill ${M.PART.tgt!=null&&M.PART.gen>=M.PART.tgt?'p-grn':''}" style="color:${M.PART.tgt!=null&&M.PART.gen<M.PART.tgt?'#a33d3d':'#1f7a56'};background:${M.PART.tgt!=null&&M.PART.gen<M.PART.tgt?'var(--red-l)':'var(--grn-l)'};border-color:#dfe8e3">PART ${M.PART.gen}%${M.PART.tgt!=null?' vs '+M.PART.tgt+'%':''}</span>`:'',
     M.AST.moves?`<span class="pill" style="color:#475569;background:#f1f5f9;border-color:#e2e8f0"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M4.2 6.8l2.1 2.1M17.7 15.1l2.1 2.1M2.5 12h3M18.5 12h3M4.2 17.2l2.1-2.1M17.7 8.9l2.1-2.1"/></svg> ${M.AST.moves} ASSET MOVES</span>`:''
   ].join('');
+  _fcTipBind($('wh-pills')); /* .129: tooltip del Data audit */
   $('w-range-note').innerHTML=M.n+' days in view'+(RANGE_MISS?` · <b style="color:#d97706">▲ no loads on ${shortDay(RANGE_MISS)} — showing ${shortDay(M.ISO[0])}</b>`:'');
   buildStrip();buildPadMini();
   if($('dcustom')&&$('dcustom').classList.contains('open'))buildCal();
@@ -5430,6 +5436,33 @@ function _fcTipEl(){if(!document.getElementById)return null;
   let t=document.getElementById('fcTip');
   if(!t&&document.body&&document.createElement){t=document.createElement('div');t.id='fcTip';document.body.appendChild(t);}
   return t;}
+/* ── .129 · DATA AUDIT — cómo se está leyendo el workbook (corte de día, saltos, TZ) ── */
+function _whAudit(){try{
+  const dg=(ACTIVE_META&&ACTIVE_META.diag)||null;if(!dg)return '';
+  const snap=(ACTIVE_META&&ACTIVE_META.snapshot)||null;
+  const now=new Date();
+  const todayISO=now.getFullYear()+'-'+('0'+(now.getMonth()+1)).slice(-2)+'-'+('0'+now.getDate()).slice(-2);
+  const aud=dg.day_audit||[];
+  const fut=aud.filter(a=>String(a.d)>todayISO);
+  const futN=fut.reduce((s2,a)=>s2+(+a.loads||0),0);
+  const skip=+dg.loads_skipped_no_loadnum||0, norm=+dg.dates_normalized||0;
+  const fT=Object.keys(dg.foreign_terminals||{});
+  const fN=fT.reduce((s2,k)=>s2+(((dg.foreign_terminals||{})[k]||{}).loads||0),0);
+  let age='';try{if(snap&&snap.at){const mm=Math.max(0,Math.round((Date.now()-new Date(snap.at).getTime())/60000));age=mm<1?'just now':mm+' min ago';}}catch(_){}
+  const lines=['<b>Data audit — how the workbook is being read</b>'];
+  if(dg.tz){lines.push('Day-cut timezone: <b>'+dg.tz+'</b>'+(futN?' · <b>AHEAD of the pad clock</b>':''));}
+  else lines.push('Day-cut timezone: ? — paste <b>Code v10.3</b> to audit the day buckets here.');
+  if(futN)lines.push('<b>'+futN+' load'+(futN===1?'':'s')+' already sit in a FUTURE bucket</b> ('+fut.map(a=>String(a.d).slice(5)).join(', ')+') — the workbook timezone cuts the day early, so tonight\'s deliveries land on tomorrow. Fix: Sheets File → Settings → Time zone → Central Time, or key timezone = America/Chicago in Targets.');
+  if(aud.length)lines.push('Recent buckets: '+aud.map(a=>String(a.d).slice(5)+' — <b>'+a.loads+'</b>'+(a.first?(' ('+a.first+'–'+(a.last||a.first)+')'):'')).join(' · '));
+  if(skip)lines.push('<b>'+skip+'</b> delivered row'+(skip===1?'':'s')+' skipped — <b>missing Load #</b> in the Loads Report');
+  if(norm)lines.push('<b>'+norm+'</b> date cell'+(norm===1?'':'s')+' pasted as TEXT — normalized since v10.3');
+  if(fN)lines.push('Foreign-terminal loads: <b>'+fN+'</b> ('+fT.join(', ')+')'+(dg.terminals_strict?' — <b>EXCLUDED</b> (terminals_strict)':' — counted, flagged in Sourcing'));
+  if(age)lines.push('Snapshot age: '+age);
+  const issueN=futN+skip+norm+(dg.terminals_strict?fN:0);
+  if(!issueN&&dg.tz)lines.push('No skipped rows · day buckets align with the pad clock ✓');
+  const cls=futN?'aud-bad':(issueN?'aud-warn':'aud-ok');
+  return '<span class="pill wh-aud '+cls+'" data-tip="'+encodeURIComponent(lines.join('\n'))+'">DATA AUDIT'+(issueN?' · '+issueN:' ✓')+'</span>';
+}catch(_){return '';}}
 function _fcTipBind(host){if(!host||host._tipB||!host.addEventListener)return;host._tipB=1;
   const mv=function(ev){const t=_fcTipEl();if(!t||!t.classList.contains('on'))return;
     const vw=window.innerWidth||1200,vh=window.innerHeight||800;

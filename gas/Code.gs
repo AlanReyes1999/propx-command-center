@@ -1,4 +1,10 @@
-/** MEDS · PropX Live API — Code.gs v10.2. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v10.3. PEGAR TAL CUAL → Nueva versión.
+ *  v10.3 AUDITORÍA DE CORTE DE DÍA: diag gana tz (zona horaria con la que se bucketizan
+ *  los días — la del workbook, u override con la key `timezone` en Targets, p. ej.
+ *  America/Chicago), day_audit (últimos 4 días con loads y primera/última hora de
+ *  entrega) y dates_normalized. fmtDate ahora normaliza celdas de fecha en TEXTO
+ *  ("10/16/2026 ...") a ISO — antes esas cargas caían en un bucket huérfano que el
+ *  portal no podía mostrar.
  *  v10.2 OVERWEIGHT DETAIL: wt gana ovL — la lista de cargas >80k lbs del rango
  *  [fecha, terminal, driver, gross lbs, load #] (cap 80) para que el portal
  *  muestre al pasar el cursor QUÉ trucks van pasados y de quién son.
@@ -166,7 +172,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v10.2';
+const API_VERSION='v10.3';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -628,20 +634,21 @@ function declaredTerms(T){
 function getWell(id){
   const reg=getRegistry().wells.find(w=>String(w.well_id)===String(id));
   if(!reg) return {error:'well_id no encontrado: '+id};
-  const rates=getRates(); RATE_MISS={}; const hub=SpreadsheetApp.getActive();
+  const rates=getRates(); RATE_MISS={}; _FMT_BAD=0; const hub=SpreadsheetApp.getActive();
   var FOREIGN_T={}; // terminales AJENAS al pad detectadas en el Loads Report (contaminación cruzada)
   var _DT=[], _STRICT=false;
   if(!reg.spreadsheet_id) return {error:'sin spreadsheet_id en Registry para '+id, well_id:id, name:reg.name, status:reg.status};
   let ss; try{ ss=SpreadsheetApp.openById(reg.spreadsheet_id); }
   catch(e){ return {error:'no pude abrir el workbook ('+String(e).slice(0,80)+') — revisa spreadsheet_id o permisos', well_id:id, name:reg.name, customer:reg.customer, status:reg.status, spreadsheet_id_tail:String(reg.spreadsheet_id).slice(-6)}; }
   const client=reg.customer||'FASKEN';
-  const TZS=(ss.getSpreadsheetTimeZone&&ss.getSpreadsheetTimeZone())||Session.getScriptTimeZone();
+  let TZS=(ss.getSpreadsheetTimeZone&&ss.getSpreadsheetTimeZone())||Session.getScriptTimeZone();
 
   // Targets
   const targets={}; const T=readTab(ss,CFG.tabs.targets,'key');
   if(T){const ki=colmap(T.H,['key','value']);
   for(const r of T.rows){const k=String(r[ki.key]||'').trim(); if(k&&k.charAt(0)!=='—') targets[k]=r[ki.value];}}
   _DT=declaredTerms(targets); _STRICT=/^(1|true|si|sí|yes)$/i.test(String((targets&&targets.terminals_strict)||''));
+  if(targets.timezone){try{Utilities.formatDate(new Date(),String(targets.timezone).trim(),'yyyy');TZS=String(targets.timezone).trim();}catch(_){/* tz inválida en Targets → se queda la del workbook */}} /* v10.3 */
   const designTonsStage=(+targets.lbs_per_stage||0)/2000;
 
   // Loads Report → loads, drivers, tons, etapas, ciclos, terminales, carriers, products, drivers
@@ -650,7 +657,7 @@ function getWell(id){
   const ix=L?colmap(L.H,['Load #','Load ID','Carrier Name','Truck #','Driver Name','Product','Stage#','At Terminal','In Transit','At Staging','At Dest.','Delivered','Terminal','Mileage','Load Weight','Gross Weight']):{};
   const gwIx=(ix['Gross Weight']!=null&&ix['Gross Weight']>=0)?ix['Gross Weight']:17; /* v10.1: header literal o col R */
   const byDay={},drvByDay={},tonsByDay={},maxStageByDay={},revByDay={},cycDay={},byTerm={},byTermDay={},cycDayT={},byCarrier={},byProd={},byDriver={},driversAll=new Set(),cyc={},byHourDay={},rosterEv={};
-  const wtDay={},wtHr={},ovList=[];let gwTot=0,gwN=0,ovTot=0,lwTot=0; /* v10.1 pesos NET/GROSS · v10.2 ovL */
+  const wtDay={},wtHr={},ovList=[],_dayAud={};let gwTot=0,gwN=0,ovTot=0,lwTot=0; /* v10.1 pesos · v10.2 ovL · v10.3 audit */
   let aMoves=0,aRev=0,aCost=0; const aByDay={},aRevByDay={},aEvents=[];
   const partDay={}; let gMinNo=9e15,gMaxNo=-9e15;
   const rateMixDay={}; // {fecha: {"17.76":{loads,tons,revenue}, "19.00":{...}}} — qué tarifa cobró cada carga
@@ -720,6 +727,9 @@ function getWell(id){
     if(dDel){const _rk=(+rb.bill||0).toFixed(2); const _RM=rateMixDay[dDel]=rateMixDay[dDel]||{};
       const _e=_RM[_rk]=_RM[_rk]||{loads:0,tons:0,revenue:0,fsc:0}; _e.loads++; _e.tons+=t; _e.revenue+=revL; _e.fsc+=fscL;}
     if(dDel){const d=dDel; byDay[d]=(byDay[d]||0)+1;
+      (function(){const A=_dayAud[d]=_dayAud[d]||{l:0,f:'',t:''};A.l++; /* v10.3 */
+        let h='';try{h=(dl instanceof Date)?Utilities.formatDate(dl,TZS,'HH:mm'):((String(dl).match(/(\d{1,2}):(\d{2})/)||[]).length?(('0'+String(dl).match(/(\d{1,2}):(\d{2})/)[1]).slice(-2)+':'+String(dl).match(/(\d{1,2}):(\d{2})/)[2]):'');}catch(_){}
+        if(h){if(!A.f||h<A.f)A.f=h;if(!A.t||h>A.t)A.t=h;}})();
       const btk=d+'|'+term; byTermDay[btk]=byTermDay[btk]||{date:d,terminal:term,loads:0,tons:0,revenue:0}; byTermDay[btk].loads++; byTermDay[btk].tons+=t; byTermDay[btk].revenue+=revL;
       const wk2=d+'|'+term; const WD=wtDay[wk2]=wtDay[wk2]||{d:d,t:term,l:0,nw:0,nn:0,gw:0,gn:0,ov:0,lw:0,rev:0,fsc:0};
       WD.l++; WD.rev+=revL; WD.fsc+=fscL; if(netW>1000){WD.nw+=netW;WD.nn++;}
@@ -883,6 +893,8 @@ function getWell(id){
       tons_delivered:Math.round(tons), loads_skipped_no_loadnum:_skipNoNum, footer_rows_cut:_footerCut,
       fsc_total:Math.round(fscTot), fsc_applied:fscTot>0,
       rate_fallback:RATE_MISS,
+      tz:TZS, dates_normalized:_FMT_BAD, /* v10.3 */
+      day_audit:Object.keys(_dayAud).sort().slice(-4).map(function(k){var A=_dayAud[k];return {d:k,loads:A.l,first:A.f,last:A.t};}),
       declared_terminals:_DT, terminals_strict:_STRICT, foreign_terminals:FOREIGN_T,
       targets_found:!!T, targets_keys:Object.keys(targets).length,
       loads_sheet_looked:(reg.sheet_name||CFG.tabs.loads), sheets_available:_sheetNames,
@@ -1275,4 +1287,13 @@ function parseHMS(v,tz){if(v==null||v==='')return 0;
   if(typeof v==='number')return v<2?v*1440:v; const p=String(v).trim().split(':').map(Number); if(p.length===3)return p[0]*60+p[1]+p[2]/60; if(p.length===2)return p[0]*60+p[1]; return num(v);}
 function avg2(a){return a[1]?+(a[0]/a[1]).toFixed(1):0;}
 function fmtHM(v,tz){if(v==null||v==='')return ''; if(v instanceof Date)return Utilities.formatDate(v,tz||Session.getScriptTimeZone(),'HH:mm'); const s2=String(v).trim(); const mm=s2.match(/^(\d{1,2}):(\d{2})/); return mm?('0'+mm[1]).slice(-2)+':'+mm[2]:s2;}
-function fmtDate(v,tz){if(v instanceof Date)return Utilities.formatDate(v,tz||Session.getScriptTimeZone(),'yyyy-MM-dd'); const d=new Date(v); if(isNaN(d))return String(v).split(' ')[0]; return Utilities.formatDate(d,Session.getScriptTimeZone(),'yyyy-MM-dd');}
+var _FMT_BAD=0; /* v10.3: celdas de fecha en TEXTO detectadas y normalizadas en la corrida */
+function fmtDate(v,tz){
+  if(v instanceof Date)return Utilities.formatDate(v,tz||Session.getScriptTimeZone(),'yyyy-MM-dd');
+  const d=new Date(v);
+  if(!isNaN(d))return Utilities.formatDate(d,tz||Session.getScriptTimeZone(),'yyyy-MM-dd');
+  const s=String(v).split(' ')[0];
+  const m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); /* v10.3: "10/16/2026 9:04 p.m." pegado como texto */
+  if(m){_FMT_BAD++;return m[3]+'-'+('0'+m[1]).slice(-2)+'-'+('0'+m[2]).slice(-2);}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s))_FMT_BAD++;
+  return s;}
