@@ -744,6 +744,10 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
 .seg-ctrl{display:flex;background:#f1f5f9;border-radius:8px;padding:2px;gap:1px;flex-wrap:wrap}
 .seg-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 12px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:none;background:transparent;color:#64748b;transition:all .15s;white-space:nowrap;font-family:inherit}
 .seg-btn:hover{background:rgba(45,90,123,.1);color:#2d5a7b}
+.seg-btn.seg-dim{opacity:.58}.seg-btn.seg-dim.seg-on{opacity:1}
+.tdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle;flex:0 0 7px}
+.seg-btn .tdot{margin-right:0}
+@media (max-width:640px){.grp-h.gh-ctrl{flex-wrap:wrap;row-gap:8px}.grp-h.gh-ctrl>.seg-ctrl{flex:1 1 100%}}
 .seg-on{background:#fff!important;color:#1c3d54!important;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .ctrl-label{font-size:8.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
 .ctrl-sep{width:1px;height:26px;background:#e2e8f0;flex-shrink:0}
@@ -1212,8 +1216,8 @@ const c=id=>$(id).getContext('2d');
 const fmt=n=>(+n).toLocaleString('en-US');
 const money=n=>'$'+Math.round(+n).toLocaleString('en-US');
 const hexA=(h,a)=>{const n=parseInt(h.slice(1),16);return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`;};
-function termPrefixes(T){/* descubre prefijos con *_ct_total en la hoja Targets */
-  const out=[];for(const k in T){const m=String(k).match(/^(.+)_ct_total$/);if(m&&+T[k])out.push(m[1]);}return out;}
+function termPrefixes(T){/* .133: prefijos de terminal en Targets (*_ct_total o *_mix_pct) — cualquier cantidad, orden de la hoja */
+  const out=[];for(const k in T){const m=String(k).match(/^(.+?)_(ct_total|mix_pct)$/);if(m&&+T[k]&&out.indexOf(m[1])<0)out.push(m[1]);}return out;}
 function normTerm(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'');}
 function termKeyFor(name,T){/* name real de terminal → prefijo de Targets · override term_map gana */
   if(!name)return null;const pref=termPrefixes(T);if(!pref.length)return null;
@@ -1221,6 +1225,11 @@ function termKeyFor(name,T){/* name real de terminal → prefijo de Targets · o
   /* 1) override explícito: term_map = "CIG - Odessa - Silo=silo; Covia Odessa=covia" */
   if(T.term_map){for(const pair of String(T.term_map).split(/[;\n]/)){const kv=pair.split('=');
     if(kv.length===2&&normTerm(kv[0])&&nn.indexOf(normTerm(kv[0]))>=0){const pk=kv[1].trim().toLowerCase();if(pref.indexOf(pk)>=0)return pk;}}}
+  /* 1b) .133: nombre del encabezado de Targets ("— TERMINAL · CIG - BIG LAKE —", GAS v10.7): exacto gana, si no el más largo contenido */
+  {const dt=(typeof ACTIVE_META!=='undefined'&&ACTIVE_META&&ACTIVE_META.designTerminals)||[];let b1=null,l1=0;
+   for(const x of dt){const pk=String(x.prefix||'').toLowerCase(),nd=normTerm(x.name);if(!pk||!nd||pref.indexOf(pk)<0)continue;
+     if(nd===nn)return pk;if((nn.indexOf(nd)>=0||nd.indexOf(nn)>=0)&&nd.length>l1){b1=pk;l1=nd.length;}}
+   if(b1)return b1;}
   /* 2) match por prefijo normalizado contenido en el nombre — el more largo gana (evita colisión) */
   let best=null,bl=0;pref.forEach(p=>{const np=normTerm(p);if(np&&nn.indexOf(np)>=0&&np.length>bl){best=p;bl=np.length;}});
   if(best)return best;
@@ -1228,6 +1237,29 @@ function termKeyFor(name,T){/* name real de terminal → prefijo de Targets · o
   const syn=[['biglake','big lake'],['covia','covia'],['silo','silo'],['cig','cig'],['odessa','odessa'],['lamesa','lamesa'],['kermit','kermit'],['monahans','monahans'],['atlas','atlas'],['oncore','oncore'],['nomad','nomad'],['alpine','alpine']];
   for(const [pk,tok] of syn){if(pref.indexOf(pk)>=0&&nn.indexOf(normTerm(tok))>=0)return pk;}
   return null;}
+/* .133 · TERMINALES SIN TOPE — diseño (Targets) ∪ reales (Loads Report), un color estable por terminal */
+function termDesignList(T){T=T||{};const pref=termPrefixes(T);if(!pref.length)return [];
+  const nm={};
+  if(T.term_map)String(T.term_map).split(/[;\n]/).forEach(p=>{const kv=p.split('=');if(kv.length===2){const pk=kv[1].trim().toLowerCase(),n=kv[0].trim();if(pk&&n&&!nm[pk])nm[pk]=n;}});
+  ((typeof ACTIVE_META!=='undefined'&&ACTIVE_META&&ACTIVE_META.designTerminals)||[]).forEach(x=>{const pk=String(x.prefix||'').toLowerCase();if(pk&&x.name&&!nm[pk])nm[pk]=String(x.name);});
+  return pref.map(pk=>({pk,name:nm[pk]||pk.toUpperCase(),mix:+T[pk+'_mix_pct']||+T[pk+'_mix']||0,
+    ct:{total:+T[pk+'_ct_total']||0,load:+T[pk+'_ct_load']||0,transit:+T[pk+'_ct_transit']||0,unload:+T[pk+'_ct_unload']||0}}));}
+function _tcol(i){if(i<PASTEL.length)return PASTEL[i];const h=(i*137.5)%360,sa=.42,l=.62,a=sa*Math.min(l,1-l);
+  const f=n=>{const k=(n+h/30)%12;return ('0'+Math.round((l-a*Math.max(-1,Math.min(k-3,9-k,1)))*255).toString(16)).slice(-2);};
+  return '#'+f(0)+f(8)+f(4);}
+function wellTermReg(T){T=T||{};/* reales por volumen (todo el pozo) + las del diseño sin cargas aún */
+  const act=(((typeof ACTIVE_META!=='undefined'&&ACTIVE_META&&ACTIVE_META.byTerminal&&ACTIVE_META.byTerminal.length)?ACTIVE_META.byTerminal:
+    ((typeof FACILITY!=='undefined'&&FACILITY)||[]).map(x=>({terminal:x[0],loads:x[1]})))||[]).slice().sort((a,b)=>(+b.loads||0)-(+a.loads||0));
+  const DL=termDesignList(T),dI={};DL.forEach(d=>{dI[d.pk]=d;});
+  const out=[],seenN={},seenP={};
+  act.forEach(b=>{const n=String(b.terminal||'—');if(seenN[n])return;seenN[n]=1;const pk=termKeyFor(n,T)||'';if(pk)seenP[pk]=1;
+    const d=pk?dI[pk]:null;out.push({name:n,pk,loads:+b.loads||0,design:false,mix:d?d.mix:0,ct:d?d.ct:null});});
+  DL.forEach(d=>{if(seenP[d.pk])return;seenP[d.pk]=1;out.push({name:d.name,pk:d.pk,loads:0,design:true,mix:d.mix,ct:d.ct});});
+  /* color = orden del diseño (no cambia con el volumen) y luego reales sin diseño por nombre */
+  const ord=DL.map(d=>'p:'+d.pk).concat(out.filter(x=>!x.pk).map(x=>'n:'+x.name).sort());
+  out.forEach((x,j)=>{const i=ord.indexOf(x.pk?'p:'+x.pk:'n:'+x.name);x.col=_tcol(i<0?j:i);});
+  return out;}
+function _trmFind(m,name,pk){const L=(m&&m.TRM)||[];return L.find(x=>x.name===name)||(pk?L.find(x=>x.pk===pk):null)||null;}
 function fmtMin(v){if(v==null||!isFinite(v)||v<=0)return '—';v=Math.round(v);
   const d=Math.floor(v/1440),h=Math.floor(v%1440/60),m=v%60,o=[];
   if(d)o.push(d+' d');if(h)o.push(h+' h');if(m||!o.length)o.push(m+' m');return o.join(' ');}
@@ -1342,6 +1374,7 @@ let DATES_ISO = DAYS.map((_,i)=>{const d=new Date('2026-05-22T12:00');d.setDate(
 let RATES_DAY = []; // paralelo a DATES_ISO — {tarifa:{loads,tons,revenue}} por day (GAS v8.3+)
 let REV_DAY = [], FSC_DAY = []; // revenue REAL por day y su componente FSC (GAS v9.0+) — paralelos a DATES_ISO
 let HOURLY = []; // series por hora por day (GAS v9.2+) — alimenta el modo hora cuando el range es 1 day
+let HOURLY_T = null; // .133: ciclo por hora POR TERMINAL (GAS v10.7 hourlyByTerm)
 let ACTIVE_META = {name:'FASKEN FEE BP 513MS-518WB 6 Well',customer:'FASKEN',status:'Live',equipment:'Double boxes',
   totals:{loads:2285,tons:49818,revenue:876000,cost:744600,margin:131400,rev_per_load:383.4,unique_drivers:64,max_stage:264,downtime_minutes:3413},
   targets:{total_stages:288,total_loads:2300,total_tons:50040,loads_day:80,drivers_day:26,turn_rate_target:3.27,turn_cig:1.90,turn_covia:4.64,weighted_ct:192,rev_per_load:368.98,total_revenue:848528,daily_running_rev:29519,cig_ct_total:379,covia_ct_total:155,duration_days:30,boxes_total:102},
@@ -1442,7 +1475,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-17.132';
+const VBUILD='2026-10-22.133';
 /* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
    abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
 const CT_TZ='America/Chicago';
@@ -1596,6 +1629,7 @@ function applyWell(w){
   REV_DAY=w.daily.map(d=>+d.revenue||0);
   FSC_DAY=w.daily.map(d=>+d.revenue_fsc||0);
   HOURLY=(w.hourly&&w.hourly.length)?w.hourly:[];
+  HOURLY_T=(w.hourlyByTerm&&w.hourlyByTerm.length)?w.hourlyByTerm:null; /* .133 */
   EFFD=w.daily.map(d=>{const e=+d.efficiency||0;return +(e<=3?e*100:e).toFixed(1);});
   /* v74: SIEMPRE resetear — un pozo con hoja vacía NUNCA hereda datos del pozo anterior ni del demo */
   CARRIERS=(w.byCarrier&&w.byCarrier.length)?w.byCarrier.map(x=>[x.carrier,+x.loads||0]):[];
@@ -1614,7 +1648,7 @@ function applyWell(w){
   ASSETS_DATA=w.assets||null;
   PART_D=w.daily.map(d=>d.participation==null?null:+d.participation);
   PART_SPAN_D=w.daily.map(d=>+d.pad_span||0);
-  ACTIVE_META={name:w.name,customer:w.customer,status:w.status,equipment:(w.targets&&w.targets.equipment)||'',totals:w.totals||{},targets:w.targets||{},byTerminal:w.byTerminal||[],byTerminalDaily:w.byTerminalDaily||[],stageWaitByTerminal:w.stageWaitByTerminal||[],inventory:w.inventory||null,wt:w.wt||null,diag:w.diag||null,snapshot:w.snapshot||null,api_ver:w.api_version||''};
+  ACTIVE_META={name:w.name,customer:w.customer,status:w.status,equipment:(w.targets&&w.targets.equipment)||'',totals:w.totals||{},targets:w.targets||{},byTerminal:w.byTerminal||[],byTerminalDaily:w.byTerminalDaily||[],stageWaitByTerminal:w.stageWaitByTerminal||[],designTerminals:w.designTerminals||[],inventory:w.inventory||null,wt:w.wt||null,diag:w.diag||null,snapshot:w.snapshot||null,api_ver:w.api_version||''};
   return true;
 }
 
@@ -2285,10 +2319,14 @@ function buildM(){
     CTE=L.map((_,i)=>+(bL*(0.8+r()*0.5)).toFixed(1));
     CDE=L.map((_,i)=>{const spike=(i===f||PH[i]!=='run')?1.6:(r()<0.12?1.9:1);return +(bO*(0.75+r()*0.6)*spike).toFixed(1);});
   }
-  let CYC_TERMS=[],cycHas=false,CN=null;
+  let CYC_TERMS=[],cycHas=false,CN=null,cycNone=false;const cycInR={};
+  const TRM=wellTermReg(T); /* .133: registro único de terminales (reales ∪ diseño de Targets) — N sin tope */
   if(typeof CYC_BYTERM!=='undefined'&&CYC_BYTERM&&CYC_BYTERM.length){
-    cycHas=true;CYC_TERMS=Array.from(new Set(CYC_BYTERM.map(x=>x.terminal||'—'))).sort();
+    cycHas=true;CYC_TERMS=TRM.map(x=>x.name);
+    CYC_BYTERM.forEach(x=>{const t=x.terminal||'—';if(CYC_TERMS.indexOf(t)<0)CYC_TERMS.push(t);
+      if(ISO.indexOf(String(x.date).slice(0,10))>=0)cycInR[t]=1;});
     const rows=CYC_BYTERM.filter(x=>ISO.indexOf(String(x.date).slice(0,10))>=0&&(!PZCYC||x.terminal===PZCYC));
+    cycNone=!!PZCYC&&!rows.length;
     const dm={};rows.forEach(x=>{const d=String(x.date).slice(0,10);const o=dm[d]=dm[d]||{te:0,tr:0,of:0,n:0};
       const w2=+x.loads||1;o.te+=(+x.load_min||0)*w2;o.tr+=(+x.transit_min||0)*w2;o.of+=(+x.offload_min||0)*w2;o.n+=w2;});
     CTR=ISO.map(d=>dm[d]&&dm[d].n?+(dm[d].tr/dm[d].n).toFixed(1):null);
@@ -2365,7 +2403,7 @@ function buildM(){
   if(_btd.length){SRC_RANGED=true;const _t={};_btd.forEach(x=>{const k=x.terminal||'—';(_t[k]=_t[k]||{terminal:k,loads:0,tons:0,revenue:0});_t[k].loads+=(+x.loads||0);_t[k].tons+=(+x.tons||0);_t[k].revenue+=(+x.revenue||0);});btAll=Object.values(_t).sort((a,b)=>b.loads-a.loads);}
   else btAll=(ACTIVE_META&&ACTIVE_META.byTerminal)||FACILITY.map(x=>({terminal:x[0],loads:x[1],revenue:0,tons:0}));
   const totLd=btAll.reduce((s,b)=>s+(+b.loads||0),0)||1;
-  const mixD={};['cig','covia'].forEach(k=>{if(T[k+'_mix']!=null)mixD[k]=+T[k+'_mix'];});
+  const mixD={};termPrefixes(T).concat(['cig','covia']).forEach(k=>{if(T[k+'_mix']!=null&&mixD[k]==null)mixD[k]=+T[k+'_mix'];}); /* .133: cualquier prefijo */
   /* .116: pesos NET/GROSS del GAS v10.1 (wt{days,hrs,dd}) filtrados al range */
   const _wt=(ACTIVE_META&&ACTIVE_META.wt)||null;
   const _inR=d=>ISO.indexOf(String(d).slice(0,10))>=0;
@@ -2381,7 +2419,11 @@ function buildM(){
   const SRC=btAll.map(b=>{const key=termKeyFor(b.terminal,T);
     const dPct=key&&(+T[key+'_mix_pct'])?+T[key+'_mix_pct']:(key&&mixD[key]!=null?mixD[key]:0);
     const an=b.tons&&b.loads?Math.round(b.tons*2000/b.loads):43500;
-    return {t:b.terminal,dPct,aPct:+((+b.loads||0)/totLd*100).toFixed(1),loads:+b.loads||0,an,lbs:Math.round((+b.tons||0)*2000),rev:Math.round(+b.revenue||0),fsc:Math.round(+b.fsc||0)};});
+    return {t:b.terminal,pk:key||'',dPct,aPct:+((+b.loads||0)/totLd*100).toFixed(1),loads:+b.loads||0,an,lbs:Math.round((+b.tons||0)*2000),rev:Math.round(+b.revenue||0),fsc:Math.round(+b.fsc||0)};});
+  /* .133: terminales del DISEÑO sin cargas en el range también se listan (actual 0%) — nunca se ocultan */
+  {const _sp={};SRC.forEach(s=>{if(s.pk)_sp[s.pk]=1;});
+   TRM.forEach(r=>{if(!r.pk||_sp[r.pk])return;const dPct=+T[r.pk+'_mix_pct']||(mixD[r.pk]!=null?mixD[r.pk]:0);if(!dPct)return;_sp[r.pk]=1;
+     SRC.push({t:r.name,pk:r.pk,dPct,aPct:0,loads:0,an:null,lbs:0,rev:0,fsc:0,z:true});});}
   /* participation en pad compartido */
   const pTgt=(T.participation_target!=null&&T.participation_target!=='')?+T.participation_target:null;
   let PD,PS;
@@ -2487,6 +2529,15 @@ function buildM(){
       }
     }
   }catch(e){console.warn('[hora]',e);HR=null;}
+  /* .133: Cycle Times por hora POR TERMINAL. Con terminal elegida usa hourlyByTerm (GAS v10.7);
+     sin esa serie cae a la vista diaria (correcta por terminal) en vez de mezclar todas las terminales */
+  let HRC=HR;
+  if(HR&&PZCYC){HRC=null;
+    const hb=((typeof HOURLY_T!=='undefined'&&HOURLY_T)||[]).find(x=>String(x.date).slice(0,10)===ISO[0]&&x.terminal===PZCYC);
+    if(hb&&hb.h&&hb.h.length){const z=()=>Array(24).fill(0);const L2=z(),D2=z(),TE=z(),TR=z(),DE=z();
+      hb.h.forEach((hh,j)=>{L2[hh]=+hb.l[j]||0;D2[hh]=+(hb.dr||[])[j]||0;TE[hh]=+(hb.te||[])[j]||0;TR[hh]=+(hb.tr||[])[j]||0;DE[hh]=+(hb.de||[])[j]||0;});
+      HRC={lab:HR.lab,L:L2,DRH:D2,TEh:TE,TRh:TR,DEh:DE,term:PZCYC};
+      HRC.TOT=HRC.lab.map((_,i)=>(TE[i]>0||TR[i]>0||DE[i]>0)?Math.round(TR[i]*2+TE[i]+DE[i]):null);}}
   /* .91: TR del range SOLO con días pumping (ST>0); un range/pozo sin etapas cae a todos */
   const _trI=[];for(let i=0;i<n;i++){if(Tt[i]>0&&(+ST[i]||0)>0)_trI.push(i);}
   const _trF=_trI.length?_trI:L.map((_,i)=>i).filter(i=>Tt[i]>0);
@@ -2495,7 +2546,7 @@ function buildM(){
   const bestI=runI.length?runI.reduce((b,i)=>L[i]>L[b]?i:b,runI[0]):0;
   const DTR=+T.turn_rate_target||3.27;
   return {ISO,D:Dl,L,TD:Tt,TR:TRr,TN,ST,PH,H,AN,CUMACT,CUMPL,CUMREV,CUMREVPL,
-    CTR,CTE,CDE,CTOT,AVG,DSN,dCT,dCTbuf,CYC_TERMS,cycHas,cycSel:PZCYC,CN,runIdx:runI,bestI,
+    CTR,CTE,CDE,CTOT,AVG,DSN,dCT,dCTbuf,CYC_TERMS,cycHas,cycSel:PZCYC,CN,cycNone,cycInR,TRM,HRC,runIdx:runI,bestI,
     DR,CD:CDl,VMAX:Math.max.apply(null,DR.map(d=>d[2]).concat([1])),
     DTE,dtExcl,openHid,DT_RESP,nptTot,nptLog,SRC,SRC_RANGED,WT,AST,PART,RD,
     STG:STGrows,RMIX:RMIXA,RUN_DL,RUN_DL_STG,SPD,TPD,DAY_TONS,DAY_DUR,tonsStageD,stagesDayD,durStageD,durFracD,durChgD,durTotD,validDays:_validDays,
@@ -2558,47 +2609,54 @@ function bExec(){
   const tonsTgtR=tonsTgtD*m.n, _shrPct=(_shr>0&&_shr<1)?Math.round(_shr*100):0;
   const shrBanner=_shrPct?('<div class="shr-note"><b>Shared pad — OMMA '+_shrPct+'%</b> · full pad: '+fmt(_padLoadsD)+' lds/day · '+fmt(Math.round(_padTonsD))+' tons/day — our targets = pad × '+_shrPct+'% on loads · tons · revenue (drivers: rounded ↑ · TR / times / rates: unchanged)</div>'):'';
   // Design de tiempos POR ARENERA (cig_ct_* / covia_ct_* de Targets) cuando hay filtro activo:
-  const _tkey=(_exTerm&&typeof termKeyFor==='function')?termKeyFor(_exTerm,m.T):'';
-  const DSNx=(_tkey&&+m.T[_tkey+'_ct_load'])?{term:+m.T[_tkey+'_ct_load'],trans:+m.T[_tkey+'_ct_transit'],dest:+m.T[_tkey+'_ct_unload']}:m.DSN;
+  const _reX=_exTerm?_trmFind(m,_exTerm):null;
+  const _tkey=_exTerm?((_reX&&_reX.pk)||(typeof termKeyFor==='function'?termKeyFor(_exTerm,m.T):'')||''):'';
+  /* .133: el transit de Targets es ida+vuelta → la barra compara one-way (igual que la pestaña Cycle Times) */
+  const DSNx=(_tkey&&+m.T[_tkey+'_ct_load'])?{term:+m.T[_tkey+'_ct_load'],trans:Math.max(10,Math.round((+m.T[_tkey+'_ct_transit']||0)/2)),dest:+m.T[_tkey+'_ct_unload']}:m.DSN;
   const dBufX=(_tkey&&+m.T[_tkey+'_ct_total'])?Math.round(+m.T[_tkey+'_ct_total']*(1+((+m.T.buffer_pct||0)/100))):m.dCTbuf;
   // ── Filtro de areneras (TIEMPOS): cycleDailyByTerm del range, promedio ponderado por loads ──
   const _cbt=((typeof CYC_BYTERM!=='undefined'&&CYC_BYTERM)||[]).filter(x=>_isoSet.has(String(x.date).slice(0,10)));
-  const _exTerms=Array.from(new Set(_cbt.map(x=>x.terminal))).sort();
+  /* .133: TODAS las terminales del pozo (reales ∪ diseño de Targets); las sin cargas en el range salen atenuadas */
+  const _hasT=new Set(_cbt.map(x=>x.terminal));
+  const _cbtHas=!!((typeof CYC_BYTERM!=='undefined'&&CYC_BYTERM&&CYC_BYTERM.length));
+  const _exTerms=_cbtHas?(m.TRM||[]).map(x=>x.name).concat(Array.from(_hasT).filter(t=>!_trmFind(m,t))):[];
+  const _exNone=!!_exTerm&&!_hasT.has(_exTerm);
   const _cycAvg=tk=>{const rr=tk?_cbt.filter(x=>x.terminal===tk):_cbt;let te=0,tr=0,of=0,n=0;
     rr.forEach(x=>{const w=+x.loads||1;te+=(+x.load_min||0)*w;tr+=(+x.transit_min||0)*w;of+=(+x.offload_min||0)*w;n+=w;});
     if(!n)return null;te/=n;tr/=n;of/=n;return{term:+te.toFixed(1),trans:+tr.toFixed(1),dest:+of.toFixed(1),tot:Math.round(te+tr*2+of)};};
-  const AVGx=_cycAvg(_exTerm)||_cycAvg('')||m.AVG;
+  const AVGx=_exTerm?(_cycAvg(_exTerm)||{term:null,trans:null,dest:null,tot:null}):(_cycAvg('')||m.AVG);
   // ═══ GRUPO LOGÍSTICA — entrega MEDS ═══
   const LOG=[
     kpiCard('Total Loads',fmt(m.totL),'cg',m.RD.loads?m.RD.tag+': '+fmt(m.RD.loads):'cumulative',pctS(m.totL,m.RD.loads),m.totL>=(m.RD.loads||0)?'dn':'dw'),
     kpiCard('Total Tons',delivT?fmt(Math.round(delivT))+' tons':'—',(tonsTgtR?(delivT>=tonsTgtR?'cg':delivT>=tonsTgtR*0.9?'co':'cr'):'cb'),tonsTgtR?('range target ('+m.n+'d): '+fmt(Math.round(tonsTgtR))+' tons'):'no tons target (Targets)',(tonsTgtR?pctS(delivT,tonsTgtR)+' · ':'')+(tLoad?tLoad.toFixed(1)+' tons/load':''),(tonsTgtR&&delivT>=tonsTgtR)?'dn':'dw'),
     kpiCard('TR Avg',m.trAll,'ca','Target: '+m.DTR,pctS(m.trAll,m.DTR),m.trAll>=m.DTR?'dn':'dw'),
     kpiCard('Drivers/Day',Math.round(m.runIdx.reduce((s,i)=>s+m.TD[i],0)/Math.max(m.runIdx.length,1)),'cb','Design: '+m.dDrv,'',''),
-    kpiCard('Unique Drivers',X.unique_drivers||m.DR.length,'cb','across '+m.CD.length+' carriers',m.SRC.length+' terminals','db'),
+    kpiCard('Unique Drivers',X.unique_drivers||m.DR.length,'cb','across '+m.CD.length+' carriers',m.SRC.filter(s=>s.loads>0).length+' terminals','db'),
     kpiCard('Peak Day',m.L[m.bestI]+' lds','cg',m.D[m.bestI]+' · TR '+m.TR[m.bestI],'Best day ★','dn'),
     (m.PART.has?kpiCard('Participation',(m.PART.gen!=null?m.PART.gen+'%':'—'),(m.PART.tgt!=null&&m.PART.gen!=null?(m.PART.gen>=m.PART.tgt?'cg':'cr'):'cb'),m.PART.tgt!=null?'Target: '+m.PART.tgt+'%':'shared pad · global Load#',(m.PART.tgt!=null&&m.PART.gen!=null)?((m.PART.gen-m.PART.tgt>=0?'+':'')+(m.PART.gen-m.PART.tgt).toFixed(1)+' pp vs target'):'',(m.PART.gen!=null&&m.PART.tgt!=null&&m.PART.gen>=m.PART.tgt)?'dn':'dw'):''),
     kpiCard('Asset Moves',m.AST.moves,'cb',fK(m.AST.rev)+' · outside loads',m.AST.moves?'equipment on request':'—','db')
   ].join('');
   // ═══ GRUPO TIEMPOS — filtrable por arenera (mismos datos que Cycle Times) ═══
-  const termBtns=_exTerms.length?('<button class="seg-btn '+(!_exTerm?'seg-on':'')+'" onclick="exTerm(\'\')">Total</button>'+_exTerms.map(tk=>'<button class="seg-btn '+(_exTerm===tk?'seg-on':'')+'" onclick="exTerm(\''+String(tk).replace(/'/g,"\\'")+'\')">'+tk+'</button>').join('')):'';
+  const termBtns=_exTerms.length?('<button class="seg-btn '+(!_exTerm?'seg-on':'')+'" onclick="exTerm(\'\')">Total</button>'+_exTerms.map(tk=>{const z=!_hasT.has(tk),r=_trmFind(m,tk);
+    return '<button class="seg-btn'+(_exTerm===tk?' seg-on':'')+(z?' seg-dim':'')+'"'+(z?' title="'+(r&&r.design?'In the design (Targets) — no loads yet':'No loads in this range')+' · shows its design times"':'')+' onclick="exTerm(\''+String(tk).replace(/'/g,"\\'")+'\')">'+(r?'<i class="tdot" style="background:'+r.col+'"></i>':'')+tk+'</button>';}).join('')):'';
   const TMEHDR='<div class="grp-h gh-ctrl"><span><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4.5l3 1.5M9.5 2h5"/></svg></span>Cycle Times<span class="grp-sub">· range average vs design'+(_exTerm?' · <b style="color:#3a7ca5">'+_exTerm+'</b>':'')+'</span><span style="flex:1"></span>'+(termBtns?'<span class="seg-ctrl">'+termBtns+'</span>':'')+'</div>';
-  const maxBar=Math.max(AVGx.dest,DSNx.dest,AVGx.trans,DSNx.trans,AVGx.term,DSNx.term)*1.15||1;
-  const ovCT=+(AVGx.tot-dBufX).toFixed(0);
+  const maxBar=Math.max(AVGx.dest||0,DSNx.dest,AVGx.trans||0,DSNx.trans,AVGx.term||0,DSNx.term)*1.15||1;
+  const ovCT=_exNone?0:+(AVGx.tot-dBufX).toFixed(0);
   const TME='<div class="card kpi" style="display:flex;flex-direction:column;justify-content:center">'+
     '<div class="card-t">Avg CT'+(_exTerm?' — '+_exTerm:'')+'</div>'+
-    '<div class="v '+(AVGx.tot<=dBufX?'cg':'cr')+'">'+fmtMin(AVGx.tot)+'</div>'+
+    '<div class="v '+(_exNone?'cb':(AVGx.tot<=dBufX?'cg':'cr'))+'">'+fmtMin(AVGx.tot)+'</div>'+
     '<div class="sb">Design: '+fmtMin(dBufX)+' buf'+(_exTerm?'':' · all terminals')+'</div>'+
-    '<div class="d '+(AVGx.tot<=dBufX?'dn':'dd')+'">'+pctS(AVGx.tot,dBufX)+'</div></div>'+
+    '<div class="d '+(_exNone?'db':(AVGx.tot<=dBufX?'dn':'dd'))+'">'+(_exNone?'no loads in this range':pctS(AVGx.tot,dBufX))+'</div></div>'+
     `<div class="card span3" style="padding:16px 20px;display:flex;flex-direction:column;justify-content:center">
       <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;margin-bottom:12px">
         <span style="font-size:10px;font-weight:800;color:#1e293b">Cycle components — actual (${m.n}d${_exTerm?' · '+_exTerm:''}) vs design</span>
-        <span style="font-size:8.5px;color:#94a3b8">gray bar = design · colored bar = actual · detail in Cycle Times</span></div>
+        <span style="font-size:8.5px;color:#94a3b8">${_exNone?'no loads from this terminal in the range — design shown':'gray bar = design · colored bar = actual · detail in Cycle Times'}</span></div>
       ${hbarRow('Terminal loading',AVGx.term,DSNx.term,'#7c3aed',maxBar)}
       ${hbarRow('Transit OW (one-way)',AVGx.trans,DSNx.trans,'#2563eb',maxBar)}
       ${hbarRow('Offload / staging',AVGx.dest,DSNx.dest,'#dc2626',maxBar)}
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background:${ovCT>0?'#fef2f2':'#f0fdf4'};border-radius:10px;padding:9px 13px;margin-top:2px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;background:${_exNone?'#f1f5f9':(ovCT>0?'#fef2f2':'#f0fdf4')};border-radius:10px;padding:9px 13px;margin-top:2px">
         <span style="font-size:9.5px;font-weight:800;color:#1e293b">TOTAL CYCLE <span style="font-weight:600;color:#94a3b8">(loading + transit×2 + offload)</span></span>
-        <span style="font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:14px;font-weight:800;color:${ovCT>0?'#dc2626':'#16a34a'}">${fmtMin(AVGx.tot)} <span style="font-size:9px;font-weight:600;color:#64748b">vs ${fmtMin(dBufX)} buf · ${ovCT>=0?'+':''}${fmtMin(Math.abs(ovCT))} (${pctS(AVGx.tot,dBufX)})</span></span></div></div>`;
+        <span style="font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:14px;font-weight:800;color:${_exNone?'#64748b':(ovCT>0?'#dc2626':'#16a34a')}">${fmtMin(AVGx.tot)} <span style="font-size:9px;font-weight:600;color:#64748b">${_exNone?'design '+fmtMin(dBufX)+' buf':'vs '+fmtMin(dBufX)+' buf · '+(ovCT>=0?'+':'')+fmtMin(Math.abs(ovCT))+' ('+pctS(AVGx.tot,dBufX)+')'}</span></span></div></div>`;
   // ═══ GRUPO FRACKEO — lado cliente ═══
   const FRC=[
     kpiCard('Stages',`${stg}${stgPlan?'/'+stgPlan:''}`,'cp',stgPlan?(stg>=stgPlan?'PAD COMPLETE ✓':Math.round(stg/stgPlan*100)+'% actual progress'):'current stage',(!m.RD.isFull&&m.RD.stg)?fmt(m.ST.reduce((a,b)=>a+b,0))+' in range vs '+fmt(m.RD.stg)+' plan':'',(!m.RD.isFull&&m.RD.stg&&m.ST.reduce((a,b)=>a+b,0)>=m.RD.stg)?'dn':'dw'),
@@ -2648,7 +2706,7 @@ function bExec(){
   hl.push(`<li><strong>Peak day ${m.L[m.bestI]} loads</strong> (${m.D[m.bestI]}, TR ${m.TR[m.bestI]}) — proven operating ceiling.</li>`);
   if(m.nptLog<=0)hl.push('<li><strong>Zero logistics NPT</strong> — every event attributed to Frac/external.</li>');
   if(m.trAll<m.DTR)gp.push(`<li><strong>TR ${m.trAll} vs ${m.DTR} target (${pctS(m.trAll,m.DTR)})</strong> — offload ${m.AVG.dest}m vs ${m.DSN.dest}m design is the cycle driver.</li>`);
-  if(m.AVG.tot>m.dCTbuf)gp.push(`<li><strong>Ciclo ${m.AVG.tot}m vs ${m.dCTbuf}m buffered (${pctS(m.AVG.tot,m.dCTbuf)})</strong> — absorbed by scaling drivers, not schedule slip.</li>`);
+  if(m.AVG.tot>m.dCTbuf)gp.push(`<li><strong>Cycle ${m.AVG.tot}m vs ${m.dCTbuf}m buffered (${pctS(m.AVG.tot,m.dCTbuf)})</strong> — absorbed by scaling drivers, not schedule slip.</li>`);
   if(m.nptTot>0)gp.push(`<li><strong>${m.nptTot}h NPT (${m.DTE.length} events)</strong> — concentrated on ${m.DTE[0]?m.DTE[0].resp:'—'}; worst event ${m.DTE[0]?m.DTE[0].h+'h ('+m.DTE[0].date+')':''}.</li>`);
   $('pz-cl-exec').innerHTML=`
     <div class="st"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V4m0 1h13l-2.5 4L17 13H4"/></svg> ${m.isLive?'Live':'Closure'} — Design ${T.total_stages?'('+T.total_stages+' stg · '+fmt(T.total_loads||0)+' ld)':''} vs Actual (${m.D[0]}–${m.D[m.n-1]})</div>
@@ -2934,7 +2992,7 @@ function bFin(){
     </div>
     <div class="ins ins-g"><h3><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#58a05f"/><path d="M8 12.5l2.6 2.6L16 9.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Revenue — ${fK(m.totR)}${T.total_revenue?' vs '+fK(T.total_revenue)+' design':''}</h3><ul>
       <li><strong>Revenue/Load $${(m.totL?m.totR/m.totL:0).toFixed(2)}</strong>${T.rev_per_load?' vs $'+T.rev_per_load+' design ('+pctS(m.totL?m.totR/m.totL:0,T.rev_per_load)+')':''}.</li>
-      <li>Mix por terminal: ${m.SRC.map(s=>`${s.t} ${s.aPct}%${s.rev?' → '+fK(s.rev):''}`).join(' · ')}.</li>
+      <li>Terminal mix: ${m.SRC.map(s=>`${s.t} ${s.aPct}%${s.rev?' → '+fK(s.rev):''}`).join(' · ')}.</li>
       <li>Current pace ${fK(revDay)}/day vs ${fK(dRevDayAllF)} plan (${pctS(revDay,dRevDayAllF)}).</li>
       ${m.totFsc>0?`<li><strong>FSC ${fK(m.totFsc)}</strong> dentro del revenue (rate ${fK(m.totR-m.totFsc)} + FSC)${m.fscRD?' vs '+fK(m.fscRD)+' range design FSC ('+pctS(m.totFsc,m.fscRD)+')':''}.</li>`:(m.fscD>0?'<li>No FSC billed in range yet (target $'+m.fscD.toFixed(2)+'/ton).</li>':'')}
       ${p.dd&&p.tgt?`<li><strong>Income/Truck $${fmt(Math.round(p.v))}/day vs $${fmt(p.tgt)} target (${pctS(p.v,p.tgt)})</strong> — rate $${fmt(Math.round(p.base))} + FSC $${fmt(Math.round(p.f))}.</li>`:''}
@@ -3041,6 +3099,7 @@ function bFin(){
 /* ═══════ SOURCING ═══════ */
 function bSrc(){
   const m=M;const cols=[PZ.B,PZ.P,PZ.G,PZ.A,PZ.Pu];
+  const _sc=(s,i)=>{const r=_trmFind(m,s.t,s.pk);return r?r.col:cols[i%cols.length];}; /* .133: mismo color en todas las vistas */
   if(m.WT&&WT_SCOPE!=='ALL'&&m.WT.terms.indexOf(WT_SCOPE)<0)WT_SCOPE='ALL'; /* .116 */
   const _TG={};((m.WT&&m.WT.days)||[]).forEach(r=>{const g=_TG[r[1]]=_TG[r[1]]||{l:0,gs:0,ov:0};
     if(+r[4]>0){g.gs+=r[4]*r[2];g.l+=r[2];}g.ov+=(+r[5]||0);});
@@ -3111,21 +3170,21 @@ function bSrc(){
       <div class="ch"><canvas id="chWt"></canvas></div></div>`
      :(m.WT&&m.WT.avail?'':`<div class="note" style="margin-bottom:12px">Gross/Net weight trend lands with <b>Code v10.1</b> — paste the new GAS and hit Refresh.</div>`)}
     <div class="card"><div class="tbl-x"><table class="wt-tbl"><thead><tr><th>Terminal</th><th>Mix Design</th><th>Actual Mix</th><th>Loads</th><th>Avg Net (lbs)</th><th>Avg Gross</th><th>Over 80k</th><th>Lbs Delivered</th><th>Revenue Est.</th></tr></thead><tbody>
-      ${m.SRC.map(s=>{const g2=_tg(s.t);const gt=_tgTip(s.t);return `<tr><td>${s.t}</td><td>${s.dPct}%</td><td class="mono">${s.aPct}%</td><td class="mono">${fmt(s.loads)}</td><td class="mono">${fmt(s.an)}</td><td class="mono" style="color:${g2?gwBand(g2.avg).col:'#8a97a6'}">${g2?(gt?`<span class="wt-hv" data-tip="${gt}">${fmt(g2.avg)}</span>`:fmt(g2.avg)):'—'}</td><td class="mono">${g2&&g2.ov?(`<span class="wt-hv" data-tip="${_ovTip(s.t)}"><strong style="color:#b23b3b">${fmt(g2.ov)}</strong></span>`):'0'}</td><td class="mono">${fmt(s.lbs)}</td><td class="mono">${s.rev?`<span class="wt-hv" data-tip="${_revTipT(s)}"><strong>$${fmt(s.rev)}</strong></span>`:'—'}</td></tr>`;}).join('')}
+      ${m.SRC.map((s,i)=>{const g2=_tg(s.t);const gt=_tgTip(s.t);return `<tr${s.z?' style="opacity:.62" title="In the design, no loads in this range"':''}><td><i class="tdot" style="background:${_sc(s,i)}"></i>${s.t}</td><td>${s.dPct}%</td><td class="mono">${s.aPct}%</td><td class="mono">${fmt(s.loads)}</td><td class="mono">${s.an!=null?fmt(s.an):'—'}</td><td class="mono" style="color:${g2?gwBand(g2.avg).col:'#8a97a6'}">${g2?(gt?`<span class="wt-hv" data-tip="${gt}">${fmt(g2.avg)}</span>`:fmt(g2.avg)):'—'}</td><td class="mono">${g2&&g2.ov?(`<span class="wt-hv" data-tip="${_ovTip(s.t)}"><strong style="color:#b23b3b">${fmt(g2.ov)}</strong></span>`):'0'}</td><td class="mono">${fmt(s.lbs)}</td><td class="mono">${s.rev?`<span class="wt-hv" data-tip="${_revTipT(s)}"><strong>$${fmt(s.rev)}</strong></span>`:'—'}</td></tr>`;}).join('')}
       <tr style="background:#f0fdf4"><td><strong>TOTAL</strong></td><td>100%</td><td><strong>100%</strong></td><td class="mono"><strong>${fmt(m.SRC.reduce((s,x)=>s+x.loads,0))}</strong></td><td class="mono">${fmt(anAvg)}</td><td class="mono" style="color:${m.WT&&m.WT.gAvg?gwBand(m.WT.gAvg).col:'#8a97a6'}">${m.WT&&m.WT.gAvg?(_gwTipTop()?`<span class="wt-hv" data-tip="${_gwTipTop()}"><strong>${fmt(m.WT.gAvg)}</strong></span>`:`<strong>${fmt(m.WT.gAvg)}</strong>`):'<strong>—</strong>'}</td><td class="mono">${m.WT&&m.WT.ov?`<span class="wt-hv" data-tip="${_ovTipAll()}"><strong>${fmt(m.WT.ov)}</strong></span>`:'<strong>0</strong>'}</td><td class="mono">${fmt(m.SRC.reduce((s,x)=>s+x.lbs,0))}</td><td class="mono">${_revTipTop()?`<span class="wt-hv" data-tip="${_revTipTop()}"><strong>$${fmt(m.SRC.reduce((s,x)=>s+x.rev,0))}</strong></span>`:`<strong>$${fmt(m.SRC.reduce((s,x)=>s+x.rev,0))}</strong>`}</td></tr>
     </tbody></table></div></div>`;
   _fcTipBind($('pz-cl-src')); /* .123: tooltips ricos de la tabla (delegación, sobrevive re-renders) */
   const totDL=m.T.total_loads||m.totL;
   mkChart('chSrcComp',{type:'bar',data:{labels:m.SRC.map(s=>s.t),datasets:[
     {label:'Design %',data:m.SRC.map(s=>s.dPct),backgroundColor:'rgba(203,213,225,.6)',borderRadius:6,borderSkipped:false},
-    {label:'Actual %',data:m.SRC.map(s=>s.aPct),backgroundColor:m.SRC.map((_,i)=>cols[i%cols.length]),borderRadius:6,borderSkipped:false}]},
+    {label:'Actual %',data:m.SRC.map(s=>s.aPct),backgroundColor:m.SRC.map((s,i)=>_sc(s,i)),borderRadius:6,borderSkipped:false}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},
       tooltip:{callbacks:{title:c=>`${c[0].label} — Sourcing Mix`,label:c=>`${c.dataset.label}: ${c.raw}%`,
         afterBody:it=>it.length>=2?[sep,`Delta: ${(it[1].raw-it[0].raw)>=0?'+':''}${(it[1].raw-it[0].raw).toFixed(1)} pp`]:[]}}},
       scales:{x:{...gO},y:{...gO,max:110,title:{display:true,text:'% Mix',font:{size:8}}}}}});
   mkChart('chSrcLoads',{type:'bar',data:{labels:m.SRC.map(s=>s.t),datasets:[
     {label:'Design Loads',data:m.SRC.map(s=>Math.round(totDL*s.dPct/100)),backgroundColor:'rgba(203,213,225,.6)',borderRadius:6,borderSkipped:false},
-    {label:'Actual Loads',data:m.SRC.map(s=>s.loads),backgroundColor:m.SRC.map((_,i)=>cols[i%cols.length]),borderRadius:6,borderSkipped:false}]},
+    {label:'Actual Loads',data:m.SRC.map(s=>s.loads),backgroundColor:m.SRC.map((s,i)=>_sc(s,i)),borderRadius:6,borderSkipped:false}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},
       tooltip:{callbacks:{title:c=>`${c[0].label}`,label:c=>`${c.dataset.label}: ${fmt(c.raw)} loads`,
         afterBody:it=>{if(it.length<2)return[];const d=it[1].raw-it[0].raw;const s2=m.SRC[it[0].dataIndex];return[sep,`Delta: ${d>=0?'+':''}${fmt(d)} loads`,s2.rev?`Revenue: ${fK(s2.rev)}`:''].filter(Boolean);}}}},
@@ -3225,11 +3284,11 @@ window.cycView=function(v){_cycView=v;setSegAct(['cvAll','cvRun'],v==='all'?'cvA
 window.cycComp=function(c){_cycComp=c;setSegAct(['ccTot','ccTrn','ccTrm','ccDst'],{total:'ccTot',transit:'ccTrn',terminal:'ccTrm',offload:'ccDst'}[c]);buildCycLine();};
 function setSegAct(arr,active){arr.forEach(id=>{const el=$(id);if(el)el.classList.toggle('seg-on',id===active);});}
 function hbarRow(lbl,act,dsn,color,maxV){
-  const wD=Math.min(100,dsn/maxV*100).toFixed(1),wA=Math.min(100,act/maxV*100).toFixed(1);
+  const na=(act==null||!isFinite(act));const wD=Math.min(100,dsn/maxV*100).toFixed(1),wA=na?'0':Math.min(100,act/maxV*100).toFixed(1);
   return `<div style="margin-bottom:12px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
       <span style="font-size:10px;font-weight:600;color:#475569">${lbl}</span>
-      <div style="display:flex;align-items:center;gap:8px"><span style="font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:11px;font-weight:700;color:${color}">${act}m</span><span style="font-size:9px;color:#94a3b8">/ ${dsn}m design</span></div></div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:11px;font-weight:700;color:${color}">${na?'—':act+'m'}</span><span style="font-size:9px;color:#94a3b8">/ ${dsn}m design</span></div></div>
     <div class="hbar-wrap"><div class="hbar-d" style="width:${wD}%"></div><div class="hbar-a" style="width:${wA}%;background:${color}"></div></div></div>`;}
 function bCycle(){
   const m=M;
@@ -3237,13 +3296,27 @@ function bCycle(){
   const shD=Math.round(m.AVG.dest/Math.max(m.AVG.tot,1)*100),shT=Math.round(m.AVG.term/Math.max(m.AVG.tot,1)*100),shTr=Math.round(m.AVG.trans*2/Math.max(m.AVG.tot,1)*100);
   const maxBar=Math.max(m.AVG.dest,m.DSN.dest,m.AVG.trans,m.DSN.trans,m.AVG.term,m.DSN.term)*1.15;
   const mainDrv=[['Offload',ovD],['Terminal',ovT],['Transit',ovTr]].sort((a,b)=>b[1]-a[1])[0][0];
-  $('pz-cl-cycle').innerHTML=`
+  const HDR=`
     <div class="st" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
       <span><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg> Cycle Times — Actual vs Design · ${m.n} Days · Design ${fmtMin(m.dCT)} Total (buf ${fmtMin(m.dCTbuf)})${m.cycSel?` · <b style="color:#3a7ca5">${m.cycSel}</b>`:''}</span>
       ${(function(){const q=(ACTIVE_META&&ACTIVE_META.stageWaitByTerminal)||[];const qs=m.cycSel?q.filter(x=>termKeyFor(x.terminal,m.T)===termKeyFor(m.cycSel,m.T)):q;const tot=qs.reduce((a,x)=>a+(x.avg_stage_min||0)*(x.events||1),0),ev=qs.reduce((a,x)=>a+(x.events||0),0);const avg=ev?tot/ev:0;
         return avg>0?`<span class="ssub" style="color:#059669" title="This time is ALREADY included in the offload AVG above">✓ offload includes ~${fmtMin(avg)} of pad staging (${ev} loads) — already counted in the AVG</span>`:'';})()}
       <span style="display:flex;align-items:center;gap:6px"><span class="ctrl-label">Terminal</span>
-        <span class="seg-ctrl">${m.cycHas?('<button class="seg-btn '+(m.cycSel?'':'seg-on')+'" onclick="pzCycT(\'\')">All</button>'+m.CYC_TERMS.map(t=>`<button class="seg-btn ${m.cycSel===t?'seg-on':''}" onclick="pzCycT('${String(t).replace(/'/g,"\\'")}')">${t}</button>`).join('')):'<span class="sb">por terminal → pega Code v6.8</span>'}</span></span></div>
+        <span class="seg-ctrl">${m.cycHas?('<button class="seg-btn '+(m.cycSel?'':'seg-on')+'" onclick="pzCycT(\'\')">All</button>'+m.CYC_TERMS.map(t=>{const r=_trmFind(m,t),z=!(m.cycInR&&m.cycInR[t]);
+          return `<button class="seg-btn${m.cycSel===t?' seg-on':''}${z?' seg-dim':''}"${z?` title="${r&&r.design?'In the design (Targets) — no loads yet':'No loads in this range'} · shows its design times"`:''} onclick="pzCycT('${String(t).replace(/'/g,"\\'")}')">${r?`<i class="tdot" style="background:${r.col}"></i>`:''}${t}</button>`;}).join('')):'<span class="sb">per terminal → paste Code v6.8</span>'}</span></span></div>`;
+  if(m.cycNone){ /* .133: terminal sin cargas en el range (o solo de diseño) → su diseño, sin inventar actuales */
+    const r=_trmFind(m,m.cycSel),mx=Math.max(m.DSN.trans,m.DSN.term,m.DSN.dest)*1.15||1;
+    $('pz-cl-cycle').innerHTML=HDR+`<div class="card mb" style="padding:20px">
+      <div style="font-size:11px;font-weight:800;color:#1e293b;margin-bottom:4px">${r?`<i class="tdot" style="background:${r.col}"></i>`:''}${m.cycSel} — no loads in this range</div>
+      <div class="sb" style="margin-bottom:14px">${r&&r.design?'Declared in Targets, no loads delivered from it yet.':'No loads from this terminal in the selected dates — widen the range or pick All.'} Design times from Targets:</div>
+      ${hbarRow('Transit OW (one-way)',null,m.DSN.trans,'#2563eb',mx)}
+      ${hbarRow('Terminal Loading',null,m.DSN.term,'#7c3aed',mx)}
+      ${hbarRow('Offload / Dest',null,m.DSN.dest,'#dc2626',mx)}
+      <div style="background:#f1f5f9;border-radius:12px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-top:14px">
+        <span style="font-size:11px;font-weight:700;color:#1e293b">Design total cycle</span>
+        <span style="font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:20px;font-weight:700;color:#3a7ca5">${fmtMin(m.dCT)} <span style="font-size:10px;font-weight:600;color:#64748b">· ${fmtMin(m.dCTbuf)} with buffer</span></span></div></div>`;
+    return;}
+  $('pz-cl-cycle').innerHTML=HDR+`
     <div class="grid g4 mb">
       <div class="card kpi" style="border-top:3px solid ${ovTot>0?'#d47272':'#6ab89a'}"><div class="card-t">Avg Total Cycle (Run)</div><div class="v ${ovTot>0?'cr':'cg'}" style="font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:22px">${fmtMin(m.AVG.tot)}</div><div class="sb" style="color:${ovTot>0?'#dc2626':'#16a34a'}">Design ${fmtMin(m.dCTbuf)} · ${ovTot>=0?'+':''}${fmtMin(Math.abs(ovTot))} (${pctS(m.AVG.tot,m.dCTbuf)})</div></div>
       <div class="card kpi" style="border-top:3px solid #d47272"><div class="card-t">Offload Overrun</div><div class="v ${ovD>0?'cr':'cg'}" style="font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:22px">${fmtMin(m.AVG.dest)}</div><div class="sb" style="color:${ovD>0?'#dc2626':'#16a34a'}">Design ${fmtMin(m.DSN.dest)} · ${ovD>=0?'+':''}${fmtMin(Math.abs(ovD))} (${pctS(m.AVG.dest,m.DSN.dest)})${mainDrv==='Offload'?' · Main driver':''}</div></div>
@@ -3272,8 +3345,8 @@ function bCycle(){
     </div>
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-        <div class="card-t" style="margin:0">${m.HR?'Hourly Cycle Breakdown — '+m.D[0]+' · by Delivered hour':'Daily Cycle Breakdown — Stacked Components'}</div>
-        ${m.HR?'':`<div class="seg-ctrl"><button id="cvAll" class="seg-btn seg-on" onclick="cycView('all')">All Days</button><button id="cvRun" class="seg-btn" onclick="cycView('run')">Running Only</button></div>`}</div>
+        <div class="card-t" style="margin:0">${m.HRC?'Hourly Cycle Breakdown — '+m.D[0]+(m.HRC.term?' · '+m.HRC.term:'')+' · by Delivered hour':'Daily Cycle Breakdown — Stacked Components'}</div>
+        ${m.HRC?'':`<div class="seg-ctrl"><button id="cvAll" class="seg-btn seg-on" onclick="cycView('all')">All Days</button><button id="cvRun" class="seg-btn" onclick="cycView('run')">Running Only</button></div>`}</div>
       <div class="ch ch-l"><canvas id="cCycStack"></canvas></div></div>
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
@@ -3282,12 +3355,13 @@ function bCycle(){
       <div class="ch"><canvas id="cCycLine"></canvas></div></div>
     <div class="grid g2 mb">
       <div class="card"><div class="card-t">Cycle vs Daily Loads — correlation</div><div class="ch ch-s"><canvas id="cCycScat"></canvas></div></div>
-      <div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 16px"><div class="card-t" style="margin:0">${m.HR?'Hourly Cycle Detail — '+m.D[0]:'Daily Cycle Detail'}</div></div>
+      <div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 16px"><div class="card-t" style="margin:0">${m.HRC?'Hourly Cycle Detail — '+m.D[0]:'Daily Cycle Detail'}</div></div>
         <div style="overflow:auto;max-height:300px"><table style="width:100%;font-size:10.5px">
           <thead><tr>${['Date','Transit','Terminal','Offload','Total','vs Design'].map(h=>`<th style="position:sticky;top:0;background:#f8fafc">${h}</th>`).join('')}</tr></thead>
-          <tbody>${(m.HR?m.HR.lab.map((d,i)=>({d,i})).filter(x=>m.HR.L[x.i]>0).map(x=>{const i=x.i,tot=m.HR.TOT[i];const gap=tot!=null?tot-m.dCTbuf:null;const cl=gap==null?'#94a3b8':gap<=0?'#16a34a':gap<=m.dCTbuf*0.3?'#d97706':'#dc2626';
-            return `<tr><td style="font-weight:600">${x.d} · ${m.HR.L[i]} lds</td><td class="mono">${m.HR.TRh[i]||'—'}m</td><td class="mono">${m.HR.TEh[i]||'—'}m</td><td class="mono" style="color:${m.HR.DEh[i]>m.DSN.dest*1.5?'#dc2626':'#475569'}">${m.HR.DEh[i]||'—'}m</td><td class="mono" style="font-weight:700">${tot!=null?tot+'m':'—'}</td><td class="mono" style="color:${cl};font-weight:700">${gap!=null?(gap>=0?'+':'')+gap+'m':'—'}</td></tr>`;}):m.D.map((d,i)=>{const gap=m.CTOT[i]-m.dCTbuf;const cl=gap<=0?'#16a34a':gap<=m.dCTbuf*0.3?'#d97706':'#dc2626';
-            return `<tr style="${m.PH[i]!=='run'?'opacity:.55':''}"><td style="font-weight:600">${d}</td><td class="mono">${m.CTR[i]}m</td><td class="mono">${m.CTE[i]}m</td><td class="mono" style="color:${m.CDE[i]>m.DSN.dest*1.5?'#dc2626':'#475569'}">${m.CDE[i]}m</td><td class="mono" style="font-weight:700">${m.CTOT[i]}m</td><td class="mono" style="color:${cl};font-weight:700">${gap>=0?'+':''}${gap}m</td></tr>`;})).join('')}</tbody></table></div></div>
+          <tbody>${(m.HRC?m.HRC.lab.map((d,i)=>({d,i})).filter(x=>m.HRC.L[x.i]>0).map(x=>{const h=m.HRC,i=x.i,tot=h.TOT[i];const gap=tot!=null?tot-m.dCTbuf:null;const cl=gap==null?'#94a3b8':gap<=0?'#16a34a':gap<=m.dCTbuf*0.3?'#d97706':'#dc2626';
+            return `<tr><td style="font-weight:600">${x.d} · ${h.L[i]} lds</td><td class="mono">${h.TRh[i]?h.TRh[i]+'m':'—'}</td><td class="mono">${h.TEh[i]?h.TEh[i]+'m':'—'}</td><td class="mono" style="color:${h.DEh[i]>m.DSN.dest*1.5?'#dc2626':'#475569'}">${h.DEh[i]?h.DEh[i]+'m':'—'}</td><td class="mono" style="font-weight:700">${tot!=null?tot+'m':'—'}</td><td class="mono" style="color:${cl};font-weight:700">${gap!=null?(gap>=0?'+':'')+gap+'m':'—'}</td></tr>`;}):m.D.map((d,i)=>{if(m.CTOT[i]==null&&m.CTR[i]==null&&m.CTE[i]==null&&m.CDE[i]==null)return ''; /* .133: día sin cargas de esa terminal → fuera (antes "nullm") */
+            const _v=v=>v==null?'—':v+'m';const gap=m.CTOT[i]!=null?m.CTOT[i]-m.dCTbuf:null;const cl=gap==null?'#94a3b8':gap<=0?'#16a34a':gap<=m.dCTbuf*0.3?'#d97706':'#dc2626';
+            return `<tr style="${m.PH[i]!=='run'?'opacity:.55':''}"><td style="font-weight:600">${d}</td><td class="mono">${_v(m.CTR[i])}</td><td class="mono">${_v(m.CTE[i])}</td><td class="mono" style="color:${m.CDE[i]>m.DSN.dest*1.5?'#dc2626':'#475569'}">${_v(m.CDE[i])}</td><td class="mono" style="font-weight:700">${_v(m.CTOT[i])}</td><td class="mono" style="color:${cl};font-weight:700">${gap==null?'—':(gap>=0?'+':'')+gap+'m'}</td></tr>`;})).join('')}</tbody></table></div></div>
     </div>`;
   mkChart('cCycDough',{type:'doughnut',data:{labels:[`Transit ${m.AVG.trans}m`,`Terminal ${m.AVG.term}m`,`Offload ${m.AVG.dest}m`],
     datasets:[{data:[m.AVG.trans,m.AVG.term,m.AVG.dest],backgroundColor:['rgba(58,124,165,.85)','rgba(155,142,196,.85)','rgba(212,114,114,.85)'],borderWidth:4,borderColor:'#fff',hoverOffset:14}]},
@@ -3296,7 +3370,7 @@ function bCycle(){
   buildCycStack();buildCycLine();buildCycScat();
 }
 function buildCycStack(){
-  if(M.HR)return buildCycStackH(); /* v72: 1 day → por hora */
+  if(M.HRC)return buildCycStackH(); /* v72: 1 day → por hora · .133 por terminal */
   const m=M,idx=getCycIdx(),labels=idx.map(i=>m.D[i]);
   const THR={trans:m.DSN.trans*1.5,term:m.DSN.term*1.5,dest:m.DSN.dest*1.5};
   mkChart('cCycStack',{type:'bar',data:{labels,datasets:[
@@ -3313,7 +3387,7 @@ function buildCycStack(){
       scales:{x:{stacked:true,...gO,ticks:{font:{size:9},maxRotation:0,maxTicksLimit:14}},y:{stacked:true,...gO,title:{display:true,text:'Minutes',font:{size:8}},ticks:{callback:v=>v+'m'}}}}});
 }
 function buildCycLine(){
-  if(M.HR)return buildCycLineH(); /* v72: 1 day → por hora */
+  if(M.HRC)return buildCycLineH(); /* v72: 1 day → por hora · .133 por terminal */
   const m=M,idx=getCycIdx(),labels=idx.map(i=>m.D[i]);
   const cm={total:{data:m.CTOT,dsn:m.dCTbuf,col:'rgba(212,114,114,.8)',fillA:'rgba(212,114,114,.18)',fillB:'rgba(212,114,114,.02)',lbl:'Total Cycle'},
     transit:{data:m.CTR,dsn:m.DSN.trans,col:'rgba(58,124,165,.8)',fillA:'rgba(58,124,165,.18)',fillB:'rgba(58,124,165,.02)',lbl:'Transit OW'},
@@ -3334,7 +3408,7 @@ function buildCycLine(){
       scales:{x:{...gO,ticks:{font:{size:9},maxRotation:0,maxTicksLimit:14}},y:{...gO,min:0,ticks:{callback:v=>v+'m'}}}}});
 }
 function buildCycScat(){
-  if(M.HR)return buildCycScatH(); /* v72: 1 day → por hora */
+  if(M.HRC)return buildCycScatH(); /* v72: 1 day → por hora · .133 por terminal */
   const m=M,idx=getCycIdx();
   const pts=idx.map(i=>({x:m.L[i],y:m.CTOT[i],day:m.D[i],tr:m.TR[i],ph:m.PH[i]}));
   const col=pts.map(p=>p.ph==='run'?'rgba(58,124,165,.7)':'rgba(148,163,184,.5)');
@@ -3347,20 +3421,20 @@ function buildCycScat(){
 }
 
 /* ── v72 · charts de ciclo POR HORA (range de 1 day + GAS v9.2 hourly) ── */
-function buildCycStackH(){const m=M,h=m.HR;
+function buildCycStackH(){const m=M,h=m.HRC;
   mkChart('cCycStack',{type:'bar',data:{labels:h.lab,datasets:[
     {label:'Transit OW',data:h.TRh.map(v=>v>0?v:null),backgroundColor:'rgba(58,124,165,.75)',stack:'s',borderSkipped:false},
     {label:'Terminal',data:h.TEh.map(v=>v>0?v:null),backgroundColor:'rgba(155,142,196,.75)',stack:'s',borderSkipped:false},
     {label:'Offload',data:h.DEh.map(v=>v>0?v:null),backgroundColor:'rgba(212,114,114,.75)',stack:'s',borderSkipped:true,borderRadius:4}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
-      tooltip:{callbacks:{title:c=>`${h.lab[c[0].dataIndex]} — Cycle por hora`,label:c=>tipL(c,x=>x+'m'),
+      tooltip:{callbacks:{title:c=>`${h.lab[c[0].dataIndex]} — Cycle by hour${h.term?' · '+h.term:''}`,label:c=>tipL(c,x=>x+'m'),
         afterBody:it=>{const i=it[0].dataIndex;if(!h.L[i])return['No deliveries this hour'];const tot=h.TOT[i];
           const out=[sep,`${h.L[i]} load${h.L[i]===1?'':'s'} · ${h.DRH[i]} driver${h.DRH[i]===1?'':'s'}`];
           if(tot!=null){const gap=tot-m.dCTbuf;out.push(`Avg cycle: ${tot}m`,`vs Design ${m.dCTbuf}: ${gap>=0?'+':''}${gap}m (${(gap/m.dCTbuf*100).toFixed(0)}%)`);}
           return out;}}}},
       scales:{x:{stacked:true,...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{stacked:true,...gO,title:{display:true,text:'Minutes',font:{size:8}},ticks:{callback:v=>v+'m'}}}}});
 }
-function buildCycLineH(){const m=M,h=m.HR;
+function buildCycLineH(){const m=M,h=m.HRC;
   const cm={total:{data:h.TOT,dsn:m.dCTbuf,col:'rgba(212,114,114,.8)',fillA:'rgba(212,114,114,.18)',fillB:'rgba(212,114,114,.02)',lbl:'Total Cycle'},
     transit:{data:h.TRh.map(v=>v>0?v:null),dsn:m.DSN.trans,col:'rgba(58,124,165,.8)',fillA:'rgba(58,124,165,.18)',fillB:'rgba(58,124,165,.02)',lbl:'Transit OW'},
     terminal:{data:h.TEh.map(v=>v>0?v:null),dsn:m.DSN.term,col:'rgba(155,142,196,.8)',fillA:'rgba(155,142,196,.18)',fillB:'rgba(155,142,196,.02)',lbl:'Terminal'},
@@ -3376,7 +3450,7 @@ function buildCycLineH(){const m=M,h=m.HR;
           const gap=v-cm.dsn;return[sep,`vs Design: ${gap>=0?'+':''}${gap.toFixed(1)}m (${(gap/cm.dsn*100).toFixed(0)}%)`,`Loads this hour: ${h.L[i]}`];}}}},
       scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{...gO,min:0,ticks:{callback:v=>v+'m'}}}}});
 }
-function buildCycScatH(){const m=M,h=m.HR;
+function buildCycScatH(){const m=M,h=m.HRC;
   const pts=h.lab.map((lb,i)=>({x:h.L[i],y:h.TOT[i],hh:lb,dr:h.DRH[i]})).filter(p=>p.x>0&&p.y!=null);
   mkChart('cCycScat',{type:'scatter',data:{datasets:[{label:'Cycle vs Loads (hour)',data:pts.map(p=>({x:p.x,y:p.y})),
     backgroundColor:pts.map(p=>p.y<=m.dCTbuf?'rgba(106,184,154,.75)':'rgba(212,114,114,.7)'),pointRadius:7,pointHoverRadius:11,borderColor:'#fff',borderWidth:1.5}]},
@@ -3782,11 +3856,18 @@ function buildScatChart(){
 }
 
 /* ═══════ PRE-WELL (desde Targets) ═══════ */
+function _preMix(m){/* .133: mix de DISEÑO = todas las terminales de Targets (no solo las que ya tienen cargas) */
+  const L=(m.TRM||[]).filter(r=>r.mix>0).map(r=>({t:r.name,p:r.mix,c:r.col}));
+  return L.length?L:(m.SRC||[]).filter(s=>s.dPct>0).map((s,i)=>({t:s.t,p:s.dPct,c:PASTEL[i%PASTEL.length]}));}
+function _preCyc(m){/* .133: ciclo por terminal — real (todo el pozo, GAS) vs diseño de Targets, todas las terminales */
+  const out=(m.TRM||[]).map(r=>({t:r.name,col:r.col,loads:r.loads,a:TIMES[r.name]||null,d:(r.ct&&r.ct.total)||(r.pk?+m.T[r.pk+'_ct_total']||0:0)}));
+  Object.keys(TIMES).forEach((t,i)=>{if(!out.some(x=>x.t===t))out.push({t,col:PASTEL[(out.length+i)%PASTEL.length],loads:0,a:TIMES[t],d:0});});
+  return out;}
 function bPreSum(){
   const m=M,T=m.T;
   const lps=T.total_stages&&T.total_loads?(T.total_loads/T.total_stages).toFixed(1):8;
   $('pz-pre-sum').innerHTML=`
-    <div class="st">${ICO.ruler} Pre-Well Analysis — ${T.total_stages||'—'} Stages · ${m.SRC.map(s=>s.t+' '+s.dPct+'%').join(' · ')}</div>
+    <div class="st">${ICO.ruler} Pre-Well Analysis — ${T.total_stages||'—'} Stages · ${_preMix(m).map(x=>x.t+' '+x.p+'%').join(' · ')}</div>
     <div class="grid g5 mb">
       ${kpiCard('Total Stages',T.total_stages||'—','cp','pad design','','')}
       ${kpiCard('Design Loads',T.total_loads?fmt(T.total_loads):'—','cp',lps+' loads/stage','','')}
@@ -3802,9 +3883,9 @@ function bPreSum(){
     </div>
     <div class="grid g2 mb">
       <div class="card"><div class="card-tl">Design parameters</div><div style="max-height:430px;overflow:auto"><table><tbody>
-        ${Object.entries(T).slice(0,24).map(([k,v])=>`<tr><td style="color:#64748b;font-size:10px">${k}</td><td class="mono" style="text-align:right">${typeof v==='number'?fmt(+(+v).toFixed(2)):v}</td></tr>`).join('')||'<tr><td class="sb">Paste the well Targets into the workbook Targets tab.</td></tr>'}
+        ${Object.entries(T).map(([k,v])=>`<tr><td style="color:#64748b;font-size:10px">${k}</td><td class="mono" style="text-align:right">${typeof v==='number'?fmt(+(+v).toFixed(2)):v}</td></tr>`).join('')||'<tr><td class="sb">Paste the well Targets into the workbook Targets tab.</td></tr>'}
       </tbody></table></div></div>
-      <div class="card" style="display:flex;flex-direction:column"><div class="card-tl">Ritmo diario proyectado</div><div class="ch" style="flex:1;min-height:340px"><canvas id="chPreDaily"></canvas></div></div>
+      <div class="card" style="display:flex;flex-direction:column"><div class="card-tl">Projected daily pace</div><div class="ch" style="flex:1;min-height:340px"><canvas id="chPreDaily"></canvas></div></div>
     </div>`;
   const days=T.duration_days||30;const proj=Array.from({length:days},(_,i)=>i===0?Math.round(m.dTgt*0.6):(i===days-1?Math.round(m.dTgt*0.35):m.dTgt));
   mkChart('chPreDaily',{type:'bar',data:{labels:proj.map((_,i)=>'D'+(i+1)),datasets:[{label:'Loads plan',data:proj,backgroundColor:proj.map(v=>v>=m.dTgt?'rgba(106,184,154,.8)':'rgba(203,213,225,.7)'),borderRadius:3}]},
@@ -3816,10 +3897,11 @@ function bPreSrc(){
     <div class="st"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11a7 7 0 1 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg> Sourcing &amp; Cycles — design</div>
     <div class="grid g2 mb">
       <div class="card"><div class="card-t">Sourcing Mix — Design</div><div class="ch"><canvas id="chSrcPie"></canvas></div></div>
-      <div class="card"><div class="card-tl">Cycle por terminal (actual medido)</div><table><thead><tr><th>Terminal</th><th>Loading</th><th>Transit RT</th><th>Offload</th><th>Total</th></tr></thead><tbody>
-        ${Object.keys(TIMES).map(t=>{const x=TIMES[t];return `<tr><td>${t}</td><td class="mono">${x[0]}m</td><td class="mono">${x[1]}m</td><td class="mono">${x[2]}m</td><td class="mono"><strong>${Math.round(x[0]+x[1]+x[2])}m</strong></td></tr>`;}).join('')}
-      </tbody></table><div class="note">Design ponderado: ${m.dCT} min (buffered ${m.dCTbuf}).</div></div></div>`;
-  mkChart('chSrcPie',{type:'doughnut',data:{labels:m.SRC.map(s=>`${s.t} (${s.dPct}%)`),datasets:[{data:m.SRC.map(s=>s.dPct),backgroundColor:[PZ.B,PZ.P,PZ.G,PZ.A],borderWidth:0,hoverOffset:8}]},
+      <div class="card"><div class="card-tl">Cycle by terminal — actual (full well) vs design</div><div class="tbl-x"><table><thead><tr><th>Terminal</th><th>Loads</th><th>Loading</th><th>Transit OW</th><th>Offload</th><th>Total</th><th>Design</th></tr></thead><tbody>
+        ${_preCyc(m).map(r=>`<tr${r.loads?'':' style="opacity:.62"'}><td><i class="tdot" style="background:${r.col}"></i>${r.t}</td><td class="mono">${r.loads?fmt(r.loads):'—'}</td><td class="mono">${r.a?r.a[0]+'m':'—'}</td><td class="mono">${r.a?r.a[1]+'m':'—'}</td><td class="mono">${r.a?r.a[2]+'m':'—'}</td><td class="mono"><strong>${r.a?fmtMin(r.a[0]+r.a[1]*2+r.a[2]):'—'}</strong></td><td class="mono">${r.d?fmtMin(r.d):'—'}</td></tr>`).join('')}
+      </tbody></table></div><div class="note">Total = loading + transit × 2 + offload. Weighted design: ${m.dCT} min (buffered ${m.dCTbuf}).</div></div></div>`;
+  const _pm=_preMix(m); /* .133: todas las terminales del diseño, color estable */
+  mkChart('chSrcPie',{type:'doughnut',data:{labels:_pm.map(x=>`${x.t} (${x.p}%)`),datasets:[{data:_pm.map(x=>x.p),backgroundColor:_pm.map(x=>x.c),borderWidth:0,hoverOffset:8}]},
     options:{cutout:'65%',plugins:{dCenter:{show:true,value:'100%',label:'design mix'},legend:{position:'bottom',labels:{boxWidth:8,font:{size:10}}},tooltip:{callbacks:{title:()=>'Sourcing Mix — Design',label:c=>` ${c.label}`}}}}});
 }
 function bPreOps(){

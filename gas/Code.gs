@@ -1,4 +1,13 @@
-/** MEDS · PropX Live API — Code.gs v10.6. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v10.7. PEGAR TAL CUAL → Nueva versión.
+ *  v10.7 TERMINALES SIN TOPE: (1) el match de terminales normaliza guiones Unicode. PropX
+ *  escribe "Covia – Pronto" (guion largo) y Targets "Covia - Pronto": la terminal principal de
+ *  Olgin (166 cargas) salía como AJENA en diag.foreign_terminals y con terminals_strict se
+ *  habría excluido completa. Aplica también al match de pads del Status. (2) designTerminals:
+ *  prefijo → nombre de cada terminal de diseño, leído de los encabezados "— TERMINAL · nombre —"
+ *  de Targets. El portal lista TODAS las terminales del diseño (cualquier cantidad) aunque
+ *  todavía no tengan cargas, y liga cada terminal real con su prefijo sin depender de term_map.
+ *  (3) hourlyByTerm: ciclo por hora POR TERMINAL (solo horas con cargas): al filtrar UN día por
+ *  terminal en Cycle Times, la vista por hora ya no mezcla todas las terminales.
  *  v10.6 RELOJ = LO QUE MUESTRA LA CELDA: Delivered / At Terminal / In Transit / At Staging /
  *  At Dest. se leen con getDisplayValues() — el texto exacto del doc ("10/16/2026 9:04:31 p.m.")
  *  parseado directo como hora Central. En producción, convertir el valor de la celda (Date) con
@@ -199,7 +208,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v10.6';
+const API_VERSION='v10.7';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -682,8 +691,13 @@ function getWell(id){
 
   // Targets
   const targets={}; const T=readTab(ss,CFG.tabs.targets,'key');
-  if(T){const ki=colmap(T.H,['key','value']);
-  for(const r of T.rows){const k=String(r[ki.key]||'').trim(); if(k&&k.charAt(0)!=='—') targets[k]=r[ki.value];}}
+  const _dTerm={}; /* v10.7: prefijo → nombre de la terminal de diseño (encabezado "— TERMINAL · X —") */
+  if(T){const ki=colmap(T.H,['key','value']); let _curT='';
+  for(const r of T.rows){const k=String(r[ki.key]||'').trim(); if(!k)continue;
+    if(k.charAt(0)==='—'){const mh=k.match(/terminal\s*[·:\-\u2013]\s*(.+?)\s*[\u2014\u2013-]*\s*$/i);_curT=mh?mh[1].trim():'';continue;}
+    targets[k]=r[ki.value];
+    const mp=_curT?k.match(/^([A-Za-z0-9]+)_(mix_pct|mix|rate_ton|miles|ct_total|ct_load|ct_transit|ct_unload|drivers_shift)$/):null;
+    if(mp&&!_dTerm[mp[1]])_dTerm[mp[1]]=_curT;}}
   _DT=declaredTerms(targets); _STRICT=/^(1|true|si|sí|yes)$/i.test(String((targets&&targets.terminals_strict)||''));
   const designTonsStage=(+targets.lbs_per_stage||0)/2000;
 
@@ -747,7 +761,7 @@ function getWell(id){
       if(sw&&sw.d<=_WIN_HI&&(!_WIN_LO||sw.d>=_WIN_LO)){w=sw;_swpD++;}}
     return w;};
   const byDay={},drvByDay={},tonsByDay={},maxStageByDay={},revByDay={},cycDay={},byTerm={},byTermDay={},cycDayT={},byCarrier={},byProd={},byDriver={},driversAll=new Set(),cyc={},byHourDay={},rosterEv={};
-  const wtDay={},wtHr={},ovList=[],_dayAud={};let gwTot=0,gwN=0,ovTot=0,lwTot=0; /* v10.1 pesos · v10.2 ovL · v10.3 audit */
+  const wtDay={},wtHr={},ovList=[],_dayAud={},byHourTerm={}; /* v10.7 byHourTerm */let gwTot=0,gwN=0,ovTot=0,lwTot=0; /* v10.1 pesos · v10.2 ovL · v10.3 audit */
   let aMoves=0,aRev=0,aCost=0; const aByDay={},aRevByDay={},aEvents=[];
   const partDay={}; let gMinNo=9e15,gMaxNo=-9e15;
   const rateMixDay={}; // {fecha: {"17.76":{loads,tons,revenue}, "19.00":{...}}} — qué tarifa cobró cada carga
@@ -859,13 +873,15 @@ function getWell(id){
     if(dDel&&_wD){const _hh=_wD.h; /* v10.4: antes getHours() en la tz del SCRIPT */
       const HD=byHourDay[dDel]=byHourDay[dDel]||{l:Array(24).fill(0),rv:Array(24).fill(0),fs:Array(24).fill(0),tn:Array(24).fill(0),dr:{},te:Array(24).fill(0),ten:Array(24).fill(0),trh:Array(24).fill(0),trn:Array(24).fill(0),de:Array(24).fill(0),den:Array(24).fill(0)};
       HD.l[_hh]++; HD.rv[_hh]+=revL; HD.fs[_hh]+=fscL; HD.tn[_hh]+=t;
+      const _hk=dDel+'|'+term; const HT=byHourTerm[_hk]=byHourTerm[_hk]||{d:dDel,t:term,l:{},dr:{},te:{},ten:{},tr:{},trn:{},de:{},den:{}}; /* v10.7 */
+      HT.l[_hh]=(HT.l[_hh]||0)+1; if(drv)(HT.dr[_hh]=HT.dr[_hh]||{})[drv]=1;
       const wh2=dDel+'|'+_hh+'|'+term; const WH=wtHr[wh2]=wtHr[wh2]||{d:dDel,h:_hh,t:term,l:0,nw:0,nn:0,gw:0,gn:0,ov:0};
       WH.l++; if(netW>1000){WH.nw+=netW;WH.nn++;} if(gwOk){WH.gw+=gwL;WH.gn++;if(gwL>80000)WH.ov++;}
       if(drv){(HD.dr[_hh]=HD.dr[_hh]||{})[drv]=1;
         (rosterEv[drv]=rosterEv[drv]||[]).push(_absH(dDel)+_hh);} // v9.4: evento driver×hora
-      if(aT&&iT){const m=(iT-aT)/6e4; if(m>0&&m<1200){HD.te[_hh]+=m;HD.ten[_hh]++;}}
-      {const eol=aS||aD; if(iT&&eol){const m=(eol-iT)/6e4; if(m>0&&m<1200){HD.trh[_hh]+=m;HD.trn[_hh]++;}}}
-      {let un=0; if(aD&&dv){const m=(dv-aD)/6e4; if(m>0&&m<1200)un+=m;} if(aS&&aD){const sw=(aD-aS)/6e4; if(sw>0&&sw<1200)un+=sw;} if(un>0){HD.de[_hh]+=un;HD.den[_hh]++;}}
+      if(aT&&iT){const m=(iT-aT)/6e4; if(m>0&&m<1200){HD.te[_hh]+=m;HD.ten[_hh]++;HT.te[_hh]=(HT.te[_hh]||0)+m;HT.ten[_hh]=(HT.ten[_hh]||0)+1;}}
+      {const eol=aS||aD; if(iT&&eol){const m=(eol-iT)/6e4; if(m>0&&m<1200){HD.trh[_hh]+=m;HD.trn[_hh]++;HT.tr[_hh]=(HT.tr[_hh]||0)+m;HT.trn[_hh]=(HT.trn[_hh]||0)+1;}}}
+      {let un=0; if(aD&&dv){const m=(dv-aD)/6e4; if(m>0&&m<1200)un+=m;} if(aS&&aD){const sw=(aD-aS)/6e4; if(sw>0&&sw<1200)un+=sw;} if(un>0){HD.de[_hh]+=un;HD.den[_hh]++;HT.de[_hh]=(HT.de[_hh]||0)+un;HT.den[_hh]=(HT.den[_hh]||0)+1;}}
     }
   }
   // Stages (per-pozo) — etapa por etapa + inventario (cajas/pila)
@@ -1015,8 +1031,14 @@ function getWell(id){
       te:H.te.map(function(v,h){return H.ten[h]?Math.round(v/H.ten[h]*10)/10:0;}),
       tr:H.trh.map(function(v,h){return H.trn[h]?Math.round(v/H.trn[h]*10)/10:0;}),
       de:H.de.map(function(v,h){return H.den[h]?Math.round(v/H.den[h]*10)/10:0;})};}),
+    hourlyByTerm:Object.keys(byHourTerm).sort().map(function(k){var H=byHourTerm[k];
+      var hs=Object.keys(H.l).map(Number).sort(function(a,b){return a-b;});
+      var av=function(sm,nn){return hs.map(function(h){return nn[h]?Math.round(sm[h]/nn[h]*10)/10:0;});};
+      return {date:H.d,terminal:H.t,h:hs,l:hs.map(function(h){return H.l[h];}),dr:hs.map(function(h){return H.dr[h]?Object.keys(H.dr[h]).length:0;}),
+        te:av(H.te,H.ten),tr:av(H.tr,H.trn),de:av(H.de,H.den)};}), /* v10.7: ciclo por hora por terminal (solo horas con cargas) */
     stageWaitByTerminal:Object.entries(cyc).map(([k,v])=>({terminal:k,avg_stage_min:v.stage_wait[1]?+(v.stage_wait[0]/v.stage_wait[1]).toFixed(1):0,events:v.stage_wait[1]})).filter(x=>x.avg_stage_min>0).sort((a,b)=>b.avg_stage_min-a.avg_stage_min),
     byTerminal:Object.entries(byTerm).map(([k,v])=>({terminal:k,loads:v.loads,avg_miles:v.loads?+(v.miles/v.loads).toFixed(1):0,revenue:Math.round(v.revenue),fsc:Math.round(v.fsc),tons:Math.round(v.tons)})).sort((a,b)=>b.revenue-a.revenue),
+    designTerminals:Object.keys(_dTerm).map(function(p){return {prefix:p,name:_dTerm[p]};}), /* v10.7 */
     byTerminalDaily:Object.values(byTermDay).map(v=>({date:v.date,terminal:v.terminal,loads:v.loads,tons:Math.round(v.tons),revenue:Math.round(v.revenue)})).sort((a,b)=>a.date<b.date?-1:1),
     byCarrier:Object.entries(byCarrier).map(([k,v])=>({carrier:k,loads:v})).sort((a,b)=>b.loads-a.loads),
     byProduct:Object.entries(byProd).map(([k,v])=>({product:k,loads:v})).sort((a,b)=>b.loads-a.loads),
@@ -1183,6 +1205,7 @@ function _rosterBuild(rosterEv,byDriver,pumpSet){
 // Normaliza para matching de pads: minúsculas, sin acentos, guiones/puntuación→espacio, espacios colapsados.
 // "26. (BAYSWATER) - Far Country" y "Bayswater - Far" → ambos contienen "bayswater far".
 function _mnorm(s){return String(s||'').toLowerCase()
+  .replace(/[\u2010-\u2015\u2212\uFE58\uFE63\uFF0D]/g,'-') /* v10.7: guiones Unicode (– — −) = guion normal */
   .replace(/[().,#/\\_-]+/g,' ').replace(/\s+/g,' ').trim();}
 // v9.3.1 — localiza el spreadsheet del BOARD desde el IMPORTRANGE de la hoja status del Hub
 // y lee su STATUS_LOG directo (headers Timestamp/Date/Hour/Pad/Status/Count/Shift del
