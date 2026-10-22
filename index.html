@@ -747,6 +747,84 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
 .seg-btn.seg-dim{opacity:.58}.seg-btn.seg-dim.seg-on{opacity:1}
 .tdot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle;flex:0 0 7px}
 .seg-btn .tdot{margin-right:0}
+/* .134 · capa de downtimes */
+.dt-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;border:1px solid #e5e9ef;background:#fff;color:#7b8794;font-size:9.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s,color .2s,border-color .2s,box-shadow .2s;white-space:nowrap}
+.dt-chip i{width:12px;height:8px;border-radius:2px;background:linear-gradient(90deg,rgba(125,201,146,.95) 0 33%,rgba(212,114,114,.95) 33% 66%,rgba(128,22,22,.95) 66%);opacity:.45;transition:opacity .2s}
+.dt-chip.on{background:#fff5f5;border-color:#efc4c4;color:#9b2c2c;box-shadow:0 1px 4px rgba(155,44,44,.10)}
+.dt-chip.on i{opacity:1}
+.dt-chip:hover{border-color:#e2a9a9}
+.ch-hd{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.ch-hd .card-t{margin:0}
+.ch-ctl{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.dtc{padding:16px 18px}
+.dtc-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.dtc-ti{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#fdeeee,#f6d9d9);color:#a33a3a;flex:0 0 34px}
+.dtc-ti .ico{width:17px;height:17px}
+.dtc-hd{flex:1;min-width:210px}
+.dtc-sum{font-size:11px;color:#5b6b7c;margin-top:3px}
+.dtc-sum b{color:#1e293b}
+.dtc-tog{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;border:1px solid #e5e9ef;background:#fff;color:#7b8794;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+.dtc-tog i{width:26px;height:14px;border-radius:999px;background:#dfe5ec;position:relative;transition:background .2s}
+.dtc-tog i::after{content:'';position:absolute;top:2px;left:2px;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:left .2s}
+.dtc-tog.on{color:#9b2c2c;border-color:#efc4c4;background:#fff8f8}
+.dtc-tog.on i{background:#d47272}
+.dtc-tog.on i::after{left:14px}
+.dtc-bar{display:flex;height:10px;border-radius:6px;overflow:hidden;background:#eef2f6;margin:2px 0 8px}
+.dtc-bar span{display:block;height:100%}
+.dtc-leg{display:flex;gap:14px;flex-wrap:wrap;font-size:10px;color:#64748b;margin-bottom:12px}
+.dtc-leg b{color:#1e293b}
+.dtc-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.dtc-tl{position:relative;height:34px;border-radius:9px;background:#f8fafc;border:1px solid #edf1f5;margin:0 0 16px}
+.dtc-tl .ev{position:absolute;top:5px;bottom:12px;border-radius:3px;min-width:3px;cursor:help;box-shadow:0 0 0 1px rgba(255,255,255,.6) inset}
+.dtc-tl .ev.live{background-image:repeating-linear-gradient(135deg,rgba(255,255,255,.55) 0 3px,transparent 3px 7px)!important}
+.dtc-tl .tk{position:absolute;bottom:0;font-size:7.5px;font-weight:600;color:#94a3b8;transform:translateX(-50%);white-space:nowrap}
+.dtc-tl .tk:first-of-type{transform:none}
+.dtc-g{display:grid;grid-template-columns:minmax(220px,1fr) minmax(280px,2fr);gap:16px}
+@media(max-width:760px){.dtc-g{grid-template-columns:1fr}}
+.dtc-st{font-size:8.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#94a3b8;margin-bottom:8px}
+.dtc-r{display:grid;grid-template-columns:1fr auto;gap:3px 8px;font-size:10px;color:#475569;margin-bottom:9px}
+.dtc-r b{color:#1e293b}
+.dtc-r .bar{grid-column:1/-1;height:6px;border-radius:4px;background:#f1f5f9;overflow:hidden}
+.dtc-r .bar span{display:block;height:100%;border-radius:4px}
+.dtc-list{max-height:220px;overflow:auto;border:1px solid #eef2f6;border-radius:10px}
+.dtc-e{display:grid;grid-template-columns:8px 50px 92px 64px 1fr;gap:9px;align-items:center;padding:7px 11px;font-size:10px;border-bottom:1px solid #f3f5f8}
+.dtc-e:last-child{border-bottom:0}
+.dtc-e:hover{background:#fafbfd}
+.dtc-e .d{width:8px;height:8px;border-radius:50%}
+.dtc-e .t{font-variant-numeric:tabular-nums;color:#334155;font-weight:600;white-space:nowrap}
+.dtc-e .c{color:#5b6b7c;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dtc-e .r{color:#1e293b}
+.dtc-e .dd{font-weight:800;color:#2f6f5c;margin-left:4px}
+.dtc-e.on{background:#fff6f6}
+.dtc-e .dx{grid-column:2/-1;font-size:9.5px;color:#475569;margin-top:-4px;line-height:1.5}
+.dtc-e .dx b{color:#1e293b}.dtc-e .dx b.up{color:#2f7a45}.dtc-e .dx b.dn{color:#b23b3b}.dtc-e .dx b.fl{color:#64748b}
+.dtc-e .inw{display:inline-block;margin-right:6px;padding:0 7px;border-radius:999px;background:#eef2f6;color:#475569;font-size:8.5px;font-weight:800;vertical-align:1px}
+.fck-live{font-size:11px;font-weight:800;color:#b23b3b;letter-spacing:0;vertical-align:3px}
+.dtc-tag{display:inline-block;margin-left:7px;padding:1px 8px;border-radius:999px;font-size:8.5px;font-weight:800;vertical-align:1px}
+.dtc-tag.bad{background:#fbe9e9;color:#8f1d1d}.dtc-tag.warn{background:#fdf3e3;color:#9a6b1f}
+#fcl-dt::before{content:'';display:inline-block;width:11px;height:7px;border-radius:2px;margin-right:5px;vertical-align:0;opacity:.45;background:linear-gradient(90deg,rgba(125,201,146,.95) 0 33%,rgba(212,114,114,.95) 33% 66%,rgba(128,22,22,.95) 66%)}
+#fcl-dt.on{background:#fff5f5;border-color:#efc4c4;color:#9b2c2c}#fcl-dt.on::before{opacity:1}
+@media(max-width:560px){.dtc-e{grid-template-columns:8px 44px 82px 1fr}.dtc-e .t:nth-child(4){display:none}}
+.dtc-ok{display:flex;align-items:center;gap:9px;padding:11px 16px;font-size:11px;color:#2f7a45;background:linear-gradient(90deg,#f1faf4,#fff 70%)}
+.dtc-ok-i{width:20px;height:20px;border-radius:50%;background:#dcf2e3;display:grid;place-items:center;font-weight:800;font-size:11px}
+/* .134 · scroll horizontal con eje Y fijo (vista por hora de varios días) */
+.ch.ch-sc{overflow:hidden}
+.ch-xs{position:absolute;left:0;right:0;top:0;bottom:24px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:#cbd5e1 transparent;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+.ch-xs::-webkit-scrollbar{height:7px}.ch-xs::-webkit-scrollbar-thumb{background:#cdd6e1;border-radius:7px}.ch-xs::-webkit-scrollbar-track{background:transparent}
+.ch-xin{position:relative;height:100%}
+.ch-yov{position:absolute;top:0;z-index:2;pointer-events:none;display:none}
+.ch-yov-l{left:0;box-shadow:7px 0 8px -7px rgba(15,23,42,.22)}
+.ch-yov-r{right:0;box-shadow:-7px 0 8px -7px rgba(15,23,42,.22)}
+.ch-nav{position:absolute;top:calc(50% - 28px);z-index:3;width:30px;height:30px;border-radius:50%;border:1px solid #dfe6ee;background:rgba(255,255,255,.96);color:#2d5a7b;font:700 17px/1 'Plus Jakarta Sans',sans-serif;cursor:pointer;box-shadow:0 3px 10px rgba(15,23,42,.14);opacity:0;transition:opacity .2s,transform .15s}
+.ch.ch-sc:hover .ch-nav{opacity:1}.ch-nav:active{transform:scale(.92)}
+.ch-nav-l{left:calc(var(--yl,44px) + 8px)}.ch-nav-r{right:calc(var(--yr,0px) + 8px)}
+.ch-leg{position:absolute;left:0;right:0;bottom:0;height:22px;display:flex;align-items:center;gap:13px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;font-size:9.5px;font-weight:600;color:#475569}
+.ch-leg::-webkit-scrollbar{display:none}.ch-leg>.ch-li:first-child{margin-left:auto}.ch-leg>.ch-li:last-child{margin-right:auto}
+.ch-li{display:inline-flex;align-items:center;gap:5px;cursor:pointer;white-space:nowrap;transition:opacity .2s}
+.ch-li i{width:8px;height:8px;border-radius:50%}
+.ch-li.off{opacity:.38;text-decoration:line-through}
+.hv-seg .seg-btn{padding:4px 11px}
+@media(hover:none){.ch-nav{opacity:.9}}
 @media (max-width:640px){.grp-h.gh-ctrl{flex-wrap:wrap;row-gap:8px}.grp-h.gh-ctrl>.seg-ctrl{flex:1 1 100%}}
 .seg-on{background:#fff!important;color:#1c3d54!important;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .ctrl-label{font-size:8.5px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
@@ -1271,6 +1349,7 @@ const semaTR=t=>t>2.2?['se-g','<svg class="ico" viewBox="0 0 24 24"><circle cx="
 const PASTEL=['#6a9ec8','#d4956a','#6ab89a','#9b8ec4','#d4a05a','#d47272','#7fc4bd','#c8b84a','#8aa9c9','#c99ab6','#96b98e','#b0876a'];
 const CH={}; // registro de charts
 function mkChart(id,cfg){let _re=false;
+  const _dt=(cfg&&cfg.dt)||null,_sc=(cfg&&cfg.scroll)||null;if(cfg){delete cfg.dt;delete cfg.scroll;} /* .134 */
   const _el=document.getElementById(id); if(!_el)return null;
   // Resolver por CANVAS, no solo por registro: si una creación previa failed a medias, Chart.getChart
   // aún lo conoce y sin destruirlo el canvas queda "in use" para siempre (charts que ya no cargan).
@@ -1320,14 +1399,30 @@ function mkChart(id,cfg){let _re=false;
           else if(el._dimApplied){el.options.backgroundColor=el._origBg;el._dimApplied=false;}});});}});
     }
   }catch(e){}
+  /* .134 · capa de downtimes (bandas + líneas en el tooltip) + scroll horizontal con eje fijo */
+  let _sco=null,_lgF=null;
+  try{_sco=_chScroll(_el,_sc);
+    if(_sco){cfg.options.plugins=cfg.options.plugins||{};const lg=cfg.options.plugins.legend||{};_lgF=(lg.labels&&lg.labels.filter)||null;
+      cfg.options.plugins.legend=Object.assign({},lg,{display:false});}
+    if(_dt&&_dt.ev&&_dt.ev.length){DTR[id]=Object.assign({id:id,alpha:dtOn(id)?1:0},_dt);
+      const pl=cfg.options.plugins=cfg.options.plugins||{};const tt=pl.tooltip=Object.assign({},pl.tooltip||{});
+      const cb=tt.callbacks=Object.assign({},tt.callbacks||{});const ab0=cb.afterBody;
+      cb.afterBody=function(items){let out=ab0?ab0.apply(this,arguments):[];if(out==null)out=[];if(!Array.isArray(out))out=[out];
+        try{if(items&&items.length){const L=_dtTip(id,items[0].dataIndex);if(L.length)out=out.concat(L);}}catch(_){}return out;};}
+    else delete DTR[id];}catch(e){console.warn('[dt/scroll]',id,e);}
   try{CH[id]=new Chart(_el.getContext('2d'),cfg);}
   catch(e){console.error('[chart]',id,e);
     try{const _z=Chart.getChart&&Chart.getChart(_el);if(_z)_z.destroy();}catch(_){}
     CH[id]=null;}
   if(CH[id])CH[id].$born=Date.now();
+  if(_sco&&CH[id]){try{const ch=CH[id],b=_sco.box;const max=Math.max(0,b.scrollWidth-b.clientWidth);let x=max;
+      if(typeof _sc.at==='number'&&ch.scales&&ch.scales.x)x=ch.scales.x.getPixelForValue(_sc.at)-b.clientWidth*(_sc.frac!=null?_sc.frac:.7);
+      else if(_sc.at==='start')x=0;
+      b.scrollLeft=Math.max(0,Math.min(max,x));}catch(_){}
+    _chLegend(CH[id],_lgF);}
   return CH[id];}
 function _fade(col,a){if(typeof col!=='string')return col;const m=col.match(/rgba?\(([^)]+)\)/);if(!m)return col;const p=m[1].split(',').map(x=>x.trim());return `rgba(${p[0]},${p[1]},${p[2]},${a})`;}
-function shortDay(iso){const d=new Date(iso+'T12:00');if(isNaN(d))return iso;return d.getDate()+'-'+['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][d.getMonth()];}
+function shortDay(iso){const d=new Date(iso+'T12:00');if(isNaN(d))return iso;return d.getDate()+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];}
 
 /* ════════════════════════════════════════════════════════════
    DEMO DATA — BP513 (se reemplaza al conectar la API)
@@ -1429,7 +1524,7 @@ window.wtTog=k=>{WT_PREF[k]=!WT_PREF[k];_wtSave();bSrc();};
 window.wtScope=t2=>{WT_SCOPE=t2;bSrc();};
 window.wtBack=()=>{const p=window._wtPrevR;if(!p)return;window._wtPrevR=null;
   const d0=$('w-d0'),d1=$('w-d1');if(d0)d0.value=p.d0||'';if(d1)d1.value=p.d1||'';
-  document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));renderPozo();};
+  document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));_vt(renderPozo);};
 let WELL_EPOCH=0;
 let APPLIED_ID=null; // qué pozo está efectivamente pintado ahora mismo   // token de vigencia: cada cambio de pozo lo incrementa; toda respuesta async lo verifica al aterrizar
 let _wellCtl=null;  // cancela el fetch del pozo anterior al cambiar (libera red y GAS)
@@ -1475,7 +1570,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-22.133';
+const VBUILD='2026-10-22.134';
 /* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
    abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
 const CT_TZ='America/Chicago';
@@ -2234,6 +2329,269 @@ if(typeof Chart!=='undefined'&&Chart.register){try{
       c.ctx.restore();
     }catch(_){}}});
 }catch(e){console.error('[chart-layer]',e);}}
+/* ═══════ .134 · DOWNTIME LAYER · TIEMPO CENTRAL · EJES CON SCROLL ═══════
+   Tiempo "W" = reloj de pared Central como ms ingenuos (Date.UTC de sus componentes): días, horas,
+   etapas y downtimes del workbook comparten base, sin zonas horarias. ppxDT pinta los downtimes
+   DETRÁS de los datos — día: tinte + sub-banda a la hora exacta · hora: banda exacta · etapa: slot
+   completo · forecast: eje lineal por hora real. Colores (regla Alan): clima verde claro · resto
+   rojo · coil tubing / NPT por arena rojo oscuro fuerte (lo peor). */
+const DT_K={
+  wx:{n:'Weather',c:'#3f8f5a',rgb:'125,201,146',a:.34},
+  oth:{n:'Other NPT',c:'#c24e4e',rgb:'212,114,114',a:.24},
+  bad:{n:'Sand / Coil tubing',c:'#7a1212',rgb:'128,22,22',a:.34}};
+const DT_RANK={wx:0,oth:1,bad:2};
+const _dp2=n=>('0'+n).slice(-2);
+let _ctFmtW=null;
+function _wOf(ms){ /* reloj de pared Central del instante real ms → W */
+  try{_ctFmtW=_ctFmtW||new Intl.DateTimeFormat('en-US',{timeZone:(typeof CT_TZ!=='undefined'&&CT_TZ)||'America/Chicago',hourCycle:'h23',
+      year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    const p={};_ctFmtW.formatToParts(new Date(ms)).forEach(x=>{p[x.type]=x.value;});
+    return Date.UTC(+p.year,+p.month-1,+p.day,(+p.hour)%24,+p.minute,+p.second);}
+  catch(_){const d=new Date(ms);return Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),d.getHours(),d.getMinutes(),d.getSeconds());}}
+const _wNow=()=>_wOf(Date.now());
+function _wToMs(W){let t=W+6*36e5;for(let k=0;k<3;k++){const d=W-_wOf(t);if(!d)break;t+=d;}return t;} /* W → instante real */
+function _wms(iso,hm){const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/);if(!m)return null;
+  const t=String(hm||'').match(/(\d{1,2}):(\d{2})/);
+  return Date.UTC(+m[1],+m[2]-1,+m[3],t?Math.min(23,+t[1]):0,t?Math.min(59,+t[2]):0);}
+const _wHM=W=>{const d=new Date(W);return _dp2(d.getUTCHours())+':'+_dp2(d.getUTCMinutes());};
+const _wISO=W=>{const d=new Date(W);return d.getUTCFullYear()+'-'+_dp2(d.getUTCMonth()+1)+'-'+_dp2(d.getUTCDate());};
+const _wDow=W=>['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(W).getUTCDay()];
+const _wMD=W=>{const d=new Date(W);return d.getUTCDate()+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()];};
+/* clasificación: lo peor gana (coil / arena) → clima → resto */
+const _DT_WX=/\b(weather|clima|mal tiempo|lluvias?|rain(ing|s|y)?|storms?|tormentas?|lightning|rayos?|thunder\w*|winds?|viento\w*|fog|niebla|ice|icy|hielo|snow\w*|nieve|freez\w*|helad\w*|flood\w*|inunda\w*|hail|granizo|tornado\w*)\b/i;
+const _DT_COIL_R=/coil|\bct\b/i,_DT_COIL_C=/coil(ed)?\s*tubing|\bct\s*(unit|crew|run|job|rig)\b/i;
+const _DT_SAND_R=/sand|arena|proppant|logist|meds|omma|trucking/i;
+const _DT_SAND_C=/wait(ing)?\s*(on|for)\s*(the\s*)?(sand|trucks?|boxes|proppant|loads?)|no\s+sand|out\s+of\s+sand|short\s+(on\s+)?sand|sand\s+(supply|shortage|delay|outage)|sin\s+arena|falta\s+de\s+arena|esperando\s+(arena|camiones|cajas)/i;
+function dtCls(resp,cause){const r=String(resp||''),c=String(cause||'');
+  if(_DT_COIL_R.test(r)||_DT_COIL_C.test(c))return 'bad';
+  if(_DT_SAND_R.test(r)||_DT_SAND_C.test(c))return 'bad';
+  if(_DT_WX.test(r)||_DT_WX.test(c))return 'wx';
+  return 'oth';}
+function dtSand(e){return !!e&&(_DT_SAND_R.test(String(e.resp||''))||_DT_SAND_C.test(String(e.cause||'')));} /* NPT por arena (no coil) */
+/* .134 · ventanas REALES de etapa (reloj W). Una etapa que cruza medianoche (fin < inicio) puede venir
+   fechada con el día de INICIO o con el de FIN (Olgin: día de FIN — S5 "20-Oct 22:12→00:36" corrió
+   19-Oct 22:12 → 20-Oct 00:36). Se decide por continuidad con la etapa anterior/siguiente; si nada
+   decide, manda la convención mayoritaria del pozo. */
+function stgWins(st){const hm=v=>/\d{1,2}:\d{2}/.test(String(v||''));
+  const W=(st||[]).map(s=>{if(!s||!s.day||!hm(s.start))return null;const a=_wms(s.day,s.start);if(a==null)return null;
+    if(!hm(s.end))return {a,b:null,x:0};const b=_wms(s.day,s.end);return b>a?{a,b,x:0}:{a,b:b+864e5,x:1};});
+  const near=(i,d)=>{for(let j=i+d;j>=0&&j<W.length;j+=d)if(W[j]&&!W[j].x)return W[j];return null;};
+  const vote=[0,0],und=[];
+  W.forEach((w,i)=>{if(!w||!w.x)return;const p=near(i,-1),q=near(i,1);
+    const fit=(a,b)=>{let sc=0,n=0;if(p&&p.b!=null){const g=a-p.b;n++;sc+=g>=-6e5?g:1e13;}
+      if(q){const g=q.a-b;n++;sc+=g>=-6e5?g:1e13;}return n?sc:null;};
+    const fA=fit(w.a,w.b),fB=fit(w.a-864e5,w.b-864e5);
+    if(fA!=null&&fB!=null&&fB<fA){w.a-=864e5;w.b-=864e5;vote[1]++;}
+    else if(fA!=null&&fB!=null&&fA<fB)vote[0]++;else und.push(w);});
+  if(vote[1]>vote[0])und.forEach(w=>{w.a-=864e5;w.b-=864e5;});
+  return W;}
+/* horas a pintar en vistas por hora de varios días: hasta la hora actual (nada de horas futuras vacías) */
+function _hrKeep(isos){const n=(isos||[]).length*24;const W0=_wms((isos||[])[0],'00:00');if(W0==null)return n;
+  return Math.max(1,Math.min(n,Math.floor((_wNow()-W0)/36e5)+1));}
+function _dtIv(e,open,nowW){if(!e)return null;
+  const date=String(e.date||'').slice(0,10),st=String(e.start||''),en=String(e.end||'');
+  const clk=/\d{1,2}:\d{2}/.test(st);const a=_wms(date,clk?st:'00:00');if(a==null)return null;
+  const h=Math.max(0,+(e.h!=null?e.h:e.hours)||0);let b=null;
+  if(open){b=(nowW!=null&&nowW>a)?nowW:a+36e5;}
+  else{if(/\d{1,2}:\d{2}/.test(en)){const ed=String(e.ed||e.end_date||'').slice(0,10)||date;b=_wms(ed,en);if(b!=null&&b<=a)b+=864e5;}
+    if(b==null||!(b>a))b=a+Math.max(h,1/60)*36e5;}
+  const resp=String(e.resp||e.responsible||'—'),cause=String(e.cause||e.why||'—').replace(/\s*\(en curso\)\s*$/i,'');
+  return {a,b,h:open?+((b-a)/36e5).toFixed(2):(h||+((b-a)/36e5).toFixed(2)),clk,open:!!open,date,resp,cause,k:dtCls(resp,cause),stage:String(e.stage||'')};}
+function dtParse(list,openList,nowW){const out=[];
+  (list||[]).forEach(e=>{const r=_dtIv(e,false,nowW);if(r)out.push(r);});
+  (openList||[]).forEach(e=>{const r=_dtIv(e,true,nowW);if(r)out.push(r);});
+  return out.sort((x,y)=>x.a-y.a);}
+function dtWin(ev,A,B){return (ev||[]).map(e=>{const a=Math.max(e.a,A),b=Math.min(e.b,B);return b>a?{e,a,b,h:(b-a)/36e5}:null;}).filter(Boolean);}
+function dtFH(h){const mn=Math.round((+h||0)*60);if(mn<60)return mn+' m';const H=Math.floor(mn/60),M2=mn%60;return H+' h'+(M2?' '+_dp2(M2)+' m':'');}
+const _dtDaySlot=iso=>{const a=_wms(iso,'00:00');return a==null?null:{a,b:a+864e5};};
+const _dtHourSlots=isos=>{const o=[];(isos||[]).forEach(d=>{const a=_wms(d,'00:00');for(let h=0;h<24;h++)o.push(a==null?null:{a:a+h*36e5,b:a+(h+1)*36e5});});return o;};
+/* registro por canvas id: {ev, slots|lin, kind, contig, alpha} — el plugin lo lee, la config de Chart.js no lo carga */
+const DTR={};
+let DTV={};try{DTV=JSON.parse(localStorage.getItem('ppx_dtv')||'{}')||{};}catch(_){DTV={};}
+const dtOn=id=>DTV[id]!==false;
+function _dtPaint(c,R){
+  const A=c.chartArea,xs=c.scales&&c.scales.x;if(!A||!xs||!R)return;
+  const ev=R.ev||[];if(!ev.length)return;const al=R.alpha!=null?R.alpha:1;if(al<=0.001)return;
+  const ctx=c.ctx,H=A.bottom-A.top,RH=7;ctx.save();ctx.beginPath();ctx.rect(A.left,A.top,A.right-A.left,H);ctx.clip();
+  const lbl=[];
+  const stripe=(x0,w,K,y0,h)=>{ctx.save();ctx.beginPath();ctx.rect(x0,y0,w,h);ctx.clip();
+    ctx.strokeStyle='rgba('+K.rgb+','+(.5*al).toFixed(3)+')';ctx.lineWidth=1;
+    for(let x=x0-h;x<x0+w;x+=7){ctx.beginPath();ctx.moveTo(x,y0+h);ctx.lineTo(x+h,y0);ctx.stroke();}ctx.restore();};
+  const band=(x0,x1,k,open)=>{const K=DT_K[k]||DT_K.oth;const w=Math.max(1.5,x1-x0);
+    ctx.fillStyle='rgba('+K.rgb+','+(K.a*al).toFixed(3)+')';ctx.fillRect(x0,A.top,w,H);
+    if(open)stripe(x0,w,K,A.top,H);
+    ctx.fillStyle='rgba('+K.rgb+','+(.9*al).toFixed(3)+')';ctx.fillRect(x0,A.top,w,2.4);};
+  if(R.lin){const p0=xs.getPixelForValue(0),st=xs.getPixelForValue(1)-p0;
+    ev.forEach(e=>{const a=e.ar!=null?e.ar:e.a,b=e.br!=null?e.br:e.b;
+      const x0=p0+(a-R.lin.t0)/R.lin.ms*st,x1=p0+(b-R.lin.t0)/R.lin.ms*st;if(x1<A.left||x0>A.right)return;
+      band(x0,x1,e.k,e.open);const l=Math.max(x0,A.left),r=Math.min(x1,A.right);lbl.push({x:(l+r)/2,w:r-l,h:(b-a)/36e5,k:e.k,o:e.open});});}
+  else if(R.slots&&R.slots.length){const n=R.slots.length,p0=xs.getPixelForValue(0),st=n>1?(xs.getPixelForValue(1)-p0):(A.right-A.left);
+    const xL=i=>xs.getPixelForValue(i)-st/2;
+    if(R.contig){ /* horas consecutivas: una banda exacta por evento */
+      let i0=0;while(i0<n&&!R.slots[i0])i0++;let i1=n-1;while(i1>=0&&!R.slots[i1])i1--;if(i0>i1){ctx.restore();return;}
+      const T0=R.slots[i0].a,T1=R.slots[i1].b,ms=(R.slots[i0].b-R.slots[i0].a)||36e5;
+      const xOf=t=>xL(i0)+(t-T0)/ms*st;
+      ev.forEach(e=>{if(!e.clk)return;const a=Math.max(e.a,T0),b=Math.min(e.b,T1);if(!(b>a))return;
+        const x0=xOf(a),x1=xOf(b);band(x0,x1,e.k,e.open);lbl.push({x:(x0+x1)/2,w:x1-x0,h:(b-a)/36e5,k:e.k,o:e.open});});}
+    else R.slots.forEach((s,i)=>{if(!s)return;const L=xL(i),span=s.b-s.a;let tot=0,worst=null,live=false;const sub=[];
+      ev.forEach(e=>{const a=Math.max(e.a,s.a),b=Math.min(e.b,s.b);if(!(b>a))return;
+        if(R.kind==='stage'&&b-a<5*6e4)return; /* roce de minutos en el borde de la etapa = ruido de captura, no NPT de esa etapa */
+        tot+=(b-a);if(e.open)live=true;
+        if(worst==null||DT_RANK[e.k]>DT_RANK[worst])worst=e.k;if(e.clk)sub.push([a,b,e.k,e.open]);});
+      if(!tot)return;const K=DT_K[worst];
+      if(R.kind==='stage'){ /* etapa: slot completo, más intenso entre más minutos caídos */
+        const k2=Math.min(1,.35+tot/(120*6e4));ctx.fillStyle='rgba('+K.rgb+','+(K.a*.72*k2*al).toFixed(3)+')';ctx.fillRect(L,A.top,st,H);
+        ctx.fillStyle='rgba('+K.rgb+','+(.9*al).toFixed(3)+')';ctx.fillRect(L,A.top,st,3);
+        lbl.push({x:L+st/2,w:st,h:tot/36e5,k:worst,o:live,y:6});}
+      else{ /* día: ÁREA sombreada (más intensa entre más horas caídas) + RIEL superior con la hora exacta de cada paro */
+        const k2=Math.min(1,.3+.7*tot/(8*36e5));ctx.fillStyle='rgba('+K.rgb+','+(K.a*(worst==='bad'?.55:.7)*k2*al).toFixed(3)+')';ctx.fillRect(L,A.top,st,H);
+        ctx.fillStyle='rgba(255,255,255,'+(.9*al).toFixed(3)+')';ctx.fillRect(L,A.top,st,RH);
+        if(!sub.length){ctx.fillStyle='rgba('+K.rgb+','+(.9*al).toFixed(3)+')';ctx.fillRect(L,A.top,st,RH);}
+        sub.forEach(x=>{const K2=DT_K[x[2]]||DT_K.oth;const x0=L+(x[0]-s.a)/span*st,w=Math.max(1.5,(x[1]-x[0])/span*st);
+          ctx.fillStyle='rgba('+K2.rgb+','+((x[3]?.6:.95)*al).toFixed(3)+')';ctx.fillRect(x0,A.top,w,RH);if(x[3])stripe(x0,w,K2,A.top,RH);});
+        ctx.fillStyle='rgba('+K.rgb+','+(.35*al).toFixed(3)+')';ctx.fillRect(L,A.top+RH,st,1);
+        lbl.push({x:L+st/2,w:st,h:tot/36e5,k:worst,o:live,y:RH+4});}});}
+  ctx.font="800 8.5px 'Plus Jakarta Sans',sans-serif";ctx.textAlign='center';ctx.textBaseline='middle';
+  lbl.forEach(o=>{if(o.w<30||o.h<0.05)return;const K=DT_K[o.k];const t=(o.o?'LIVE ':'')+dtFH(o.h);const tw=ctx.measureText(t).width+10;
+    const cx=Math.max(A.left+tw/2+1,Math.min(A.right-tw/2-1,o.x)),ty=A.top+(o.y!=null?o.y:5);
+    ctx.globalAlpha=al;ctx.fillStyle='rgba(255,255,255,.92)';ctx.fillRect(cx-tw/2,ty,tw,13);
+    ctx.fillStyle=K.c;ctx.fillText(t,cx,ty+6.5);ctx.globalAlpha=1;});
+  ctx.restore();}
+function _dtTip(id,i){const R=DTR[id];if(!R||!dtOn(id))return [];let A0,B0;
+  if(R.lin){A0=R.lin.t0+i*R.lin.ms-R.lin.ms/2;B0=A0+R.lin.ms;}
+  else{const s=R.slots&&R.slots[i];if(!s)return [];A0=s.a;B0=s.b;}
+  const hits=(R.ev||[]).map(e=>{const a0=R.lin?(e.ar!=null?e.ar:e.a):e.a,b0=R.lin?(e.br!=null?e.br:e.b):e.b;
+    const a=Math.max(a0,A0),b=Math.min(b0,B0);return b>a?{e,h:(b-a)/36e5}:null;}).filter(Boolean);
+  if(!hits.length)return [];
+  const tot=hits.reduce((s,x)=>s+x.h,0);
+  const L=[sep,'⏸ Downtime '+dtFH(tot)+(hits.length>1?' · '+hits.length+' events':'')+' (CT)'];
+  hits.slice(0,3).forEach(x=>{const e=x.e;
+    L.push('• '+(e.clk?_wHM(e.a)+'–'+(e.open?'now':_wHM(e.b)):_wMD(e.a))+' '+DT_K[e.k].n+' · '+e.resp+' — '+String(e.cause).slice(0,40)+(e.open?' (ongoing)':''));});
+  if(hits.length>3)L.push('+'+(hits.length-3)+' more');
+  return L;}
+if(typeof Chart!=='undefined'&&Chart.register){try{
+  Chart.register({id:'ppxDT',beforeDatasetsDraw(c){try{const id=c.canvas&&c.canvas.id;const R=id&&DTR[id];if(R)_dtPaint(c,R);}catch(_){}}});
+  /* eje Y fijo para charts con scroll horizontal: copia el área del eje a un lienzo que no se mueve */
+  Chart.register({id:'ppxSticky',afterRender(c){try{
+    const el=c.canvas;const host=el&&el.closest&&el.closest('.ch.ch-sc');if(!host||!c.chartArea)return;
+    const A=c.chartArea,dpr=c.currentDevicePixelRatio||(typeof devicePixelRatio!=='undefined'?devicePixelRatio:1)||1,Hh=c.height;
+    const paint=(o,sx,w)=>{if(!o)return;if(w<=2){o.style.display='none';return;}o.style.display='block';
+      o.width=Math.round(w*dpr);o.height=Math.round(Hh*dpr);o.style.width=w+'px';o.style.height=Hh+'px';
+      const g=o.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,o.width,o.height);
+      const yb=Math.min(Hh,Math.ceil(A.bottom)+2);g.drawImage(el,Math.round(sx*dpr),0,Math.round(w*dpr),Math.round(yb*dpr),0,0,o.width,Math.round(yb*dpr));};
+    const L=Math.ceil(A.left),Rw=Math.ceil(c.width-A.right);
+    paint(host.querySelector(':scope > .ch-yov-l'),0,L);paint(host.querySelector(':scope > .ch-yov-r'),c.width-Rw,Rw>6?Rw:0);
+    host.style.setProperty('--yl',L+'px');host.style.setProperty('--yr',(Rw>6?Rw:0)+'px');}catch(_){}}});
+}catch(e){console.error('[dt-layer]',e);}}
+/* chip de capa por chart (solo si el rango trae downtimes) */
+function dtChip(id,has){if(!has)return '';
+  return '<button type="button" class="dt-chip'+(dtOn(id)?' on':'')+'" data-dt="'+id+'" onclick="dtTog(\''+id+'\')" title="Show / hide downtime bands on this chart (CT)"><i></i>Downtime</button>';}
+window.dtTog=function(id,on){const nv=(on==null)?!dtOn(id):!!on;DTV[id]=nv;
+  try{localStorage.setItem('ppx_dtv',JSON.stringify(DTV));}catch(_){}
+  document.querySelectorAll('.dt-chip[data-dt="'+id+'"],[data-dtl="'+id+'"]').forEach(b=>b.classList.toggle('on',nv));
+  const R=DTR[id];const ch=(typeof CH!=='undefined'&&CH[id])||((typeof Chart!=='undefined'&&Chart.getChart)?Chart.getChart(id):null);
+  if(!R||!ch)return;const a0=R.alpha!=null?R.alpha:(nv?0:1),a1=nv?1:0;
+  if(typeof requestAnimationFrame==='undefined'||typeof performance==='undefined'){R.alpha=a1;try{ch.draw();}catch(_){}return;}
+  const t0=performance.now(),d=280;
+  requestAnimationFrame(function st(t){const k=Math.min(1,(t-t0)/d);R.alpha=a0+(a1-a0)*(1-Math.pow(1-k,3));
+    try{ch.draw();}catch(_){}if(k<1)requestAnimationFrame(st);});};
+window.dtTogAll=function(ids,on){(ids||[]).forEach(id=>dtTog(id,on));
+  document.querySelectorAll('.dtc-tog').forEach(b=>{const own=(b.dataset.ids||'').split(',');if(own.some(x=>(ids||[]).indexOf(x)>=0))b.classList.toggle('on',!!on);});};
+/* tarjeta de desglose (rango / día / forecast) */
+function dtCardHTML(o){
+  o=o||{};const rows=(o.ev||[]).slice().sort((x,y)=>x.a-y.a);const ids=(o.ids||[]).filter(Boolean);
+  const A=o.A,B=o.B,span=Math.max(1,(B-A)/36e5);
+  const cls=rows.filter(x=>!x.e.open),live=rows.filter(x=>x.e.open);
+  if(!rows.length)return '<div class="card dtc dtc-ok mb"><span class="dtc-ok-i">✓</span><b>No downtime '+(o.when||'in this range')+'</b><span class="sb">'+(o.sub?' · '+o.sub:'')+'</span></div>';
+  const tot=cls.reduce((s,x)=>s+x.h,0);
+  const byK={wx:0,oth:0,bad:0};cls.forEach(x=>{byK[x.e.k]+=x.h;});
+  const byR={};cls.forEach(x=>{const r=byR[x.e.resp]=byR[x.e.resp]||{h:0,k:'wx',n:0};r.h+=x.h;r.n++;if(DT_RANK[x.e.k]>DT_RANK[r.k])r.k=x.e.k;});
+  const R2=Object.entries(byR).sort((p,q)=>q[1].h-p[1].h);
+  const pct=v=>tot?Math.round(v/tot*100):0;
+  const multi=span>36;
+  let ticks='';
+  const stp=multi?(span>24*12?Math.ceil(span/24/12)*864e5:864e5):(span>14?3:2)*36e5;
+  for(let t=Math.ceil(A/stp)*stp;t<=B;t+=stp){const x=(t-A)/(B-A)*100;const tf=x<4?'none':x>96?'translateX(-100%)':'translateX(-50%)';
+    ticks+='<span class="tk" style="left:'+x.toFixed(2)+'%;transform:'+tf+'">'+(multi?_wMD(t):_dp2(new Date(t).getUTCHours())+'h')+'</span>';}
+  const tl=rows.map(x=>{const l=(x.a-A)/(B-A)*100,w=Math.max(.45,(x.b-x.a)/(B-A)*100);const K=DT_K[x.e.k];
+    return '<span class="ev'+(x.e.open?' live':'')+'" style="left:'+l.toFixed(2)+'%;width:'+w.toFixed(2)+'%;background:rgba('+K.rgb+','+(x.e.open?.55:.75)+')" title="'+
+      (x.e.clk?_wHM(x.e.a)+'–'+(x.e.open?'now':_wHM(x.e.b)):_wMD(x.e.a))+' CT · '+dtFH(x.h)+' · '+x.e.resp+' — '+String(x.e.cause).replace(/"/g,"'")+'"></span>';}).join('');
+  const seg=['bad','oth','wx'].filter(k=>byK[k]>0).map(k=>'<span style="width:'+(byK[k]/Math.max(tot,1e-9)*100).toFixed(2)+'%;background:rgba('+DT_K[k].rgb+',.9)" title="'+DT_K[k].n+' '+dtFH(byK[k])+'"></span>').join('');
+  const leg=['wx','oth','bad'].map(k=>'<span><i style="background:rgba('+DT_K[k].rgb+',.9)"></i>'+DT_K[k].n+' <b>'+(byK[k]?dtFH(byK[k]):'0 h')+'</b>'+(byK[k]?' · '+pct(byK[k])+'%':'')+'</span>').join('');
+  const resp=R2.slice(0,6).map(([r,v])=>'<div class="dtc-r"><span><b>'+r+'</b> · '+v.n+' event'+(v.n===1?'':'s')+'</span><span class="mono">'+dtFH(v.h)+' · '+pct(v.h)+'%</span>'+
+    '<span class="bar"><span style="width:'+pct(v.h)+'%;background:rgba('+DT_K[v.k].rgb+',.85)"></span></span></div>').join('');
+  const evs=rows.slice().reverse().map(x=>{const e=x.e,K=DT_K[e.k];const d=o.delta?o.delta(x):null;
+    return '<div class="dtc-e'+(e.open?' on':'')+'"><span class="d" style="background:'+K.c+'"></span><span class="t">'+_wMD(e.a)+'</span>'
+      +'<span class="t">'+(e.clk?_wHM(e.a)+'–'+(e.open?'now':_wHM(e.b)):'all day')+'</span><span class="t">'+dtFH(e.h!=null?e.h:x.h)+'</span>'
+      +'<span class="c" title="'+String(e.resp+' — '+e.cause).replace(/"/g,"'")+'">'+((x.h<(x.e.b-x.e.a)/36e5-1/60)?'<span class="inw">'+dtFH(x.h)+' '+(o.winWord||'in range')+'</span>':'')+'<b class="r">'+e.resp+'</b> — '+e.cause+(e.open?' <b style="color:#b23b3b">· ONGOING</b>':'')+'</span>'
+      +(d?'<span class="dx">'+d+'</span>':'')+'</div>';}).join('');
+  const clsB=['bad','oth','wx'].map(k=>{const n=cls.filter(x=>x.e.k===k).length;if(!n)return '';
+    return '<div class="dtc-r"><span><b>'+DT_K[k].n+'</b> · '+n+' event'+(n===1?'':'s')+'</span><span class="mono">'+dtFH(byK[k])+' · '+pct(byK[k])+'%</span>'
+      +'<span class="bar"><span style="width:'+pct(byK[k])+'%;background:rgba('+DT_K[k].rgb+',.85)"></span></span></div>';}).join('');
+  return '<div class="card dtc mb">'
+    +'<div class="dtc-h"><div class="dtc-ti"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/></svg></div>'
+    +'<div class="dtc-hd"><div class="card-t" style="margin:0">Downtime — '+(o.title||'this range')+'</div>'
+    +'<div class="dtc-sum"><b>'+dtFH(tot)+'</b> NPT · '+cls.length+' event'+(cls.length===1?'':'s')+' · <b>'+(tot/span*100).toFixed(1)+'%</b> of the '+(span>=48?Math.round(span/24)+'-day':Math.round(span)+'-hour')+' window'
+    +(live.length?' · <b style="color:#b23b3b">'+live.length+' ongoing</b>':'')+(o.note?' · '+o.note:'')+'</div></div>'
+    +(ids.length?'<button type="button" class="dtc-tog'+(ids.every(dtOn)?' on':'')+'" data-ids="'+ids.join(',')+'" onclick="dtTogAll(\''+ids.join(',')+'\'.split(\',\'),!this.classList.contains(\'on\'))" title="Show or hide the downtime bands on every chart of this view"><i></i>Bands on charts</button>':'')
+    +'</div>'
+    +'<div class="dtc-bar">'+seg+'</div><div class="dtc-leg">'+leg+'</div>'
+    +'<div class="dtc-tl">'+tl+ticks+'</div>'
+    +'<div class="dtc-g"><div class="dtc-resp"><div class="dtc-st">By responsible</div>'+resp+'</div>'
+    +(o.noList?('<div class="dtc-resp"><div class="dtc-st">By class</div>'+clsB+'</div>')
+      :('<div><div class="dtc-st">Events · CT'+(o.deltaHdr?' · '+o.deltaHdr:'')+'</div><div class="dtc-list">'+evs+'</div></div>'))+'</div></div>';}
+/* scroll horizontal (vista por hora de varios días): el lienzo crece, el eje Y queda fijo */
+function _chScroll(el,sc){const host=el&&(el.closest&&el.closest('.ch'));if(!host)return null;
+  const xs=host.querySelector(':scope > .ch-xs');
+  const unwrap=()=>{if(xs){host.insertBefore(el,xs);xs.remove();}
+    host.querySelectorAll(':scope > .ch-yov,:scope > .ch-nav,:scope > .ch-leg').forEach(n=>n.remove());host.classList.remove('ch-sc');};
+  if(!sc||!(sc.n>0)){unwrap();return null;}
+  const vw=host.clientWidth||0;const need=Math.min(16000,Math.round(sc.n*(sc.px||16)+(sc.pad||96)));
+  if(!vw||need<=vw+8){unwrap();return null;}
+  let box=xs;
+  if(!box){box=document.createElement('div');box.className='ch-xs';const inn=document.createElement('div');inn.className='ch-xin';
+    box.appendChild(inn);host.appendChild(box);inn.appendChild(el);
+    ['l','r'].forEach(k=>{const ov=document.createElement('canvas');ov.className='ch-yov ch-yov-'+k;host.appendChild(ov);});
+    const mk=(k,t)=>{const b=document.createElement('button');b.type='button';b.className='ch-nav ch-nav-'+k;b.textContent=t;b.title=k==='l'?'Earlier':'Later';
+      b.onclick=()=>{const dx=(k==='l'?-1:1)*box.clientWidth*.8;try{box.scrollBy({left:dx,behavior:'smooth'});}catch(_){box.scrollLeft+=dx;}};host.appendChild(b);};
+    mk('l','‹');mk('r','›');host.classList.add('ch-sc');}
+  else if(el.parentElement!==box.firstChild)box.firstChild.appendChild(el);
+  box.firstChild.style.width=need+'px';
+  return {host,box,need};}
+function _chLegend(c,flt){try{if(!c||!c.canvas)return;const host=c.canvas.closest('.ch.ch-sc');if(!host)return;
+  let lg=host.querySelector(':scope > .ch-leg');if(!lg){lg=document.createElement('div');lg.className='ch-leg';host.appendChild(lg);}
+  const col=ds=>{const sol=x=>{const m2=String(x).match(/rgba?\(([^)]+)\)/);if(!m2)return true;const p=m2[1].split(',');return p.length<4||+p[3]>=.5;};
+    const pick=v=>{if(Array.isArray(v)){const s2=v.filter(x=>typeof x==='string');return s2.find(sol)||s2[0]||null;}return typeof v==='string'?v:null;};
+    return ((ds.type||c.config.type)==='line'?pick(ds.borderColor):null)||pick(ds.backgroundColor)||pick(ds.borderColor)||'#94a3b8';};
+  let items=(c.data.datasets||[]).map((ds,i)=>({text:ds.label||'',datasetIndex:i,hidden:!c.isDatasetVisible(i),fillStyle:col(ds)})).filter(it=>it.text);
+  if(flt)items=items.filter(it=>{try{return flt(it,c.data);}catch(_){return true;}});
+  lg.innerHTML=items.map(it=>'<span class="ch-li'+(it.hidden?' off':'')+'" data-i="'+it.datasetIndex+'"><i style="background:'+it.fillStyle+'"></i>'+it.text+'</span>').join('');
+  lg.onclick=ev=>{const s=ev.target&&ev.target.closest&&ev.target.closest('.ch-li');if(!s)return;const i=+s.dataset.i;
+    c.setDatasetVisibility(i,!c.isDatasetVisible(i));c.update();_chLegend(c,flt);};}catch(_){}}
+/* ticks del eje por hora de varios días: medianoche = día, cada 3 h = hora */
+function _hrTicks(lab){return {autoSkip:false,maxRotation:0,font:{size:8.5},callback:function(v,i){const L=String(lab[i]||'');const hh=L.slice(-5,-3);
+  if(hh==='00')return L.slice(0,-6);return (+hh%3===0)?hh+'h':'';}};}
+/* Día | Hora — vista por hora aunque el rango sea de varios días (no aparece con 1 día) */
+let HV={};try{HV=JSON.parse(localStorage.getItem('ppx_hv')||'{}')||{};}catch(_){HV={};}
+function hvSeg(k,show){if(!show)return '';const v=HV[k]==='hour'?'hour':'day';
+  return '<div class="seg-ctrl hv-seg" data-hv="'+k+'" title="Hour view keeps every hour of the range — scroll sideways"><button type="button" class="seg-btn'+(v==='day'?' seg-on':'')+'" onclick="hvSet(\''+k+'\',\'day\')">Day</button><button type="button" class="seg-btn'+(v==='hour'?' seg-on':'')+'" onclick="hvSet(\''+k+'\',\'hour\')">Hour</button></div>';}
+window.hvSet=function(k,v){if((HV[k]==='hour'?'hour':'day')===v)return;HV[k]=v;
+  try{localStorage.setItem('ppx_hv',JSON.stringify(HV));}catch(_){}
+  _vt(()=>{try{
+    if(k==='cyc'){M=buildM();bCycle();}
+    else if(k==='wt'){bSrc();}
+    else if(k==='stg'){buildDayCombo();document.querySelectorAll('.hv-seg[data-hv="stg"] .seg-btn').forEach((b,i)=>b.classList.toggle('seg-on',(i===1)===(v==='hour')));}
+    else if(k==='dly'){bDaily();}
+  }catch(e){console.error('[hv]',e);}});};
+
+function _hrX(lab,stacked){const md=c=>String(lab[c.index]||'').slice(-5)==='00:00';
+  return Object.assign({},gO,{stacked:!!stacked,ticks:_hrTicks(lab),grid:{color:c=>md(c)?'rgba(15,23,42,.16)':'rgba(0,0,0,.035)',lineWidth:c=>md(c)?1.3:1}});}
+function dtDays(m,isos){return {ev:(m&&m.DTALL)||[],slots:(isos||[]).map(_dtDaySlot)};}
+function dtHours(m,h){return {ev:(m&&m.DTALL)||[],slots:(h&&h.slots)||[],contig:true};}
+function dtCardFor(m,ids,o){if(!m||m.dtA==null)return '';
+  return dtCardHTML(Object.assign({ev:m.DTW||[],A:m.dtA,B:m.dtB,ids:ids,
+    title:m.n===1?m.D[0]+' · hour by hour':m.D[0]+' – '+m.D[m.n-1],
+    sub:'nothing logged in the Downtimes tab for '+(m.n===1?'this day':'these dates')},o||{}));}
 const PZ={P:'#3a7ca5',A:'#d4956a',B:'#6a9ec8',R:'#d47272',G:'#6ab89a',Gr:'#cbd5e1',Pu:'#9b8ec4'};
 function mkGrad(id,c1,c2,h){const el=document.getElementById(id);if(!el||!el.getContext)return c1;const g=el.getContext('2d').createLinearGradient(0,0,0,h||300);g.addColorStop(0,c1);g.addColorStop(1,c2);return g;}
 function mul32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
@@ -2360,7 +2718,7 @@ function buildM(){
   const cdm={};DR.forEach(d=>{const c=cdm[d[1]]=cdm[d[1]]||{l:0,n:0};c.l+=d[2];c.n++;});
   const CDl=Object.entries(cdm).map(([c,v])=>[c,v.l,v.n]).sort((x,y)=>y[1]-x[1]);
   /* downtime events */
-  let DTE,dtExcl=0,openHid=0;
+  let DTE,dtExcl=0,openHid=0,DTALL=[];
   if(typeof DOWNTIME_EVENTS!=='undefined'&&DOWNTIME_EVENTS&&DOWNTIME_EVENTS.length){
     const _isoS=new Set(ISO);
     // Deployment del GAS: v6.9 emite api_version + flag open. Si faltan → deployment VIEJO (datos de downtime corruptos +17h30m).
@@ -2383,6 +2741,8 @@ function buildM(){
       return false;};
     const _rawDT=DOWNTIME_EVENTS.filter(e=>!_isOpen(e)).map(e=>({date:String(e.date||'').slice(0,10),cause:e.why||e.cause||'—',resp:e.responsible||'—',start:e.start||'',end:e.end||'',ed:String(e.end_date||'').slice(0,10),h:+(+e.hours||0).toFixed(2)}));
     openHid=DOWNTIME_EVENTS.filter(_isOpen).length;
+    try{DTALL=dtParse(_rawDT,DOWNTIME_EVENTS.filter(e=>e&&e.open===true&&/\d:\d/.test(String(e.start||''))).map(e=>({date:String(e.date||'').slice(0,10),
+      cause:e.why||e.cause||'—',resp:e.responsible||'—',start:e.start,h:0})),_wNow());}catch(e){console.warn('[dt]',e);DTALL=[];} /* .134 */
     if(isFull){DTE=_rawDT;dtExcl=0;}
     else{DTE=_rawDT.filter(e=>_isoS.has(e.date));dtExcl=_rawDT.length-DTE.length;}
   }else if(!CONFIG.API_URL){ /* v74: sintético SOLO en demo — jamás con API conectado */
@@ -2397,6 +2757,9 @@ function buildM(){
   const DT_RESP={};DTE.forEach(e=>DT_RESP[e.resp]=+((DT_RESP[e.resp]||0)+e.h).toFixed(2));
   const nptTot=+DTE.reduce((s,e)=>s+e.h,0).toFixed(1);
   const nptLog=+DTE.filter(e=>/meds|omma|logist|trucking/i.test(e.resp)).reduce((s,e)=>s+e.h,0).toFixed(1);
+  /* .134: ventana del rango en reloj Central → downtimes que la tocan (incluye los que cruzan medianoche) */
+  const dtA=_wms(ISO[0],'00:00'),dtB=(_wms(ISO[ISO.length-1],'00:00')||0)+864e5;
+  const DTW=(dtA!=null&&DTALL.length)?dtWin(DTALL,dtA,dtB):[];
   /* sourcing */
   const _btd=((ACTIVE_META&&ACTIVE_META.byTerminalDaily)||[]).filter(x=>{const d=String(x.date).slice(0,10);return ISO.indexOf(d)>=0;});
   let SRC_RANGED=false,btAll;
@@ -2457,11 +2820,15 @@ function buildM(){
     // stage cuenta si su day está en el daily del range O dentro de los límites de fecha seleccionados
     return _rangeSet.has(d)||(d>=_d0&&d<=_d1);};
   const stIn=SD.filter(_dayOK);
+  const _SWm=new Map();try{const _sw=stgWins(SD);SD.forEach((x,i)=>_SWm.set(x,_sw[i]));}catch(_){} /* .134 */
   const STGrows=stIn.map(s=>{const raw=String(s.duration||'');const bad=raw.trim().charAt(0)==='-';
     let m=(+s.duration_min>0)?+s.duration_min:(bad?0:(durMin(raw)||durSE(s.start,s.end)));
     if(m<0||m>720)m=0;
     const c=(+s.change_min>0&&+s.change_min<1440)?Math.round(+s.change_min):0;
-    return {n:+s.total_stage||0,well:s.well||'',t:+(+s.used_tons||0).toFixed(1),d:Math.round(m),c:c,day:s.day||'',drv:+s.drivers_loc||0};}).filter(s=>s.n>0);
+    /* .134: ventana de la etapa en reloj Central = inicio → fin + cambio (WL/transición que la sigue) */
+    let wa=null,wb=null;const _w=_SWm.get(s);
+    if(_w){wa=_w.a;wb=(_w.b!=null?_w.b:wa+Math.max(m,60)*6e4)+(c>0?c*6e4:0);}
+    return {n:+s.total_stage||0,well:s.well||'',t:+(+s.used_tons||0).toFixed(1),d:Math.round(m),c:c,day:s.day||'',drv:+s.drivers_loc||0,wa,wb};}).filter(s=>s.n>0);
   const tonsStageD=(T.total_tons&&T.total_stages)?+(T.total_tons/T.total_stages).toFixed(1):173;
   const stagesDayD=+T.stages_day||((T.total_stages&&T.duration_days)?+(T.total_stages/T.duration_days).toFixed(1):9);
   // Mezcla de tarifas REALMENTE aplicadas en el range (de daily[].rates del GAS v8.3+)
@@ -2523,6 +2890,7 @@ function buildM(){
         HR={lab:Array.from({length:24},(_,h2)=>String(h2).padStart(2,'0')+':00'),
           L:A('l'),DRH:A('dr'),RV:A('rv'),FS:A('fs'),TNh:A('tn'),TEh:A('te'),TRh:A('tr'),DEh:A('de')};
         HR.TOT=HR.lab.map((_,i)=>(HR.TEh[i]>0||HR.TRh[i]>0||HR.DEh[i]>0)?Math.round(HR.TRh[i]*2+HR.TEh[i]+HR.DEh[i]):null);
+        HR.slots=_dtHourSlots([ISO[0]]); /* .134 */
         let _hcum=0;HR.CUM=HR.L.map(v=>_hcum+=v);
         HR.IPTh=HR.L.map((_,i)=>HR.DRH[i]>0?Math.round(HR.RV[i]/HR.DRH[i]):null);
         if(!HR.L.some(v=>v>0))HR=null; /* day sin horas de entrega → quedan las vistas diarias */
@@ -2536,8 +2904,31 @@ function buildM(){
     const hb=((typeof HOURLY_T!=='undefined'&&HOURLY_T)||[]).find(x=>String(x.date).slice(0,10)===ISO[0]&&x.terminal===PZCYC);
     if(hb&&hb.h&&hb.h.length){const z=()=>Array(24).fill(0);const L2=z(),D2=z(),TE=z(),TR=z(),DE=z();
       hb.h.forEach((hh,j)=>{L2[hh]=+hb.l[j]||0;D2[hh]=+(hb.dr||[])[j]||0;TE[hh]=+(hb.te||[])[j]||0;TR[hh]=+(hb.tr||[])[j]||0;DE[hh]=+(hb.de||[])[j]||0;});
-      HRC={lab:HR.lab,L:L2,DRH:D2,TEh:TE,TRh:TR,DEh:DE,term:PZCYC};
+      HRC={lab:HR.lab,slots:HR.slots,L:L2,DRH:D2,TEh:TE,TRh:TR,DEh:DE,term:PZCYC};
       HRC.TOT=HRC.lab.map((_,i)=>(TE[i]>0||TR[i]>0||DE[i]>0)?Math.round(TR[i]*2+TE[i]+DE[i]):null);}}
+  /* .134: VISTA POR HORA de varios días (Cycle Times / Daily): una hora por punto, scroll horizontal.
+     Con terminal elegida usa hourlyByTerm (GAS v10.7); sin esa serie no se ofrece (no mezcla terminales). */
+  let HRM=null,HLM=null;
+  try{if(n>1&&typeof HOURLY!=='undefined'&&HOURLY&&HOURLY.length){
+    const byD={};HOURLY.forEach(x=>{byD[String(x.date).slice(0,10)]=x;});
+    const hT=PZCYC?(((typeof HOURLY_T!=='undefined'&&HOURLY_T)||[]).filter(x=>x.terminal===PZCYC)):null;
+    const byT={};(hT||[]).forEach(x=>{byT[String(x.date).slice(0,10)]=x;});
+    const lab=[],L1=[],DR1=[],RV1=[],FS1=[],CU1=[],TE1=[],TR1=[],DE1=[],L2=[],DR2=[],TE2=[],TR2=[],DE2=[];
+    ISO.forEach(d=>{const hd=byD[d],hb=byT[d];const sp={};if(hb&&hb.h)hb.h.forEach((hh,j)=>{sp[hh]=j;});let cu=0;
+      for(let h2=0;h2<24;h2++){lab.push(shortDay(d)+' '+_dp2(h2)+':00');
+        const g=k=>(hd&&hd[k]&&hd[k].length===24)?(+hd[k][h2]||0):0;
+        L1.push(g('l'));DR1.push(g('dr'));RV1.push(g('rv'));FS1.push(g('fs'));cu+=g('l');CU1.push(cu);TE1.push(g('te'));TR1.push(g('tr'));DE1.push(g('de'));
+        const j=sp[h2],gb=k=>(hb&&j!=null&&hb[k])?(+hb[k][j]||0):0;
+        L2.push(gb('l'));DR2.push(gb('dr'));TE2.push(gb('te'));TR2.push(gb('tr'));DE2.push(gb('de'));}});
+    const slots=_dtHourSlots(ISO);const _k=_hrKeep(ISO);
+    [lab,slots,L1,DR1,RV1,FS1,CU1,TE1,TR1,DE1,L2,DR2,TE2,TR2,DE2].forEach(a=>{if(a.length>_k)a.length=_k;});
+    if(L1.some(v=>v>0))HLM={lab,slots,L:L1,DRH:DR1,RV:RV1,FS:FS1,CUM:CU1,multi:true};
+    const useT=!!PZCYC;
+    if(!useT||Object.keys(byT).length){
+      HRM={lab,slots,L:useT?L2:L1,DRH:useT?DR2:DR1,TEh:useT?TE2:TE1,TRh:useT?TR2:TR1,DEh:useT?DE2:DE1,multi:true,term:PZCYC||''};
+      HRM.TOT=HRM.lab.map((_,i)=>(HRM.TEh[i]>0||HRM.TRh[i]>0||HRM.DEh[i]>0)?Math.round(HRM.TRh[i]*2+HRM.TEh[i]+HRM.DEh[i]):null);
+      if(!HRM.L.some(v=>v>0))HRM=null;}}}catch(e){console.warn('[hora-multi]',e);HRM=null;HLM=null;}
+  const HRX=(n===1)?HRC:(((typeof HV!=='undefined')&&HV.cyc==='hour'&&HRM)?HRM:null);
   /* .91: TR del range SOLO con días pumping (ST>0); un range/pozo sin etapas cae a todos */
   const _trI=[];for(let i=0;i<n;i++){if(Tt[i]>0&&(+ST[i]||0)>0)_trI.push(i);}
   const _trF=_trI.length?_trI:L.map((_,i)=>i).filter(i=>Tt[i]>0);
@@ -2546,10 +2937,10 @@ function buildM(){
   const bestI=runI.length?runI.reduce((b,i)=>L[i]>L[b]?i:b,runI[0]):0;
   const DTR=+T.turn_rate_target||3.27;
   return {ISO,D:Dl,L,TD:Tt,TR:TRr,TN,ST,PH,H,AN,CUMACT,CUMPL,CUMREV,CUMREVPL,
-    CTR,CTE,CDE,CTOT,AVG,DSN,dCT,dCTbuf,CYC_TERMS,cycHas,cycSel:PZCYC,CN,cycNone,cycInR,TRM,HRC,runIdx:runI,bestI,
+    CTR,CTE,CDE,CTOT,AVG,DSN,dCT,dCTbuf,CYC_TERMS,cycHas,cycSel:PZCYC,CN,cycNone,cycInR,TRM,HRC,HRM,HLM,HRX,DTALL,DTW,dtA,dtB,runIdx:runI,bestI,
     DR,CD:CDl,VMAX:Math.max.apply(null,DR.map(d=>d[2]).concat([1])),
     DTE,dtExcl,openHid,DT_RESP,nptTot,nptLog,SRC,SRC_RANGED,WT,AST,PART,RD,
-    STG:STGrows,RMIX:RMIXA,RUN_DL,RUN_DL_STG,SPD,TPD,DAY_TONS,DAY_DUR,tonsStageD,stagesDayD,durStageD,durFracD,durChgD,durTotD,validDays:_validDays,
+    STG:STGrows,RMIX:RMIXA,RUN_DL,RUN_DL_STG,RUN_ISO:_dayKeys,SPD,TPD,DAY_TONS,DAY_DUR,tonsStageD,stagesDayD,durStageD,durFracD,durChgD,durTotD,validDays:_validDays,
     totL,totT,totR,totFsc,fscD,FSCR,fscRD,fscDsnTot,totRevDsnF,dRevDayF,CUMREVPLF,CUMFSC,IPT,IPT_D,IPT_F,HR,trAll,rpl,dTgt,dDrv:+T.drivers_day||20,DTR,techTR:+(DTR*1.2).toFixed(2),dRevDay,
     T,X,n,isLive,name:(ACTIVE_META&&ACTIVE_META.name)||CURRENT_ID,f,l};
 }
@@ -2720,21 +3111,21 @@ function bExec(){
     ${secH('<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.8"/><path d="M6 12h.01M18 12h.01"/></svg>','Financial',(m.totFsc>0||m.fscD>0)?'range revenue · includes FSC':'range revenue · no FSC reported')}
     <div class="grid g2 mb">${FIN}</div>
     <div class="grid g2 mb">
-      <div class="card"><div class="card-t">Loads/Day vs Target (${m.dTgt}) — Phase Annotated</div><div class="ch"><canvas id="chClLoads"></canvas></div></div>
-      <div class="card"><div class="card-t">Turn Rate vs Target (${m.DTR}) + Technical (${m.techTR})</div><div class="ch"><canvas id="chClTR"></canvas></div></div>
+      <div class="card"><div class="ch-hd"><div class="card-t">Loads/Day vs Target (${m.dTgt}) — Phase Annotated</div>${dtChip('chClLoads',m.DTW.length>0)}</div><div class="ch"><canvas id="chClLoads"></canvas></div></div>
+      <div class="card"><div class="ch-hd"><div class="card-t">Turn Rate vs Target (${m.DTR}) + Technical (${m.techTR})</div>${dtChip('chClTR',m.DTW.length>0)}</div><div class="ch"><canvas id="chClTR"></canvas></div></div>
     </div>
     <div class="grid g2 mb">
       <div class="ins ins-g"><h3><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#58a05f"/><path d="M8 12.5l2.6 2.6L16 9.5" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Highlights vs Design</h3><ul>${hl.join('')}</ul></div>
       <div class="ins ins-w"><h3><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="#d47272"/></svg> Gaps vs Design</h3><ul>${gp.join('')}</ul></div>
     </div>`;
-  mkChart('chClLoads',{type:'bar',data:{labels:m.D,datasets:[
+  mkChart('chClLoads',{dt:dtDays(m,m.ISO),type:'bar',data:{labels:m.D,datasets:[
     {label:'Actual Loads',data:m.L,backgroundColor:m.L.map((v,i)=>phBarColor(v,i,m.dTgt)),borderRadius:5,borderSkipped:false,order:2},
     {label:'Design Target '+m.dTgt,data:tgtLine(m.dTgt),type:'line',borderColor:'rgba(212,114,114,.7)',borderDash:[6,3],pointRadius:0,borderWidth:2,order:0}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
       tooltip:{callbacks:{title:c=>`${m.D[c[0].dataIndex]} — Daily Ops`,label:c=>tipL(c),
-        afterBody:it=>{const i=it[0].dataIndex,ld=m.L[i],gap=ld-m.dTgt;return[sep,`Phase: ${PHLBLM[m.PH[i]]}`,`vs Target: ${gap>=0?'+':''}${gap} loads (${(gap/m.dTgt*100).toFixed(0)}%)`,`Turn Rate: ${m.TR[i]} | Drivers: ${m.TD[i]}`,`Est. Revenue: ${fK(m.H[i])}`,`Loads/Driver: ${(ld/Math.max(m.TD[i],1)).toFixed(1)}`];}}}},
+        afterBody:it=>{const i=it[0].dataIndex,ld=m.L[i],gap=ld-m.dTgt;return[sep,`Phase: ${PHLBLM[m.PH[i]]}`,`vs Target: ${gap>=0?'+':''}${+gap.toFixed(1)} loads (${(gap/m.dTgt*100).toFixed(0)}%)`,`Turn Rate: ${m.TR[i]} | Drivers: ${m.TD[i]}`,`Est. Revenue: ${fK(m.H[i])}`,`Loads/Driver: ${(ld/Math.max(m.TD[i],1)).toFixed(1)}`];}}}},
       scales:{x:{...gO,ticks:tO},y:{...gO,min:0,title:{display:true,text:'Loads/Day',font:{size:8}}}}}});
-  mkChart('chClTR',{type:'bar',data:{labels:m.D,datasets:[
+  mkChart('chClTR',{dt:dtDays(m,m.ISO),type:'bar',data:{labels:m.D,datasets:[
     {label:'Turn Rate',data:m.TR,backgroundColor:m.TR.map(trColor),borderRadius:4,borderSkipped:false},
     {label:'Design TR '+m.DTR,data:Array(m.n).fill(m.DTR),type:'line',borderColor:'rgba(106,184,154,.7)',borderDash:[6,3],pointRadius:0,borderWidth:2},
     {label:'Technical TR '+m.techTR,data:Array(m.n).fill(m.techTR),type:'line',borderColor:'rgba(212,149,106,.55)',borderDash:[3,3],pointRadius:0,borderWidth:1.5}]},
@@ -2824,7 +3215,7 @@ function bDVA(){
 
 /* ═══════ DAILY OPS ═══════ */
 function bDaily(){
-  const m=M;
+  const m=M;const H1=m.HR||((m.n>1&&typeof HV!=='undefined'&&HV.dly==='hour'&&m.HLM)?m.HLM:null); /* .134 */
   const runL=m.runIdx.map(i=>m.L[i]);
   const avgRun=runL.length?Math.round(runL.reduce((s,v)=>s+v,0)/runL.length):0;
   const runEffPct=runL.length?Math.round(runL.reduce((s,v)=>s+v,0)/(runL.length*m.dTgt)*100):0;
@@ -2839,10 +3230,10 @@ function bDaily(){
       ${kchip('NPT Impact',m.nptTot+'h',m.DTE.length+' events · '+m.nptLog+'h logistics',m.nptTot>0?'kr':'kg')}
     </div>
     <div class="grid g2 mb">
-      <div class="card"><div class="card-t">${m.HR?'Loads &amp; Active Drivers by Hour — '+m.D[0]:'Loads/Day &amp; Drivers vs Target ('+m.dTgt+' / '+m.dDrv+')'}</div><div class="ch ch-l"><canvas id="chDailyL"></canvas></div></div>
-      <div class="card"><div class="card-t">${m.HR?'Day Running Total by Hour vs Target Pace ('+m.dTgt+')':'Turn Rate by Day vs Design '+m.DTR}</div><div class="ch ch-l"><canvas id="chDailyTR"></canvas></div></div>
+      <div class="card"><div class="ch-hd"><div class="card-t">${H1?'Loads &amp; Active Drivers by Hour — '+(H1.multi?m.D[0]+' – '+m.D[m.n-1]:m.D[0]):'Loads/Day &amp; Drivers vs Target ('+m.dTgt+' / '+m.dDrv+')'}</div><div class="ch-ctl">${dtChip('chDailyL',m.DTW.length>0)}${hvSeg('dly',m.n>1&&!!m.HLM)}</div></div><div class="ch ch-l"><canvas id="chDailyL"></canvas></div></div>
+      <div class="card"><div class="ch-hd"><div class="card-t">${m.HR?'Day Running Total by Hour vs Target Pace ('+m.dTgt+')':'Turn Rate by Day vs Design '+m.DTR}</div>${dtChip('chDailyTR',m.DTW.length>0)}</div><div class="ch ch-l"><canvas id="chDailyTR"></canvas></div></div>
     </div>
-    ${(m.PART.has&&!m.HR)?`<div class="card mb"><div class="card-t">Participation diaria en el pad${m.PART.tgt!=null?' vs Target ('+m.PART.tgt+'%)':''} — Load # global</div><div class="ch"><canvas id="chPart"></canvas></div></div>`:''}
+    ${(m.PART.has&&!m.HR)?`<div class="card mb"><div class="card-t">Daily participation on the pad${m.PART.tgt!=null?' vs Target ('+m.PART.tgt+'%)':''} — Load # global</div><div class="ch"><canvas id="chPart"></canvas></div></div>`:''}
     ${m.HR?'':`<div class="card mb"><div class="card-t">Cumulative Loads: Actual vs Design ${m.T.total_loads?fmt(m.T.total_loads)+' ':''}Projection</div><div class="ch"><canvas id="chCumPZ"></canvas></div></div>`}
     <div class="card" style="padding:0;overflow:hidden">
       <div style="padding:12px 16px;background:linear-gradient(135deg,#1c3d54,#2d5a7b);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
@@ -2858,41 +3249,41 @@ function bDaily(){
       <div style="overflow-x:auto"><table style="width:100%;font-size:11px;min-width:900px">
         <thead><tr style="background:#f8fafc;border-bottom:2px solid #e2e8f0">${['Date','Phase','Loads','Avg Net (lbs)','Tons','Revenue','Drivers','TR','vs Target','Eff'].map((h,i)=>`<th style="padding:9px 12px;font-size:8.5px;text-transform:uppercase;letter-spacing:.7px;color:#94a3b8;font-weight:700;text-align:${i>=2&&i<=6?'right':i>=7?'center':'left'}">${h}</th>`).join('')}</tr></thead>
         <tbody>${m.D.map((d,i)=>dailyRow(i)).join('')}</tbody></table></div></div>`;
-  if(m.HR){const h=m.HR;
-    mkChart('chDailyL',{type:'bar',data:{labels:h.lab,datasets:[
+  if(H1){const h=H1;
+    mkChart('chDailyL',{dt:dtHours(m,h),scroll:h.multi?{n:h.lab.length,px:14}:null,type:'bar',data:{labels:h.lab,datasets:[
       {label:'Loads/hour',data:h.L,backgroundColor:h.L.map(v=>v>0?'rgba(106,184,154,.85)':'rgba(203,213,225,.25)'),borderRadius:4,borderSkipped:false,order:2,yAxisID:'y'},
       {label:'Active drivers',data:h.DRH.map(v=>v>0?v:null),type:'line',borderColor:PZ.A,pointRadius:3,pointBackgroundColor:PZ.A,tension:.35,order:1,yAxisID:'y1',borderWidth:2.5,pointBorderColor:'#fff',pointBorderWidth:1.5,spanGaps:true}]},
       options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
-        tooltip:{callbacks:{title:c=>`${h.lab[c[0].dataIndex]} — ${m.D[0]}`,label:c=>tipL(c),
+        tooltip:{callbacks:{title:c=>h.multi?h.lab[c[0].dataIndex]:`${h.lab[c[0].dataIndex]} — ${m.D[0]}`,label:c=>tipL(c),
           afterBody:it=>{const i=it[0].dataIndex;if(!h.L[i]&&!h.DRH[i])return['No deliveries this hour'];
             const out=[sep,`Hour revenue: ${fK(h.RV[i])}`+(h.FS[i]>0?` (rate ${fK(h.RV[i]-h.FS[i])} + FSC ${fK(h.FS[i])})`:'')];
             if(h.DRH[i]>0)out.push(`Loads/driver: ${(h.L[i]/h.DRH[i]).toFixed(2)}`);
             out.push(`Day running total: ${h.CUM[i]} loads`+(m.dTgt?` (${Math.round(h.CUM[i]/m.dTgt*100)}% of target ${m.dTgt})`:''));
             return out;}}}},
-        scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:24}},y:{...gO,beginAtZero:true,position:'left',title:{display:true,text:'Loads',font:{size:8}}},
+        scales:{x:h.multi?_hrX(h.lab):{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:24}},y:{...gO,beginAtZero:true,position:'left',title:{display:true,text:'Loads',font:{size:8}}},
           y1:{...gO,beginAtZero:true,position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Drivers',font:{size:8}}}}}});
   }else
-  mkChart('chDailyL',{type:'bar',data:{labels:m.D,datasets:[
+  mkChart('chDailyL',{dt:dtDays(m,m.ISO),type:'bar',data:{labels:m.D,datasets:[
     {label:'Loads',data:m.L,backgroundColor:m.L.map((v,i)=>phBarColor(v,i,m.dTgt)),borderRadius:4,borderSkipped:false,order:2,yAxisID:'y'},
     {label:'Drivers',data:m.TD,type:'line',borderColor:PZ.A,pointRadius:3,pointBackgroundColor:PZ.A,tension:.4,order:1,yAxisID:'y1',borderWidth:2.5,pointBorderColor:'#fff',pointBorderWidth:1.5},
     {label:'Target '+m.dTgt,data:tgtLine(m.dTgt),type:'line',borderColor:'rgba(212,114,114,.6)',borderDash:[6,3],pointRadius:0,borderWidth:1.5,order:0,yAxisID:'y'},
     {label:'Target '+m.dDrv+' drivers',data:Array(m.n).fill(m.dDrv),type:'line',borderColor:'rgba(212,149,106,.35)',borderDash:[3,3],pointRadius:0,borderWidth:1,order:0,yAxisID:'y1'}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
       tooltip:{callbacks:{title:c=>`${m.D[c[0].dataIndex]} — Daily Performance`,label:c=>tipL(c),
-        afterBody:it=>{const i=it[0].dataIndex,gap=m.L[i]-m.dTgt;const out=[sep,`vs Target: ${gap>=0?'+':''}${gap} (${(gap/m.dTgt*100).toFixed(0)}%)`,`TR: ${m.TR[i]} | Loads/Driver: ${(m.L[i]/Math.max(m.TD[i],1)).toFixed(1)}`,`Revenue: ${fK(m.H[i])} | Tons: ${fmt(Math.round(m.TN[i]))}t`];if(m.FSCR&&m.FSCR[i]>0)out.push(`Rate: ${fK(m.H[i]-m.FSCR[i])}  ·  FSC: ${fK(m.FSCR[i])}`);return out;}}}},
+        afterBody:it=>{const i=it[0].dataIndex,gap=m.L[i]-m.dTgt;const out=[sep,`vs Target: ${gap>=0?'+':''}${+gap.toFixed(1)} (${(gap/m.dTgt*100).toFixed(0)}%)`,`TR: ${m.TR[i]} | Loads/Driver: ${(m.L[i]/Math.max(m.TD[i],1)).toFixed(1)}`,`Revenue: ${fK(m.H[i])} | Tons: ${fmt(Math.round(m.TN[i]))}t`];if(m.FSCR&&m.FSCR[i]>0)out.push(`Rate: ${fK(m.H[i]-m.FSCR[i])}  ·  FSC: ${fK(m.FSCR[i])}`);return out;}}}},
       scales:{x:{...gO,ticks:tO},y:{...gO,beginAtZero:true,position:'left',title:{display:true,text:'Loads',font:{size:8}}},
         y1:{...gO,beginAtZero:true,position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Drivers',font:{size:8}},suggestedMax:Math.max(30,m.dDrv+8)}}}});
   if(m.HR){const h=m.HR;const pace=h.lab.map((_,i)=>+(m.dTgt*(i+1)/24).toFixed(1));
-    mkChart('chDailyTR',{type:'line',data:{labels:h.lab,datasets:[
+    mkChart('chDailyTR',{dt:dtHours(m,h),type:'line',data:{labels:h.lab,datasets:[
       {label:'Running total',data:h.CUM,borderColor:PZ.P,backgroundColor:mkGrad('chDailyTR','rgba(58,124,165,.14)','rgba(58,124,165,.01)',240),fill:true,tension:.3,pointRadius:2,pointHoverRadius:7,borderWidth:2.5},
       {label:'Target pace '+m.dTgt,data:pace,borderColor:'rgba(212,114,114,.6)',borderDash:[6,3],pointRadius:0,borderWidth:1.5}]},
       options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
-        tooltip:{callbacks:{title:c=>`${h.lab[c[0].dataIndex]} — Cumulative del day`,label:c=>tipL(c,x=>(+x).toFixed(0)+' loads'),
+        tooltip:{callbacks:{title:c=>`${h.lab[c[0].dataIndex]} — Day cumulative`,label:c=>tipL(c,x=>(+x).toFixed(0)+' loads'),
           afterBody:it=>{const i=it[0].dataIndex,gap=h.CUM[i]-pace[i];
-            return[sep,`vs ritmo: ${gap>=0?'+':''}${gap.toFixed(1)} loads`,`This hour: ${h.L[i]} loads · ${h.DRH[i]} drivers`].concat(m.dTgt?[`Progress: ${Math.round(h.CUM[i]/m.dTgt*100)}% of target ${m.dTgt}`]:[]);}}}},
+            return[sep,`vs pace: ${gap>=0?'+':''}${gap.toFixed(1)} loads`,`This hour: ${h.L[i]} loads · ${h.DRH[i]} drivers`].concat(m.dTgt?[`Progress: ${Math.round(h.CUM[i]/m.dTgt*100)}% of target ${m.dTgt}`]:[]);}}}},
         scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{...gO,min:0}}}});
   }else
-  mkChart('chDailyTR',{type:'bar',data:{labels:m.D,datasets:[
+  mkChart('chDailyTR',{dt:dtDays(m,m.ISO),type:'bar',data:{labels:m.D,datasets:[
     {label:'Turn Rate',data:m.TR,backgroundColor:m.TR.map(trColor),borderRadius:4,borderSkipped:false},
     {label:'Design TR '+m.DTR,data:Array(m.n).fill(m.DTR),type:'line',borderColor:'rgba(106,184,154,.65)',borderDash:[6,3],pointRadius:0,borderWidth:2}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
@@ -2912,7 +3303,7 @@ function bDaily(){
             return[sep,`Our loads: ${m.L[i]} of ~${m.PART.span[i]||'—'} on the pad`].concat(gap!=null?[`vs Target: ${gap>=0?'+':''}${gap.toFixed(1)} pp ${gap>=0?'✓':'✗'}`]:[]);}}}},
         scales:{x:{...gO,ticks:tO},y:{...gO,min:0,suggestedMax:Math.max(60,(m.PART.tgt||0)+15),ticks:{callback:v=>v+'%'}}}}});
   }
-  mkChart('chCumPZ',{type:'line',data:{labels:m.D,datasets:[
+  mkChart('chCumPZ',{dt:dtDays(m,m.ISO),type:'line',data:{labels:m.D,datasets:[
     {label:'Actual Loads',data:m.CUMACT,borderColor:PZ.P,backgroundColor:mkGrad('chCumPZ','rgba(58,124,165,.14)','rgba(58,124,165,.01)',280),fill:true,tension:.4,pointRadius:3,pointHoverRadius:8,pointBackgroundColor:PZ.P,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5},
     {label:'Design Plan',data:m.CUMPL,borderColor:PZ.G,borderDash:[6,3],pointRadius:2,pointHoverRadius:6,borderWidth:1.5,pointBackgroundColor:PZ.G}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
@@ -2929,7 +3320,7 @@ function dailyRow(i){
   const phBg=isBest?'#dcfce7':PHCOL[ph],phCl=isBest?'#166534':ph==='run'?'#1e40af':'#475569';
   const tr=m.TR[i],trBg=tr>=m.DTR?'#dcfce7':tr>=m.DTR*0.88?'#dbeafe':'#fee2e2',trCl=tr>=m.DTR?'#166534':tr>=m.DTR*0.88?'#1e40af':'#b91c1c';
   const vB=ph!=='run'?'<span style="background:#f1f5f9;color:#94a3b8;padding:2px 8px;border-radius:7px;font-size:9px;font-weight:600">—</span>':
-    `<span style="background:${gap>=0?'#dcfce7':'#fee2e2'};color:${gap>=0?'#166534':'#b91c1c'};padding:2px 8px;border-radius:7px;font-size:9px;font-weight:700">${gap>=0?'+':''}${gap} (${gp}%)</span>`;
+    `<span style="background:${gap>=0?'#dcfce7':'#fee2e2'};color:${gap>=0?'#166534':'#b91c1c'};padding:2px 8px;border-radius:7px;font-size:9px;font-weight:700">${gap>=0?'+':''}${+gap.toFixed(1)} (${gp}%)</span>`;
   const eff=ph==='run'?Math.round(ld/m.dTgt*100)+'%':'—';
   return `<tr style="background:${rowBg}">
     <td style="padding:9px 12px;font-weight:700;color:#1e293b;border-left:3px solid ${blc}">${m.D[i]}${isBest?' ★':''}</td>
@@ -3134,7 +3525,7 @@ function bSrc(){
     if(!d2.length)return '';
     return encodeURIComponent('<b>'+t2+' — avg gross by day</b>\n'+d2.slice(-6).map(r=>'• '+String(r[0]).slice(5)+' — '+
       (+r[4]>0?fmt(r[4])+' lbs':'—')+((+r[5]||0)?' · <b>'+r[5]+' over</b>':'')).join('\n'));};
-  const _ser=WT_PREF.series,_oneD=m.n===1;
+  const _ser=WT_PREF.series,_hrW=m.n>1&&HV.wt==='hour',_oneD=m.n===1||_hrW;
   const _tCnt={};((m.WT&&m.WT.days)||[]).forEach(r=>{_tCnt[r[1]]=(_tCnt[r[1]]||0)+(+r[2]||0);});
   const _allL=Object.values(_tCnt).reduce((s2,v)=>s2+v,0);
   const wtPills=m.WT&&m.WT.has?['ALL'].concat(m.WT.terms).map(t2=>'<button class="wt-pill'+((WT_SCOPE===t2)?' on':'')+
@@ -3149,7 +3540,7 @@ function bSrc(){
     +((_oneD&&window._wtPrevR)?'<button class="wt-chip bk" onclick="wtBack()">◂ Back to range</button>':'');
   const wtLeg=(_ser!=='net'?'78–80k in-window green · >80k over red · <70k light':'Net payload per load delivered')
     +((!_oneD&&WT_PREF.inc)?' · dashed $ = Income/Truck·Day (rate + FSC)':'');
-  const wtSub=_oneD?'Hour-by-hour averages for this day':'Click any day on the chart to drill into its hours';
+  const wtSub=_hrW?'Every hour of the range — scroll sideways · Day returns to the daily trend':_oneD?'Hour-by-hour averages for this day':'Click any day on the chart to drill into its hours';
   const anAvg=Math.round(m.SRC.reduce((s,x)=>s+x.an*x.loads,0)/Math.max(m.SRC.reduce((s,x)=>s+x.loads,0),1));
   $('pz-cl-src').innerHTML=`
     <div class="st"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.1-7-11a7 7 0 1 1 14 0c0 4.9-7 11-7 11z"/><circle cx="12" cy="10" r="2.6"/></svg> Sourcing — ${m.SRC.map(s=>`${s.t} ${s.aPct}%`).join(' · ')} <span class="ssub">${m.SRC_RANGED?'· range '+m.n+'d':'· full-well range — paste Code v6.7 to filter by dates'}</span></div>
@@ -3158,14 +3549,15 @@ function bSrc(){
       ${kpiCard('Avg Net Weight',fmt(anAvg)+' lbs','cg',fmt(Math.round(m.SRC.reduce((s,x)=>s+x.lbs,0)/1e6))+'M lbs delivered','2-Box avg ✓','dn')}
       ${m.WT&&m.WT.has?kpiCard('Avg Gross Weight',fmt(m.WT.gAvg)+' lbs',gwBand(m.WT.gAvg).cls,(m.WT.ov?fmt(m.WT.ov)+' over 80k':'none over 80k')+' · '+(m.WT.lw?fmt(m.WT.lw)+' under 70k':'none under 70k'),gwBand(m.WT.gAvg).t,gwBand(m.WT.gAvg).k):''}
     </div>
+    ${dtCardFor(m,['chWt'],{note:'weight trend shows the bands'})}
     <div class="grid g2 mb">
       <div class="card"><div class="card-t">Design vs Actual Mix (%)</div><div class="ch ch-s"><canvas id="chSrcComp"></canvas></div></div>
       <div class="card"><div class="card-t">Loads by Terminal: Design vs Actual</div><div class="ch ch-s"><canvas id="chSrcLoads"></canvas></div></div>
     </div>
     ${m.WT&&m.WT.has&&m.WT.ov?`<div class="note" style="background:#fdecec;border:1px solid #f1c8c8;color:#b23b3b;border-radius:12px;padding:10px 14px;margin-bottom:12px;font-weight:700">Overweight alert — ${fmt(m.WT.ov)} load${m.WT.ov===1?'':'s'} above 80,000 lbs gross in this range. Hover the weight trend to find the exact ${m.n===1?'hours':'days'}${m.WT.ovAvail?' — the <b>Over 80k</b> column below names the trucks':''}.</div>`:''}
-    ${m.WT&&m.WT.has?`<div class="card mb"><div class="card-t wt-bar">Weight trend — ${m.n===1?'by hour':'by day'}
+    ${m.WT&&m.WT.has?`<div class="card mb"><div class="card-t wt-bar">Weight trend — ${(m.n===1||_hrW)?'by hour':'by day'}
       <span class="wt-pills">${wtPills}</span>
-      <span class="wt-ctl"><span class="wt-seg">${wtSeg}</span>${wtChips}</span></div>
+      <span class="wt-ctl">${dtChip('chWt',m.DTW.length>0)}${hvSeg('wt',m.n>1)}<span class="wt-seg">${wtSeg}</span>${wtChips}</span></div>
       <div class="sb wt-sub">${wtLeg} · ${wtSub}</div>
       <div class="ch"><canvas id="chWt"></canvas></div></div>`
      :(m.WT&&m.WT.avail?'':`<div class="note" style="margin-bottom:12px">Gross/Net weight trend lands with <b>Code v10.1</b> — paste the new GAS and hit Refresh.</div>`)}
@@ -3191,13 +3583,18 @@ function bSrc(){
       scales:{x:{...gO},y:{...gO,ticks:{callback:v=>fmt(v)+' lds'}}}}});
   /* .116: trend Net/Gross — 1 día = por hora · 2+ días = por día + Income/Truck·Day */
   if(m.WT&&m.WT.has){
-    const oneD=m.n===1;const sc=WT_SCOPE;
-    const rows=(oneD?m.WT.hrs:m.WT.days).filter(r=>sc==='ALL'||String(r[oneD?2:1])===sc);
+    const oneD=m.n===1,hrM=!oneD&&HV.wt==='hour';const sc=WT_SCOPE;
+    const rows=((oneD||hrM)?m.WT.hrs:m.WT.days).filter(r=>sc==='ALL'||String(r[(oneD||hrM)?2:1])===sc);
     const labels=[],net=[],gw=[],lds=[],ovA=[];let dayKeys=[],inc=null;const incParts={};
     if(oneD){for(let h=0;h<24;h++){labels.push(('0'+h).slice(-2)+':00');
       let l=0,ns=0,nl=0,gs=0,gl=0,ov=0;
       rows.filter(r=>+r[1]===h).forEach(r=>{l+=(+r[3]||0);if(+r[4]>0){ns+=r[4]*r[3];nl+=r[3];}if(+r[5]>0){gs+=r[5]*r[3];gl+=r[3];}ov+=(+r[6]||0);});
       lds.push(l);net.push(nl?Math.round(ns/nl):null);gw.push(gl?Math.round(gs/gl):null);ovA.push(ov);}}
+    else if(hrM){const ix={};rows.forEach(r=>{const k=String(r[0])+'|'+(+r[1]);(ix[k]=ix[k]||[]).push(r);});
+      m.ISO.forEach(d=>{for(let h=0;h<24;h++){labels.push(shortDay(d)+' '+_dp2(h)+':00');
+        let l=0,ns=0,nl=0,gs=0,gl=0,ov=0;(ix[d+'|'+h]||[]).forEach(r=>{l+=(+r[3]||0);if(+r[4]>0){ns+=r[4]*r[3];nl+=r[3];}if(+r[5]>0){gs+=r[5]*r[3];gl+=r[3];}ov+=(+r[6]||0);});
+        lds.push(l);net.push(nl?Math.round(ns/nl):null);gw.push(gl?Math.round(gs/gl):null);ovA.push(ov);}});
+      const _k=_hrKeep(m.ISO);[labels,lds,net,gw,ovA].forEach(a=>{if(a.length>_k)a.length=_k;});}
     else{dayKeys=Array.from(new Set(rows.map(r=>String(r[0])))).sort();
       dayKeys.forEach(d=>{labels.push(String(d).slice(5));
         let l=0,ns=0,nl=0,gs=0,gl=0,ov=0;
@@ -3214,20 +3611,21 @@ function bSrc(){
     const refsOn=WT_PREF.refs&&showG,incOn=(!oneD)&&WT_PREF.inc&&!!inc;
     const solo=showG!==showN; /* una sola serie → trazo más protagonista */
     const dsArr=[];
-    if(showN)dsArr.push({label:'Avg Net',data:net,borderColor:'#4ca882',backgroundColor:'rgba(76,168,130,.12)',tension:.35,spanGaps:true,pointRadius:solo?4:3,pointHoverRadius:6,borderWidth:solo?2.5:2,yAxisID:'y'});
-    if(showG)dsArr.push({label:'Avg Gross',data:gw,borderColor:'#2d5a7b',backgroundColor:'rgba(45,90,123,.10)',tension:.35,spanGaps:true,pointRadius:solo?4.5:3,pointHoverRadius:7,borderWidth:solo?2.5:2,yAxisID:'y',
+    if(showN)dsArr.push({label:'Avg Net',data:net,borderColor:'#4ca882',backgroundColor:'rgba(76,168,130,.12)',tension:.35,spanGaps:true,pointRadius:hrM?2.2:(solo?4:3),pointHoverRadius:6,borderWidth:solo?2.5:2,yAxisID:'y'});
+    if(showG)dsArr.push({label:'Avg Gross',data:gw,borderColor:'#2d5a7b',backgroundColor:'rgba(45,90,123,.10)',tension:.35,spanGaps:true,pointRadius:hrM?2.4:(solo?4.5:3),pointHoverRadius:7,borderWidth:solo?2.5:2,yAxisID:'y',
       pointBackgroundColor:gw.map(v=>v==null?'#2d5a7b':gwBand(v).col),pointBorderColor:gw.map(v=>v==null?'#2d5a7b':gwBand(v).col)});
     if(refsOn){dsArr.push(
       {label:'80k limit',data:TH(80000),borderColor:'rgba(212,114,114,.85)',borderWidth:1.5,pointRadius:0,yAxisID:'y'},
       {label:'78k floor',data:TH(78000),borderColor:'rgba(76,168,130,.5)',borderWidth:1,borderDash:[3,4],pointRadius:0,yAxisID:'y'},
       {label:'70k light',data:TH(70000),borderColor:'rgba(224,166,62,.8)',borderWidth:1.2,borderDash:[5,4],pointRadius:0,yAxisID:'y'});}
     if(incOn)dsArr.push({label:'Income/Truck·Day',data:inc,borderColor:'#9b8ec4',borderDash:[6,4],borderWidth:2,pointRadius:3,tension:.3,spanGaps:true,yAxisID:'y2'});
-    mkChart('chWt',{type:'line',data:{labels:labels,datasets:dsArr},options:{interaction:{mode:'index',intersect:false},
-      onHover:(e,els)=>{try{if(e.native&&e.native.target)e.native.target.style.cursor=(!oneD&&els&&els.length)?'pointer':'default';}catch(_){}},
-      onClick:(e,els)=>{try{if(oneD||!els||!els.length)return;const d=dayKeys[els[0].index];if(!d)return;
+    mkChart('chWt',{dt:oneD?{ev:m.DTALL,slots:_dtHourSlots([m.ISO[0]]),contig:true}:hrM?{ev:m.DTALL,slots:_dtHourSlots(m.ISO).slice(0,labels.length),contig:true}:dtDays(m,dayKeys),
+      scroll:hrM?{n:labels.length,px:14}:null,type:'line',data:{labels:labels,datasets:dsArr},options:{interaction:{mode:'index',intersect:false},
+      onHover:(e,els)=>{try{if(e.native&&e.native.target)e.native.target.style.cursor=(!oneD&&!hrM&&els&&els.length)?'pointer':'default';}catch(_){}},
+      onClick:(e,els)=>{try{if(oneD||hrM||!els||!els.length)return;const d=dayKeys[els[0].index];if(!d)return;
         window._wtPrevR={d0:$('w-d0').value,d1:$('w-d1').value};
         $('w-d0').value=d;$('w-d1').value=d;
-        document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));renderPozo();}catch(_){}},
+        document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));_vt(renderPozo);}catch(_){}},
       plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9},filter:it=>!/limit|floor|light/.test(it.text)}},
         tooltip:{filter:it=>!/limit|floor|light/.test(it.dataset.label),callbacks:{
           title:c=>c[0].label+' — '+(sc==='ALL'?'all plants':sc),
@@ -3238,9 +3636,9 @@ function bSrc(){
             const out=[sep,'Loads: '+fmt(lds[i2])+(ovA[i2]?' · OVER 80k: '+ovA[i2]:'')];
             if(!oneD&&inc&&inc[i2]!=null){const p2=incParts[dayKeys[i2]];
               if(p2&&p2.dr)out.push('Income mix: rate $'+fmt(Math.round((p2.rev-p2.fsc)/p2.dr))+' + FSC $'+fmt(Math.round(p2.fsc/p2.dr))+' per truck');}
-            if(!oneD)out.push('Click to open this day hour-by-hour');
+            if(!oneD&&!hrM)out.push('Click to open this day hour-by-hour');
             return out;}}}},
-      scales:{x:{...gO},y:{...gO,title:{display:true,text:'lbs',font:{size:8}},ticks:{callback:v=>fmt(v)}},
+      scales:{x:hrM?_hrX(labels):{...gO},y:{...gO,title:{display:true,text:'lbs',font:{size:8}},ticks:{callback:v=>fmt(v)}},
         ...(incOn?{y2:{position:'right',grid:{display:false},ticks:{callback:v=>'$'+fmt(v),font:{size:8}},title:{display:true,text:'$/truck·day',font:{size:8}}}}:{})}}});}
 }
 
@@ -3249,8 +3647,12 @@ function bDT(){
   const m=M;const worst=m.DTE[0]||{h:0,date:'—',cause:'—'};
   const padH=m.n*24,padEff=padH?(100-(m.nptTot/padH*100)).toFixed(1):100;
   const hToHM=h=>{const H2=Math.floor(h),Mn=Math.round((h-H2)*60);return H2+'h '+String(Mn).padStart(2,'0')+'m';};
-  const respCols={'Frac Crew':'rgba(212,114,114,.85)','Wireline Crew':'rgba(212,149,106,.85)','System':'rgba(106,158,200,.85)'};
-  const evCol=e=>respCols[e.resp]||'rgba(155,142,196,.85)';
+  /* .134 · color por CLASE: clima verde claro · resto rojo · coil tubing / NPT por arena rojo oscuro */
+  const evK=e=>dtCls(e.resp,e.cause);
+  const evCol=e=>{const k=evK(e);return 'rgba('+DT_K[k].rgb+','+(k==='bad'?.92:.85)+')';};
+  const SHD={wx:['125,201,146','96,176,120','160,216,175','78,156,100'],oth:['212,114,114','188,86,86','228,150,150','166,72,72','236,176,176'],bad:['128,22,22','104,14,14','150,38,38','86,10,10']};
+  const respK={};m.DTE.forEach(e=>{const k=evK(e);if(!respK[e.resp]||DT_RANK[k]>DT_RANK[respK[e.resp]])respK[e.resp]=k;});
+  const _rk={wx:0,oth:0,bad:0};const respCol=r=>{const k=respK[r]||'oth';const a=SHD[k];return 'rgba('+a[(_rk[k]++)%a.length]+',.88)';};
   $('pz-cl-dt').innerHTML=`
     <div class="st"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="#d47272"/></svg> Downtime — ${m.nptTot?fmtH(m.nptTot):'0 h'} Total · ${m.nptLog?fmtH(m.nptLog):'0 h'} Logistics · ${m.DTE.length} event${m.DTE.length===1?'':'s'} <span class="ssub">· range ${m.n}d${m.dtExcl?` · ${m.dtExcl} undated/out-of-range — visible in All`:''}${m.openHid?` · <b style="color:#d97706">${m.openHid} open/sanitized — excluded from NPT</b>`:''}</span></div>
     <div class="grid g4 mb">
@@ -3259,21 +3661,22 @@ function bDT(){
       ${kpiCard('Worst Event',hToHM(worst.h),'co',worst.date+' — '+worst.cause,Math.round(worst.h/Math.max(m.nptTot,1)*100)+'% of total NPT','dd')}
       ${kpiCard('Pad Efficiency',Math.max(0,padEff)+'%','co',fmtH(m.nptTot)+' / '+fmt(padH)+' h window ('+m.n+'d)',m.nptTot>0?'NPT driven':'no NPT ✓',m.nptTot>0?'dw':'dn')}
     </div>
+    ${dtCardFor(m,[],{noList:true,note:'weather light green · other red · sand / coil tubing dark red'})}
     <div class="grid g2 mb">
       <div class="card"><div class="card-t">NPT by Event (hours)</div><div class="ch ch-s"><canvas id="chDTbar"></canvas></div></div>
       <div class="card"><div class="card-t">NPT Distribution by Responsible Party</div><div class="ch ch-s"><canvas id="chDTpie"></canvas></div></div>
     </div>
     <div class="card"><div class="card-tl">Downtime Event Log</div>
       <table><thead><tr><th>Date</th><th>Cause</th><th>Responsible</th><th>Start</th><th>End</th><th>Duration</th><th>Est. Loads Lost</th></tr></thead><tbody>
-      ${m.DTE.map((e,i)=>`<tr${i===0?' style="background:#fee2e2"':''}><td>${e.date}</td><td>${e.cause}</td><td><span class="bs ${/frac/i.test(e.resp)?'br':/wire/i.test(e.resp)?'bo':'bb'}">${e.resp}</span></td><td class="mono">${e.start||'—'}</td><td class="mono">${e.end?e.end+(e.ed&&e.date&&e.ed>e.date?'<span style="font-size:8px;font-weight:800;color:#d97706"> +1d</span>':''):'—'}</td><td><strong>${hToHM(e.h)}</strong></td><td>~${Math.round(e.h*m.dTgt/24)} loads</td></tr>`).join('')}
+      ${m.DTE.map((e,i)=>`<tr${i===0?' style="background:#fee2e2"':''}><td>${e.date}</td><td>${e.cause}</td><td><span class="bs" style="background:rgba(${DT_K[evK(e)].rgb},.16);color:${DT_K[evK(e)].c}" title="${DT_K[evK(e)].n}">${e.resp}</span></td><td class="mono">${e.start||'—'}</td><td class="mono">${e.end?e.end+(e.ed&&e.date&&e.ed>e.date?'<span style="font-size:8px;font-weight:800;color:#d97706"> +1d</span>':''):'—'}</td><td><strong>${hToHM(e.h)}</strong></td><td>~${Math.round(e.h*m.dTgt/24)} loads</td></tr>`).join('')}
       <tr style="background:#f0fdf4"><td colspan="5"><strong>Total</strong></td><td><strong>${m.nptTot}h</strong></td><td><strong>~${Math.round(m.nptTot*m.dTgt/24)} loads est.</strong></td></tr>
       </tbody></table></div>`;
   const top=m.DTE.slice(0,8);
   mkChart('chDTbar',{type:'bar',data:{labels:top.map(e=>e.date+' — '+e.cause.slice(0,26)),datasets:[{label:'NPT Hours',data:top.map(e=>e.h),backgroundColor:top.map(evCol),borderRadius:8,borderSkipped:false}]},
-    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`${c[0].label}`,label:c=>`${c.parsed.x.toFixed(2)}h — ${(c.parsed.x/Math.max(m.nptTot,1)*100).toFixed(0)}% of total NPT`,afterLabel:c=>'Responsible: '+top[c.dataIndex].resp+' · MEDS '+m.nptLog+'h'}}},
+    options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`${c[0].label}`,label:c=>`${c.parsed.x.toFixed(2)}h — ${(c.parsed.x/Math.max(m.nptTot,1)*100).toFixed(0)}% of total NPT`,afterLabel:c=>'Responsible: '+top[c.dataIndex].resp+' · '+DT_K[evK(top[c.dataIndex])].n+' · MEDS '+m.nptLog+'h'}}},
       scales:{x:{...gO,title:{display:true,text:'Hours',font:{size:8}}},y:{...gO,ticks:{font:{size:8.5}}}}}});
   const resp=Object.entries(m.DT_RESP).sort((a,b)=>b[1]-a[1]);
-  mkChart('chDTpie',{type:'doughnut',data:{labels:resp.map(r=>r[0]),datasets:[{data:resp.map(r=>r[1]),backgroundColor:resp.map((r,i)=>respCols[r[0]]||['rgba(155,142,196,.85)','rgba(200,184,74,.85)'][i%2]),borderWidth:3,borderColor:'#fff',hoverOffset:10}]},
+  mkChart('chDTpie',{type:'doughnut',data:{labels:resp.map(r=>r[0]),datasets:[{data:resp.map(r=>r[1]),backgroundColor:resp.map(r=>respCol(r[0])),borderWidth:3,borderColor:'#fff',hoverOffset:10}]},
     options:{cutout:'62%',plugins:{dCenter:{show:true,value:m.nptTot+'h',label:'total NPT',color:'#b91c1c'},legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},
       tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw}h (${(c.raw/Math.max(m.nptTot,1)*100).toFixed(0)}%)`}}}}});
 }
@@ -3343,22 +3746,23 @@ function bCycle(){
         <div class="sb" style="margin-bottom:8px">Actual component breakdown · Total ${Math.round(m.AVG.tot)} min avg</div>
         <div class="ch"><canvas id="cCycDough"></canvas></div></div>
     </div>
+    ${dtCardFor(m,['cCycStack','cCycLine'])}
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-        <div class="card-t" style="margin:0">${m.HRC?'Hourly Cycle Breakdown — '+m.D[0]+(m.HRC.term?' · '+m.HRC.term:'')+' · by Delivered hour':'Daily Cycle Breakdown — Stacked Components'}</div>
-        ${m.HRC?'':`<div class="seg-ctrl"><button id="cvAll" class="seg-btn seg-on" onclick="cycView('all')">All Days</button><button id="cvRun" class="seg-btn" onclick="cycView('run')">Running Only</button></div>`}</div>
+        <div class="card-t" style="margin:0">${m.HRX?'Hourly Cycle Breakdown — '+(m.HRX.multi?m.D[0]+' – '+m.D[m.n-1]:m.D[0])+(m.HRX.term?' · '+m.HRX.term:'')+' · by Delivered hour':'Daily Cycle Breakdown — Stacked Components'}</div>
+        <div class="ch-ctl">${dtChip('cCycStack',m.DTW.length>0)}${hvSeg('cyc',m.n>1&&!!m.HRM)}${m.HRX?'':`<div class="seg-ctrl"><button id="cvAll" class="seg-btn seg-on" onclick="cycView('all')">All Days</button><button id="cvRun" class="seg-btn" onclick="cycView('run')">Running Only</button></div>`}</div></div>
       <div class="ch ch-l"><canvas id="cCycStack"></canvas></div></div>
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
-        <div class="card-t" style="margin:0">Component Trend vs Design &amp; Threshold</div>
-        <div class="seg-ctrl"><button id="ccTot" class="seg-btn seg-on" onclick="cycComp('total')">Total</button><button id="ccTrn" class="seg-btn" onclick="cycComp('transit')">Transit</button><button id="ccTrm" class="seg-btn" onclick="cycComp('terminal')">Terminal</button><button id="ccDst" class="seg-btn" onclick="cycComp('offload')">Offload</button></div></div>
+        <div class="card-t" style="margin:0">Component Trend vs Design &amp; Threshold${m.HRX&&m.HRX.multi?' · by hour':''}</div>
+        <div class="ch-ctl">${dtChip('cCycLine',m.DTW.length>0)}<div class="seg-ctrl"><button id="ccTot" class="seg-btn seg-on" onclick="cycComp('total')">Total</button><button id="ccTrn" class="seg-btn" onclick="cycComp('transit')">Transit</button><button id="ccTrm" class="seg-btn" onclick="cycComp('terminal')">Terminal</button><button id="ccDst" class="seg-btn" onclick="cycComp('offload')">Offload</button></div></div></div>
       <div class="ch"><canvas id="cCycLine"></canvas></div></div>
     <div class="grid g2 mb">
       <div class="card"><div class="card-t">Cycle vs Daily Loads — correlation</div><div class="ch ch-s"><canvas id="cCycScat"></canvas></div></div>
-      <div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 16px"><div class="card-t" style="margin:0">${m.HRC?'Hourly Cycle Detail — '+m.D[0]:'Daily Cycle Detail'}</div></div>
+      <div class="card" style="padding:0;overflow:hidden"><div style="padding:12px 16px"><div class="card-t" style="margin:0">${m.HRX?'Hourly Cycle Detail — '+(m.HRX.multi?m.n+' days':m.D[0]):'Daily Cycle Detail'}</div></div>
         <div style="overflow:auto;max-height:300px"><table style="width:100%;font-size:10.5px">
           <thead><tr>${['Date','Transit','Terminal','Offload','Total','vs Design'].map(h=>`<th style="position:sticky;top:0;background:#f8fafc">${h}</th>`).join('')}</tr></thead>
-          <tbody>${(m.HRC?m.HRC.lab.map((d,i)=>({d,i})).filter(x=>m.HRC.L[x.i]>0).map(x=>{const h=m.HRC,i=x.i,tot=h.TOT[i];const gap=tot!=null?tot-m.dCTbuf:null;const cl=gap==null?'#94a3b8':gap<=0?'#16a34a':gap<=m.dCTbuf*0.3?'#d97706':'#dc2626';
+          <tbody>${(m.HRX?m.HRX.lab.map((d,i)=>({d,i})).filter(x=>m.HRX.L[x.i]>0).map(x=>{const h=m.HRX,i=x.i,tot=h.TOT[i];const gap=tot!=null?tot-m.dCTbuf:null;const cl=gap==null?'#94a3b8':gap<=0?'#16a34a':gap<=m.dCTbuf*0.3?'#d97706':'#dc2626';
             return `<tr><td style="font-weight:600">${x.d} · ${h.L[i]} lds</td><td class="mono">${h.TRh[i]?h.TRh[i]+'m':'—'}</td><td class="mono">${h.TEh[i]?h.TEh[i]+'m':'—'}</td><td class="mono" style="color:${h.DEh[i]>m.DSN.dest*1.5?'#dc2626':'#475569'}">${h.DEh[i]?h.DEh[i]+'m':'—'}</td><td class="mono" style="font-weight:700">${tot!=null?tot+'m':'—'}</td><td class="mono" style="color:${cl};font-weight:700">${gap!=null?(gap>=0?'+':'')+gap+'m':'—'}</td></tr>`;}):m.D.map((d,i)=>{if(m.CTOT[i]==null&&m.CTR[i]==null&&m.CTE[i]==null&&m.CDE[i]==null)return ''; /* .133: día sin cargas de esa terminal → fuera (antes "nullm") */
             const _v=v=>v==null?'—':v+'m';const gap=m.CTOT[i]!=null?m.CTOT[i]-m.dCTbuf:null;const cl=gap==null?'#94a3b8':gap<=0?'#16a34a':gap<=m.dCTbuf*0.3?'#d97706':'#dc2626';
             return `<tr style="${m.PH[i]!=='run'?'opacity:.55':''}"><td style="font-weight:600">${d}</td><td class="mono">${_v(m.CTR[i])}</td><td class="mono">${_v(m.CTE[i])}</td><td class="mono" style="color:${m.CDE[i]>m.DSN.dest*1.5?'#dc2626':'#475569'}">${_v(m.CDE[i])}</td><td class="mono" style="font-weight:700">${_v(m.CTOT[i])}</td><td class="mono" style="color:${cl};font-weight:700">${gap==null?'—':(gap>=0?'+':'')+gap+'m'}</td></tr>`;})).join('')}</tbody></table></div></div>
@@ -3370,24 +3774,24 @@ function bCycle(){
   buildCycStack();buildCycLine();buildCycScat();
 }
 function buildCycStack(){
-  if(M.HRC)return buildCycStackH(); /* v72: 1 day → por hora · .133 por terminal */
+  if(M.HRX)return buildCycStackH(); /* v72: 1 day → por hora · .133 por terminal · .134 varios días */
   const m=M,idx=getCycIdx(),labels=idx.map(i=>m.D[i]);
   const THR={trans:m.DSN.trans*1.5,term:m.DSN.term*1.5,dest:m.DSN.dest*1.5};
-  mkChart('cCycStack',{type:'bar',data:{labels,datasets:[
+  mkChart('cCycStack',{dt:dtDays(m,idx.map(i=>m.ISO[i])),type:'bar',data:{labels,datasets:[
     {label:'Transit OW',data:idx.map(i=>m.CTR[i]),backgroundColor:'rgba(58,124,165,.75)',stack:'s',borderSkipped:false},
     {label:'Terminal',data:idx.map(i=>m.CTE[i]),backgroundColor:'rgba(155,142,196,.75)',stack:'s',borderSkipped:false},
     {label:'Offload',data:idx.map(i=>m.CDE[i]),backgroundColor:'rgba(212,114,114,.75)',stack:'s',borderSkipped:true,borderRadius:4}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
       tooltip:{callbacks:{title:c=>`${labels[c[0].dataIndex]} — Cycle Breakdown`,label:c=>tipL(c,x=>x+'m'),
         afterBody:it=>{const i=idx[it[0].dataIndex],tot=m.CTOT[i],gap=tot-m.dCTbuf;
-          return[sep,`Total Cycle: ${tot} min`,`vs Design ${m.dCTbuf}: ${gap>=0?'+':''}${gap}m (${(gap/m.dCTbuf*100).toFixed(0)}%)`,
+          return[sep,`Total Cycle: ${tot} min`,`vs Design ${m.dCTbuf}: ${gap>=0?'+':''}${+(+gap).toFixed(1)}m (${(gap/m.dCTbuf*100).toFixed(0)}%)`,
             `Transit: ${m.CTR[i]}m (dsn ${m.DSN.trans}) ${m.CTR[i]>THR.trans?'▲':'✓'}`,
             `Terminal: ${m.CTE[i]}m (dsn ${m.DSN.term}) ${m.CTE[i]>THR.term?'▲':'✓'}`,
             `Offload: ${m.CDE[i]}m (dsn ${m.DSN.dest}) ${m.CDE[i]>THR.dest?'▲':'✓'}`];}}}},
       scales:{x:{stacked:true,...gO,ticks:{font:{size:9},maxRotation:0,maxTicksLimit:14}},y:{stacked:true,...gO,title:{display:true,text:'Minutes',font:{size:8}},ticks:{callback:v=>v+'m'}}}}});
 }
 function buildCycLine(){
-  if(M.HRC)return buildCycLineH(); /* v72: 1 day → por hora · .133 por terminal */
+  if(M.HRX)return buildCycLineH(); /* v72: 1 day → por hora · .133 por terminal · .134 varios días */
   const m=M,idx=getCycIdx(),labels=idx.map(i=>m.D[i]);
   const cm={total:{data:m.CTOT,dsn:m.dCTbuf,col:'rgba(212,114,114,.8)',fillA:'rgba(212,114,114,.18)',fillB:'rgba(212,114,114,.02)',lbl:'Total Cycle'},
     transit:{data:m.CTR,dsn:m.DSN.trans,col:'rgba(58,124,165,.8)',fillA:'rgba(58,124,165,.18)',fillB:'rgba(58,124,165,.02)',lbl:'Transit OW'},
@@ -3395,7 +3799,7 @@ function buildCycLine(){
     offload:{data:m.CDE,dsn:m.DSN.dest,col:'rgba(212,149,106,.8)',fillA:'rgba(212,149,106,.18)',fillB:'rgba(212,149,106,.02)',lbl:'Offload'}}[_cycComp];
   const data=idx.map(i=>cm.data[i]);
   const ptColor=data.map(v=>v<=cm.dsn*1.05?'rgba(106,184,154,.9)':v<=cm.dsn*1.5?'rgba(212,160,90,.9)':'rgba(212,114,114,.9)');
-  mkChart('cCycLine',{type:'line',data:{labels,datasets:[
+  mkChart('cCycLine',{dt:dtDays(m,idx.map(i=>m.ISO[i])),type:'line',data:{labels,datasets:[
     {label:cm.lbl,data,borderColor:cm.col,backgroundColor:mkGrad('cCycLine',cm.fillA,cm.fillB,220),fill:true,tension:.4,pointRadius:5,pointHoverRadius:10,pointBackgroundColor:ptColor,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5},
     {label:`Design ${cm.dsn}m`,data:Array(idx.length).fill(cm.dsn),borderColor:'rgba(106,184,154,.6)',borderDash:[6,3],pointRadius:0,borderWidth:1.5},
     {label:`Threshold ${Math.round(cm.dsn*1.5)}m`,data:Array(idx.length).fill(Math.round(cm.dsn*1.5)),borderColor:'rgba(212,114,114,.4)',borderDash:[3,3],pointRadius:0,borderWidth:1}]},
@@ -3408,21 +3812,21 @@ function buildCycLine(){
       scales:{x:{...gO,ticks:{font:{size:9},maxRotation:0,maxTicksLimit:14}},y:{...gO,min:0,ticks:{callback:v=>v+'m'}}}}});
 }
 function buildCycScat(){
-  if(M.HRC)return buildCycScatH(); /* v72: 1 day → por hora · .133 por terminal */
+  if(M.HRX)return buildCycScatH(); /* v72: 1 day → por hora · .133 por terminal · .134 varios días */
   const m=M,idx=getCycIdx();
   const pts=idx.map(i=>({x:m.L[i],y:m.CTOT[i],day:m.D[i],tr:m.TR[i],ph:m.PH[i]}));
   const col=pts.map(p=>p.ph==='run'?'rgba(58,124,165,.7)':'rgba(148,163,184,.5)');
   mkChart('cCycScat',{type:'scatter',data:{datasets:[{label:'Cycle vs Loads',data:pts.map(p=>({x:p.x,y:p.y})),backgroundColor:col,pointRadius:7,pointHoverRadius:11,borderColor:col.map(c=>c.replace('.7)','.95)').replace('.5)','.8)')),borderWidth:1.5}]},
     options:{interaction:{mode:'nearest',intersect:false},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:c=>`${pts[c[0].dataIndex].day}`,label:c=>{const p=pts[c.dataIndex];return[`Cycle: ${p.y} min`,`Loads: ${p.x}`,`TR: ${p.tr}`,`Phase: ${PHLBLM[p.ph]}`];},
-        afterBody:c=>{const p=pts[c[0].dataIndex],gap=p.y-M.dCTbuf;return[sep,`vs Design: ${gap>=0?'+':''}${gap}m`,`Loads vs target: ${(p.x/M.dTgt*100).toFixed(0)}%`];}}}},
+        afterBody:c=>{const p=pts[c[0].dataIndex],gap=p.y-M.dCTbuf;return[sep,`vs Design: ${gap>=0?'+':''}${+(+gap).toFixed(1)}m`,`Loads vs target: ${(p.x/M.dTgt*100).toFixed(0)}%`];}}}},
       scales:{x:{...gO,title:{display:true,text:'Daily Loads',font:{size:9,weight:'600'}},min:0},
         y:{...gO,title:{display:true,text:'Cycle Time (min)',font:{size:9,weight:'600'}},min:0,ticks:{callback:v=>v+'m'}}}}});
 }
 
 /* ── v72 · charts de ciclo POR HORA (range de 1 day + GAS v9.2 hourly) ── */
-function buildCycStackH(){const m=M,h=m.HRC;
-  mkChart('cCycStack',{type:'bar',data:{labels:h.lab,datasets:[
+function buildCycStackH(){const m=M,h=m.HRX;
+  mkChart('cCycStack',{dt:dtHours(m,h),scroll:h.multi?{n:h.lab.length,px:15}:null,type:'bar',data:{labels:h.lab,datasets:[
     {label:'Transit OW',data:h.TRh.map(v=>v>0?v:null),backgroundColor:'rgba(58,124,165,.75)',stack:'s',borderSkipped:false},
     {label:'Terminal',data:h.TEh.map(v=>v>0?v:null),backgroundColor:'rgba(155,142,196,.75)',stack:'s',borderSkipped:false},
     {label:'Offload',data:h.DEh.map(v=>v>0?v:null),backgroundColor:'rgba(212,114,114,.75)',stack:'s',borderSkipped:true,borderRadius:4}]},
@@ -3430,33 +3834,33 @@ function buildCycStackH(){const m=M,h=m.HRC;
       tooltip:{callbacks:{title:c=>`${h.lab[c[0].dataIndex]} — Cycle by hour${h.term?' · '+h.term:''}`,label:c=>tipL(c,x=>x+'m'),
         afterBody:it=>{const i=it[0].dataIndex;if(!h.L[i])return['No deliveries this hour'];const tot=h.TOT[i];
           const out=[sep,`${h.L[i]} load${h.L[i]===1?'':'s'} · ${h.DRH[i]} driver${h.DRH[i]===1?'':'s'}`];
-          if(tot!=null){const gap=tot-m.dCTbuf;out.push(`Avg cycle: ${tot}m`,`vs Design ${m.dCTbuf}: ${gap>=0?'+':''}${gap}m (${(gap/m.dCTbuf*100).toFixed(0)}%)`);}
+          if(tot!=null){const gap=tot-m.dCTbuf;out.push(`Avg cycle: ${tot}m`,`vs Design ${m.dCTbuf}: ${gap>=0?'+':''}${+(+gap).toFixed(1)}m (${(gap/m.dCTbuf*100).toFixed(0)}%)`);}
           return out;}}}},
-      scales:{x:{stacked:true,...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{stacked:true,...gO,title:{display:true,text:'Minutes',font:{size:8}},ticks:{callback:v=>v+'m'}}}}});
+      scales:{x:h.multi?_hrX(h.lab,true):{stacked:true,...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{stacked:true,...gO,title:{display:true,text:'Minutes',font:{size:8}},ticks:{callback:v=>v+'m'}}}}});
 }
-function buildCycLineH(){const m=M,h=m.HRC;
+function buildCycLineH(){const m=M,h=m.HRX;
   const cm={total:{data:h.TOT,dsn:m.dCTbuf,col:'rgba(212,114,114,.8)',fillA:'rgba(212,114,114,.18)',fillB:'rgba(212,114,114,.02)',lbl:'Total Cycle'},
     transit:{data:h.TRh.map(v=>v>0?v:null),dsn:m.DSN.trans,col:'rgba(58,124,165,.8)',fillA:'rgba(58,124,165,.18)',fillB:'rgba(58,124,165,.02)',lbl:'Transit OW'},
     terminal:{data:h.TEh.map(v=>v>0?v:null),dsn:m.DSN.term,col:'rgba(155,142,196,.8)',fillA:'rgba(155,142,196,.18)',fillB:'rgba(155,142,196,.02)',lbl:'Terminal'},
     offload:{data:h.DEh.map(v=>v>0?v:null),dsn:m.DSN.dest,col:'rgba(212,149,106,.8)',fillA:'rgba(212,149,106,.18)',fillB:'rgba(212,149,106,.02)',lbl:'Offload'}}[_cycComp];
   const ptColor=cm.data.map(v=>v==null?'rgba(0,0,0,0)':v<=cm.dsn*1.05?'rgba(106,184,154,.9)':v<=cm.dsn*1.5?'rgba(212,160,90,.9)':'rgba(212,114,114,.9)');
-  mkChart('cCycLine',{type:'line',data:{labels:h.lab,datasets:[
-    {label:cm.lbl+' (hour)',data:cm.data,borderColor:cm.col,backgroundColor:mkGrad('cCycLine',cm.fillA,cm.fillB,220),fill:true,tension:.35,pointRadius:5,pointHoverRadius:10,pointBackgroundColor:ptColor,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5,spanGaps:true},
-    {label:`Design ${cm.dsn}m`,data:Array(24).fill(cm.dsn),borderColor:'rgba(106,184,154,.6)',borderDash:[6,3],pointRadius:0,borderWidth:1.5},
-    {label:`Threshold ${Math.round(cm.dsn*1.5)}m`,data:Array(24).fill(Math.round(cm.dsn*1.5)),borderColor:'rgba(212,114,114,.4)',borderDash:[3,3],pointRadius:0,borderWidth:1}]},
+  mkChart('cCycLine',{dt:dtHours(m,h),scroll:h.multi?{n:h.lab.length,px:15}:null,type:'line',data:{labels:h.lab,datasets:[
+    {label:cm.lbl+' (hour)',data:cm.data,borderColor:cm.col,backgroundColor:mkGrad('cCycLine',cm.fillA,cm.fillB,220),fill:true,tension:.35,pointRadius:h.multi?2.6:5,pointHoverRadius:10,pointBackgroundColor:ptColor,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5,spanGaps:true},
+    {label:`Design ${cm.dsn}m`,data:Array(h.lab.length).fill(cm.dsn),borderColor:'rgba(106,184,154,.6)',borderDash:[6,3],pointRadius:0,borderWidth:1.5},
+    {label:`Threshold ${Math.round(cm.dsn*1.5)}m`,data:Array(h.lab.length).fill(Math.round(cm.dsn*1.5)),borderColor:'rgba(212,114,114,.4)',borderDash:[3,3],pointRadius:0,borderWidth:1}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
       tooltip:{callbacks:{title:c=>`${h.lab[c[0].dataIndex]} — ${cm.lbl}`,label:c=>tipL(c,x=>x+'m'),
         afterBody:it=>{const i=it[0].dataIndex,v=cm.data[i];if(v==null)return['No measurable cycle this hour'];
           const gap=v-cm.dsn;return[sep,`vs Design: ${gap>=0?'+':''}${gap.toFixed(1)}m (${(gap/cm.dsn*100).toFixed(0)}%)`,`Loads this hour: ${h.L[i]}`];}}}},
-      scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{...gO,min:0,ticks:{callback:v=>v+'m'}}}}});
+      scales:{x:h.multi?_hrX(h.lab):{...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{...gO,min:0,ticks:{callback:v=>v+'m'}}}}});
 }
-function buildCycScatH(){const m=M,h=m.HRC;
+function buildCycScatH(){const m=M,h=m.HRX;
   const pts=h.lab.map((lb,i)=>({x:h.L[i],y:h.TOT[i],hh:lb,dr:h.DRH[i]})).filter(p=>p.x>0&&p.y!=null);
   mkChart('cCycScat',{type:'scatter',data:{datasets:[{label:'Cycle vs Loads (hour)',data:pts.map(p=>({x:p.x,y:p.y})),
     backgroundColor:pts.map(p=>p.y<=m.dCTbuf?'rgba(106,184,154,.75)':'rgba(212,114,114,.7)'),pointRadius:7,pointHoverRadius:11,borderColor:'#fff',borderWidth:1.5}]},
     options:{interaction:{mode:'nearest',intersect:false},plugins:{legend:{display:false},
       tooltip:{callbacks:{title:c=>`${pts[c[0].dataIndex].hh}`,label:c=>{const p=pts[c.dataIndex];return[`Cycle: ${p.y} min`,`Loads: ${p.x}`,`Drivers: ${p.dr}`];},
-        afterBody:c=>{const p=pts[c[0].dataIndex],gap=p.y-M.dCTbuf;return[sep,`vs Design: ${gap>=0?'+':''}${gap}m`];}}}},
+        afterBody:c=>{const p=pts[c[0].dataIndex],gap=p.y-M.dCTbuf;return[sep,`vs Design: ${gap>=0?'+':''}${+(+gap).toFixed(1)}m`];}}}},
       scales:{x:{...gO,title:{display:true,text:'Loads per hour',font:{size:9,weight:'600'}},min:0,ticks:{stepSize:1}},
         y:{...gO,title:{display:true,text:'Cycle Time (min)',font:{size:9,weight:'600'}},min:0,ticks:{callback:v=>v+'m'}}}}});
 }
@@ -3488,10 +3892,11 @@ function bStg(){
         return kpiCard('Avg Stage + WL',avgTt?fmtMin(avgTt):'—','co','Design: '+fmtMin(m.durTotD),avgTt?pctS(avgTt,m.durTotD):'',(avgTt&&avgTt<=m.durTotD*1.15)?'dn':'dw');})()}
       ${kpiCard('Outliers / NPT',outl,outl>0?'co':'cg','tons <68% · ±15% · dur >'+Math.round(m.durStageD*1.5)+'m','','dw')}
     </div>
+    ${dtCardFor(m,['cStgMain','cDurChart','cDayCombo','cFracStg','cFracTons'],{note:'a stage carries the downtime of its pumping + the WL/transition after it'})}
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
         <div class="card-t" style="margin:0">Per-Stage Performance</div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${dtChip('cStgMain',m.DTW.length>0)}
           <div class="seg-ctrl"><button id="bTons" class="seg-btn seg-on" onclick="stgMetric('tons')">Tons</button><button id="bDur" class="seg-btn" onclick="stgMetric('dur')">Duration</button></div>
           <div class="ctrl-sep"></div>
           <div class="seg-ctrl"><button id="bAll109" class="seg-btn seg-on" onclick="stgDay('all')">All</button><button id="bRunOnly" class="seg-btn" onclick="stgDay('run')">Con duration</button><button id="bOutliers" class="seg-btn" onclick="stgDay('outlier')">Outliers</button></div></div></div>
@@ -3500,13 +3905,13 @@ function bStg(){
       <div class="card">
         <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
           <div class="card-t" style="margin:0">Frac Duration</div>
-          <div class="seg-ctrl"><button id="bDurStg" class="seg-btn seg-on" onclick="durView('stage')">By Stage</button><button id="bDurDay" class="seg-btn" onclick="durView('day')">By Day</button></div></div>
+          <div class="ch-ctl">${dtChip('cDurChart',m.DTW.length>0)}<div class="seg-ctrl"><button id="bDurStg" class="seg-btn seg-on" onclick="durView('stage')">By Stage</button><button id="bDurDay" class="seg-btn" onclick="durView('day')">By Day</button></div></div></div>
         <div class="ch"><canvas id="cDurChart"></canvas></div></div>
-      <div class="card"><div class="card-t">Stages/Day &amp; Tons Fracked <span class="sb" id="stgDayStat"></span></div><div class="ch"><canvas id="cDayCombo"></canvas></div></div>
+      <div class="card"><div class="ch-hd"><div class="card-t"><span id="dcTi">Stages/Day &amp; Tons Fracked</span> <span class="sb" id="stgDayStat"></span></div><div class="ch-ctl">${dtChip('cDayCombo',m.DTW.length>0)}${hvSeg('stg',m.n>1&&!!(m.RUN_ISO&&m.RUN_ISO.length))}</div></div><div class="ch"><canvas id="cDayCombo"></canvas></div></div>
     </div>
     <div class="grid g2 mb">
-      <div class="card"><div class="card-t">Cumulative Stages vs Design Pace (${m.stagesDayD}/day)</div><div class="ch ch-s"><canvas id="cFracStg"></canvas></div></div>
-      <div class="card"><div class="card-t">Cumulative Tons vs Design</div><div class="ch ch-s"><canvas id="cFracTons"></canvas></div></div>
+      <div class="card"><div class="ch-hd"><div class="card-t">Cumulative Stages vs Design Pace (${m.stagesDayD}/day)</div>${dtChip('cFracStg',m.DTW.length>0)}</div><div class="ch ch-s"><canvas id="cFracStg"></canvas></div></div>
+      <div class="card"><div class="ch-hd"><div class="card-t">Cumulative Tons vs Design</div>${dtChip('cFracTons',m.DTW.length>0)}</div><div class="ch ch-s"><canvas id="cFracTons"></canvas></div></div>
     </div>
     <div class="card" style="padding:0;overflow:hidden">
       <div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
@@ -3531,7 +3936,7 @@ function buildStgMain(){
     {label:'Wireline/Trans',data:idx.map(i=>m.STG[i].c||0),backgroundColor:'rgba(139,111,196,.65)',borderRadius:2,borderSkipped:false,stack:'t'},
     {label:'Design total '+dsn+'min',data:Array(idx.length).fill(dsn),type:'line',borderColor:'rgba(212,114,114,.55)',borderDash:[6,3],pointRadius:0,borderWidth:1.5}
   ];
-  mkChart('cStgMain',{type:'bar',data:{labels:idx.map(i=>'S'+m.STG[i].n),datasets:dsets},
+  mkChart('cStgMain',{dt:{ev:m.DTALL,kind:'stage',slots:idx.map(i=>m.STG[i].wa!=null?{a:m.STG[i].wa,b:m.STG[i].wb}:null)},type:'bar',data:{labels:idx.map(i=>'S'+m.STG[i].n),datasets:dsets},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
       tooltip:{callbacks:{title:c=>`Stage ${m.STG[idx[c[0].dataIndex]].n} · ${m.STG[idx[c[0].dataIndex]].well||''}`,
         label:c=>{if(c.datasetIndex===1)return `Design: ${dsn}${isTons?'t':'min'}`;const s=m.STG[idx[c.dataIndex]];const pct=((s.t-m.tonsStageD)/m.tonsStageD*100).toFixed(0);
@@ -3548,7 +3953,7 @@ function buildDurChart(){
   const m=M;
   if(_durView==='day'){
     if(!m.DAY_DUR.length){mkChart('cDurChart',{type:'bar',data:{labels:['—'],datasets:[{data:[0],backgroundColor:'rgba(203,213,225,.3)'}]},options:{plugins:{legend:{display:false},subtitle:{display:true,text:'No dated per-day duration',font:{size:10},color:'#94a3b8'}},scales:{x:{display:false},y:{display:false,max:1}}}});return;}
-    mkChart('cDurChart',{type:'bar',data:{labels:m.RUN_DL_STG,datasets:[
+    mkChart('cDurChart',{dt:dtDays(m,m.RUN_ISO),type:'bar',data:{labels:m.RUN_DL_STG,datasets:[
       {label:'Avg Frac Duration',data:m.DAY_DUR,backgroundColor:m.DAY_DUR.map(durColor),borderRadius:8,borderSkipped:false},
       {label:'Design '+fmtMin(m.durStageD)+'',data:Array(m.RUN_DL.length).fill(m.durStageD),type:'line',borderColor:'rgba(106,184,154,.6)',borderDash:[6,3],pointRadius:0,borderWidth:1.5}]},
       options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
@@ -3559,7 +3964,7 @@ function buildDurChart(){
     const hasD=m.STG.some(s=>+s.d>0);
     if(!hasD){mkChart('cDurChart',{type:'bar',data:{labels:['—'],datasets:[{data:[0],backgroundColor:'rgba(203,213,225,.3)'}]},
       options:{plugins:{legend:{display:false},subtitle:{display:true,text:'No per-stage duration in the Stages sheet — fill Stage Duration (h:mm:ss) or use the By Day view',font:{size:10},color:'#94a3b8'}},scales:{x:{display:false},y:{display:false,max:1}}}});return;}
-    mkChart('cDurChart',{type:'bar',data:{labels:m.STG.filter(s=>+s.d>0).map(s=>'S'+s.n),datasets:[
+    mkChart('cDurChart',{dt:{ev:m.DTALL,kind:'stage',slots:m.STG.filter(s=>+s.d>0).map(s=>s.wa!=null?{a:s.wa,b:s.wb}:null)},type:'bar',data:{labels:m.STG.filter(s=>+s.d>0).map(s=>'S'+s.n),datasets:[
       {label:'Frac Duration',data:m.STG.filter(s=>+s.d>0).map(s=>s.d),backgroundColor:m.STG.filter(s=>+s.d>0).map(s=>durColor(s.d)),borderRadius:2,borderSkipped:false},
       {label:'Design '+m.durStageD+'min',data:Array(m.STG.filter(s=>+s.d>0).length).fill(m.durStageD),type:'line',borderColor:'rgba(106,184,154,.5)',borderDash:[6,3],pointRadius:0,borderWidth:1.5}]},
       options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
@@ -3568,10 +3973,11 @@ function buildDurChart(){
   }
 }
 function buildDayCombo(){
-  const m=M;const stat=$('stgDayStat');
+  const m=M;const stat=$('stgDayStat');const _ti=$('dcTi');if(_ti)_ti.innerHTML='Stages/Day &amp; Tons Fracked';
   if(stat&&m.SPD.length)stat.textContent='· Peak: '+m.RUN_DL_STG[m.SPD.indexOf(Math.max.apply(null,m.SPD))]+' ('+Math.max.apply(null,m.SPD)+' stages)';
   if(!m.SPD.length){mkChart('cDayCombo',{type:'bar',data:{labels:['—'],datasets:[{data:[0],backgroundColor:'rgba(203,213,225,.3)'}]},options:{plugins:{legend:{display:false},subtitle:{display:true,text:'No dated stages in the Stages sheet (Day column empty)',font:{size:10},color:'#94a3b8'}},scales:{x:{display:false},y:{display:false,max:1}}}});return;}
-  mkChart('cDayCombo',{type:'bar',data:{labels:m.RUN_DL_STG,datasets:[
+  if(m.n===1||HV.stg==='hour'){const hs=_stgHourly(m);if(hs){if(_ti)_ti.textContent='Tons Fracked by Hour'+(m.n===1?' — '+m.D[0]:'');buildDayComboH(m,hs);return;}}
+  mkChart('cDayCombo',{dt:dtDays(m,m.RUN_ISO),type:'bar',data:{labels:m.RUN_DL_STG,datasets:[
     {label:'Stages/Day',data:m.SPD,backgroundColor:m.SPD.map(v=>v>=m.stagesDayD?'rgba(106,184,154,.85)':v>=m.stagesDayD*0.75?'rgba(106,158,200,.8)':'rgba(212,149,106,.8)'),borderRadius:6,borderSkipped:false,yAxisID:'y',order:2},
     {label:'Tons Fracked',data:m.TPD,type:'line',borderColor:'rgba(106,158,200,.8)',backgroundColor:'rgba(106,158,200,.08)',fill:true,tension:.4,pointRadius:3,pointHoverRadius:8,borderWidth:2,yAxisID:'y2',order:1},
     {label:'Design '+m.stagesDayD+'/day',data:Array(m.RUN_DL.length).fill(m.stagesDayD),type:'line',borderColor:'rgba(212,114,114,.5)',borderDash:[6,3],pointRadius:0,borderWidth:1.5,yAxisID:'y',order:0}]},
@@ -3580,16 +3986,40 @@ function buildDayCombo(){
         afterBody:it=>{const i=it[0].dataIndex;return[sep,`Avg tons/stage: ${(m.TPD[i]/Math.max(m.SPD[i],1)).toFixed(0)}t`,`vs ${m.stagesDayD} target: ${m.SPD[i]>=m.stagesDayD?'+':''}${(m.SPD[i]-m.stagesDayD).toFixed(1)} stages`];}}}},
       scales:{x:{...gO,grid:{display:false},ticks:{maxRotation:0,maxTicksLimit:14}},y:{...gO,position:'left',title:{display:true,text:'Stages',font:{size:8}},min:0,suggestedMax:m.stagesDayD*1.6},y2:{...gO,position:'right',grid:{drawOnChartArea:false},title:{display:true,text:'Tons',font:{size:8}}}}}});
 }
+/* .134 · frac POR HORA: tons de cada etapa prorrateadas en su ventana de bombeo (inicio → fin) */
+function _stgHourly(m){const iso=m.RUN_ISO||[];if(!iso.length)return null;
+  const d0=_wms(iso[0],'00:00'),d1=_wms(iso[iso.length-1],'00:00');if(d0==null||d1==null)return null;
+  const days=[];for(let t=d0;t<=d1;t+=864e5)days.push(_wISO(t));
+  const slots=_dtHourSlots(days),N=slots.length;const tons=Array(N).fill(0),fin=Array(N).fill(0),act=Array(N).fill(null);let any=false;
+  (m.STG||[]).forEach(s=>{if(s.wa==null)return;const a=s.wa,b=s.wb-(s.c>0?s.c*6e4:0);if(!(b>a))return;any=true;
+    for(let i=Math.max(0,Math.floor((a-d0)/36e5));i<N&&slots[i].a<b;i++){const o0=Math.max(a,slots[i].a),o1=Math.min(b,slots[i].b);
+      if(o1>o0){tons[i]+=s.t*(o1-o0)/(b-a);act[i]=s.n;}}
+    const ie=Math.floor((b-d0)/36e5);if(ie>=0&&ie<N)fin[ie]++;});
+  if(!any)return null;const K=_hrKeep(days);let c=0;const cum=fin.slice(0,K).map(v=>c+=v);
+  const lab=[];days.forEach(d=>{for(let h=0;h<24;h++)lab.push(shortDay(d)+' '+_dp2(h)+':00');});
+  return {lab:lab.slice(0,K),slots:slots.slice(0,K),tons:tons.slice(0,K).map(v=>+v.toFixed(1)),cum,act:act.slice(0,K),fin:fin.slice(0,K)};}
+function buildDayComboH(m,hs){const stat=$('stgDayStat');if(stat)stat.textContent='· '+hs.cum[hs.cum.length-1]+' stages finished '+(m.n===1?'this day':'in range');
+  const dsnH=+(m.stagesDayD*m.tonsStageD/24).toFixed(1);
+  mkChart('cDayCombo',{dt:{ev:m.DTALL,slots:hs.slots,contig:true},scroll:hs.lab.length>24?{n:hs.lab.length,px:14}:null,type:'bar',data:{labels:hs.lab,datasets:[
+    {label:'Tons fracked / hour',data:hs.tons.map(v=>v>0?v:null),backgroundColor:hs.tons.map(v=>v>=dsnH?'rgba(106,184,154,.85)':v>=dsnH*.6?'rgba(106,158,200,.8)':'rgba(212,149,106,.8)'),borderRadius:3,borderSkipped:false,yAxisID:'y',order:2},
+    {label:'Stages finished (cumulative)',data:hs.cum,type:'line',stepped:true,borderColor:'rgba(58,124,165,.85)',backgroundColor:'rgba(58,124,165,.06)',fill:true,pointRadius:0,pointHoverRadius:5,borderWidth:2,yAxisID:'y2',order:1},
+    {label:'Design '+dsnH+' t/h',data:Array(hs.lab.length).fill(dsnH),type:'line',borderColor:'rgba(212,114,114,.5)',borderDash:[6,3],pointRadius:0,borderWidth:1.4,yAxisID:'y',order:0}]},
+    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
+      tooltip:{callbacks:{title:c=>hs.lab[c[0].dataIndex]+' — Frac by hour',
+        label:c=>c.datasetIndex===0?('Tons fracked: '+(c.raw!=null?fmt(c.raw):0)+'t'):c.datasetIndex===1?('Stages finished: '+c.raw):('Design: '+dsnH+' t/h'),
+        afterBody:it=>{const i=it[0].dataIndex;return [sep,hs.act[i]!=null?'Pumping stage S'+hs.act[i]:'No stage pumping this hour'].concat(hs.fin[i]?[hs.fin[i]+' stage'+(hs.fin[i]>1?'s':'')+' finished this hour']:[]);}}}},
+      scales:{x:_hrX(hs.lab),y:{...gO,position:'left',min:0,title:{display:true,text:'Tons / hour',font:{size:8}}},
+        y2:{...gO,position:'right',min:0,grid:{drawOnChartArea:false},title:{display:true,text:'Stages',font:{size:8}}}}}});}
 function buildFracCum(){
   const m=M;let a=0;const cumS=m.SPD.map(v=>a+=v);let b=0;const cumSd=m.SPD.map(()=>b+=m.stagesDayD);
   let c1=0;const cumT=m.TPD.map(v=>c1+=v);let d1=0;const cumTd=m.SPD.map(()=>d1+=m.stagesDayD*m.tonsStageD);
-  mkChart('cFracStg',{type:'line',data:{labels:m.RUN_DL,datasets:[
+  mkChart('cFracStg',{dt:dtDays(m,m.RUN_DL),type:'line',data:{labels:m.RUN_DL,datasets:[
     {label:'Actual Stages',data:cumS,borderColor:PZ.P,backgroundColor:'rgba(58,124,165,.1)',fill:true,tension:.35,pointRadius:2,borderWidth:2.4},
     {label:'Design Pace',data:cumSd.map(v=>+v.toFixed(1)),borderColor:PZ.G,borderDash:[6,3],pointRadius:0,borderWidth:1.5}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
       tooltip:{callbacks:{afterBody:it=>{const i=it[0].dataIndex;const g=cumS[i]-cumSd[i];return[sep,`Gap vs pace: ${g>=0?'+':''}${g.toFixed(1)} stages`];}}}},
       scales:{x:{...gO,ticks:{maxRotation:0,maxTicksLimit:12}},y:{...gO,min:0}}}});
-  mkChart('cFracTons',{type:'line',data:{labels:m.RUN_DL,datasets:[
+  mkChart('cFracTons',{dt:dtDays(m,m.RUN_DL),type:'line',data:{labels:m.RUN_DL,datasets:[
     {label:'Actual Tons',data:cumT,borderColor:PZ.A,backgroundColor:'rgba(212,149,106,.1)',fill:true,tension:.35,pointRadius:2,borderWidth:2.4},
     {label:'Design Tons',data:cumTd.map(v=>Math.round(v)),borderColor:PZ.G,borderDash:[6,3],pointRadius:0,borderWidth:1.5}]},
     options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
@@ -3972,7 +4402,7 @@ function buildStrip(){
   if(pv)pv.disabled=addD(STRIP_END,-6)<=first;
   if(nx)nx.disabled=STRIP_END>=tI;}
 window.dsPick=function(iso){CAL_PEND='';$('w-d0').value=iso;$('w-d1').value=iso;
-  document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));renderPozo();};
+  document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));_vt(renderPozo);};
 function buildPadMini(){
   const el=$('padmini');if(!el)return;
   const d0=(($('w-d0')||{}).value)||DATES_ISO[0]||'',d1=(($('w-d1')||{}).value)||DATES_ISO[DATES_ISO.length-1]||'';
@@ -4020,10 +4450,10 @@ window.calPick=function(iso){
   else{ // segundo click → range [min,max]
     const a=CAL_PEND<iso?CAL_PEND:iso,b=CAL_PEND<iso?iso:CAL_PEND;
     CAL_PEND='';$('w-d0').value=a;$('w-d1').value=b;}
-  renderPozo();buildCal();};
+  _vt(()=>{renderPozo();buildCal();});};
 window.calClear=function(){CAL_PEND='';$('w-d0').value='';$('w-d1').value='';
   document.querySelectorAll('.rng').forEach(x=>x.classList.toggle('on',x.dataset.d==='0'));
-  renderPozo();buildCal();};
+  _vt(()=>{renderPozo();buildCal();});};
 (function wireStrip(){const pv=$('ds-prev'),nx=$('ds-next'),cal=$('ds-cal'),pop=$('dcustom');
   if(pv)pv.onclick=()=>{STRIP_END=addD(STRIP_END,-7);buildStrip();};
   if(nx)nx.onclick=()=>{STRIP_END=addD(STRIP_END,+7);buildStrip();};
@@ -4034,7 +4464,7 @@ window.calClear=function(){CAL_PEND='';$('w-d0').value='';$('w-d1').value='';
       pop.classList.remove('open');},true);}})();
 
 let _exTerm='',_HEALED={};
-window.exTerm=function(t){_exTerm=t;try{bExec();}catch(e){console.error('[exTerm]',e);}};
+window.exTerm=function(t){_exTerm=t;_vt(()=>{try{bExec();}catch(e){console.error('[exTerm]',e);}});};
 
 /* ═══════ ORQUESTACIÓN PZ ═══════ */
 const PZ_BUILD={'pre-sum':bPreSum,'pre-src':bPreSrc,'pre-ops':bPreOps,'pre-fin':bPreFin,'pre-sens':bPreSens,
@@ -4436,7 +4866,7 @@ function stsPresetInit(S){const lD=keyDate(S.latest);SF.d0=keyDate(keyShift(S.la
    · burn = stages/día × tons/stage (prefill del ritmo real reciente)
    Todo editable; la simulación corre 100% en el navegador.
    ════════════════════════════════════════════════════════════ */
-let FC={id:null,hz:48,mem:{},exc:{},rOpen:false,lay:{hist:1,crew:1,bands:1,t48:1,cd:1,dm:0},kpiEsc:'m'};
+let FC={id:null,hz:48,hb:12,mem:{},exc:{},rOpen:false,lay:{hist:1,crew:1,bands:1,t48:1,cd:1,dm:0},kpiEsc:'m'};
 /* .122 · View Transitions: crossfade global con chrome fijo.
    - Llamada anidada DENTRO del callback (show→renderPozo→pzShow) → corre INLINE, en el
      mismo orden sincrónico de siempre.
@@ -4580,12 +5010,11 @@ function fcScore2(row,rows,dtr,padDays,T,bd){
 function fcScore(row,rows,dtr,padDays,T,bd){return fcScore2(row,rows,dtr,padDays,T||null,bd||null).s;}
 /* ── burn real por ventana desde Stages (start/end + used tons, prorrateo por solape) ── */
 function fcBurnWin(w,hrs,now){
-  const st=(w&&w.stages)||[];const a=now-hrs*36e5;let tons=0,any=false;
-  st.forEach(s=>{if(!(+s.used_tons>0)||!s.day)return;
-    const t0=_fcTS(s.day,s.start);let t1=_fcTS(s.day,s.end);
-    if(t0==null)return;
-    if(t1==null)t1=t0+2*36e5; else if(t1<=t0)t1+=864e5;
-    const o0=Math.max(t0,a),o1=Math.min(t1,now);
+  /* .134: reloj Central (o local en fixtures) + etapas que cruzan medianoche resueltas (stgWins) */
+  const st=(w&&w.stages)||[];const c=_fcClk();const nW=_fcW(now,c),a=nW-hrs*36e5;let tons=0,any=false;const SWf=stgWins(st);
+  st.forEach((s,i)=>{if(!(+s.used_tons>0)||!s.day)return;
+    const x=SWf[i];let t0,t1;if(x){t0=x.a;t1=x.b!=null?x.b:t0+2*36e5;}else{t0=_wms(s.day,'00:00');if(t0==null)return;t1=t0+864e5;}
+    const o0=Math.max(t0,a),o1=Math.min(t1,nW);
     if(o1>o0){tons+=(+s.used_tons)*(o1-o0)/(t1-t0);any=true;}});
   return any?tons*2000/hrs:null;}
 /* Picos/valles significativos de la curva de crew: extremos locales,
@@ -4634,6 +5063,56 @@ function fcHistBuild(w,now,hrs,inv0,liveM){
     const kS=dt2.getFullYear()+'-'+pp(dt2.getMonth()+1)+'-'+pp(dt2.getDate())+' '+pp(dt2.getHours());
     crewArr.unshift((liveM&&liveM[kS]!=null)?liveM[kS]:hm.dr);}
   return {inv:invArr,crew:crewArr,any:Object.keys(map).length>0};}
+/* ═══ .134 · FORECAST: histórico elegible (12 h base · 1 día · 2 días · pozo completo) en RELOJ
+   CENTRAL — hourly, etapas y downtimes del workbook viven en hora Central. El board (STATUS) se
+   escribe en Central; si su última hora cuadra con el reloj LOCAL y no con el Central (fixtures),
+   se usa local. Con el navegador en Central ambos modos son idénticos. ═══ */
+function _fcClk(){const L=(typeof STATUS!=='undefined'&&STATUS&&STATUS.latest)?String(STATUS.latest):'';
+  const m=L.match(/(\d{4})-(\d{2})-(\d{2})[ T](\d{2})/);if(!m)return 'ct';
+  const W=Date.UTC(+m[1],+m[2]-1,+m[3],+m[4]),n=Date.now(),d=new Date(n);
+  const wl=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),d.getHours(),d.getMinutes());
+  /* la última hora del board NUNCA va adelante del reloj que la escribió: si en Central queda en el
+     futuro y en local no, el board está en local (fixtures); cualquier otro caso = Central (un board
+     con 1 h de atraso en un navegador Mountain se ve igual que "local al día" → manda Central) */
+  return (W>_wOf(n)+18e5&&W<=wl+18e5)?'loc':'ct';}
+function _fcW(ms,c){if(c==='loc'){const d=new Date(ms);return Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),d.getHours(),d.getMinutes(),d.getSeconds());}return _wOf(ms);}
+function _fcMs(W,c){if(c==='loc'){const d=new Date(W);return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),d.getUTCHours(),d.getUTCMinutes(),d.getUTCSeconds()).getTime();}return _wToMs(W);}
+const _fcHbTxt=()=>FC.hb==='all'?'whole well':(FC.hb===48?'48 h':FC.hb===24?'24 h':'12 h');
+/* misma reconstrucción que fcHistBuild (supply real − burn de etapas, hacia atrás desde la pila de
+   ahora) pero en reloj Central y devolviendo el flujo de cada hora (para tooltips y downtimes) */
+function fcHistBuildW(w,now,hrs,inv0,liveM,c){
+  const map={};((w&&w.hourly)||[]).forEach(d=>{for(let h=0;h<24;h++)map[d.date+'|'+h]={tn:(d.tn&&+d.tn[h])||0,dr:(d.dr&&+d.dr[h])||0};});
+  const sw=[];const SWf=stgWins((w&&w.stages)||[]);((w&&w.stages)||[]).forEach((s,i)=>{if(!(+s.used_tons>0)||!s.day)return;
+    const x=SWf[i];let t0,t1;if(x){t0=x.a;t1=x.b!=null?x.b:t0+2*36e5;}else{t0=_wms(s.day,'00:00');if(t0==null)return;t1=t0+864e5;}
+    sw.push([t0,t1,(+s.used_tons)*2000]);});
+  const nW=_fcW(now,c);let inv=inv0;const invA=[Math.round(inv0)],crA=[],supA=[],brA=[];
+  for(let i=0;i<hrs;i++){const b1=nW-i*36e5,b0=b1-36e5;const hh=new Date(b0).getUTCHours();
+    const hm=map[_wISO(b0)+'|'+hh]||{tn:0,dr:0};
+    let burn=0;for(let j=0;j<sw.length;j++){const x=sw[j];const o0=Math.max(x[0],b0),o1=Math.min(x[1],b1);if(o1>o0)burn+=x[2]*(o1-o0)/(x[1]-x[0]);}
+    inv=inv-hm.tn*2000+burn;invA.unshift(Math.max(0,Math.round(inv)));
+    const kS=_wISO(b0)+' '+_dp2(hh);crA.unshift((liveM&&liveM[kS]!=null)?liveM[kS]:hm.dr);
+    supA.unshift(Math.round(hm.tn*2000));brA.unshift(Math.round(burn));}
+  return {inv:invA,crew:crA,sup:supA,burn:brA,any:Object.keys(map).length>0,nW};}
+/* horas desde el primer movimiento del pozo (cargas / etapas) — tope 45 días */
+function _fcSpanH(w,now,c){let W0=null;const mn=t=>{if(t!=null&&(W0==null||t<W0))W0=t;};
+  ((w&&w.hourly)||[]).forEach(d=>mn(_wms(d.date,'00:00')));
+  ((w&&w.stages)||[]).forEach(s=>{if(s.day)mn(_wms(s.day,'00:00'));});
+  ((w&&w.daily)||[]).forEach(d=>{if(+d.loads>0||+d.stages_day>0)mn(_wms(d.date,'00:00'));});
+  if(W0==null)return 48;return Math.max(12,Math.min(24*45,Math.ceil((_fcW(now,c)-W0)/36e5)));}
+/* downtimes del workbook (cerrados + en curso con hora de inicio) */
+function fcDtEv(w,nowW){const L=(w&&w.downtimeEvents)||[];const b19=/18(?:99|00)|19(?:00|01)/;
+  const cl=L.filter(e=>e&&e.open!==true&&!b19.test(String(e.end||''))&&!b19.test(String(e.date||''))).map(e=>({date:String(e.date||'').slice(0,10),
+    cause:e.why||e.cause||'—',resp:e.responsible||'—',start:e.start||'',end:e.end||'',ed:String(e.end_date||'').slice(0,10),h:+(+e.hours||0).toFixed(2)}));
+  const op=L.filter(e=>e&&e.open===true&&/\d:\d/.test(String(e.start||''))).map(e=>({date:String(e.date||'').slice(0,10),
+    cause:e.why||e.cause||'—',resp:e.responsible||'—',start:e.start,h:0}));
+  try{return dtParse(cl,op,nowW);}catch(_){return [];}}
+/* capturas REALES de inventario en Stages (full boxes × lbs/caja · pila) al cierre de cada etapa */
+function fcCaps(w,c,belly,lbBox){const out=[];const st=(w&&w.stages)||[];const SWf=stgWins(st);
+  st.forEach((s,i)=>{const v=+s.full_or_pila||0;if(!(v>0))return;const x=SWf[i];if(!x)return;const W=x.b!=null?x.b:x.a;
+    out.push({W,ms:_fcMs(W,c),lbs:Math.round(belly?(v>20000?v:v*2000):v*(+lbBox||45000)),raw:v,stg:+s.total_stage||+s.stage||0});});
+  return out;}
+window.fcHB=function(v){FC.hb=(v==='all')?'all':((+v===24||+v===48)?+v:12);
+  setSegAct(['fcb12','fcb24','fcb48','fcball'],'fcb'+FC.hb);_vt(()=>fcCalc());};
 /* ── MOTOR v3: curva de crew + un burn → serie de inventario ── */
 function fcSim(p,burn){
   const H=Math.max(6,Math.round(p.H||48));
@@ -5032,6 +5511,7 @@ function fcParams(){
   return {H:FC.hz,inv0:g('inv'),
     perDrvH:(Math.max(0,g('tr'))/24)*Math.max(0,g('load')),avgLoad:g('load'),
     bumpLoads:g('bump'),cycH:FC.cycH||2,curve:(FC._proj&&FC._proj.curve)||[],
+    tps:g('tps'),spd:g('spd'), /* .134: la meta GOAL de pozos de cajas (GOAL stg × arena/etapa) leía p.tps sin existir */
     burnMean:g('spd')*g('tps')*2000/24};}
 const FC_BELLY_TARGET=3000000, FC_MIN_STG=4, FC_GOAL_STG=6;
 /* Targets de etapas por cliente — regla Alan: Fasken MIN 6 · GOAL 8; resto cajas 4/6; belly MIN 4 + 3.0M */
@@ -5267,13 +5747,15 @@ function fcCalc(){
   const SIM={};FC_ESC.forEach(e=>{SIM[e.k]=fcSim(p,B[e.k]);});
   fcGaugePaint();
   const now=Date.now();
-  /* histórico reconstruido (12 h) */
-  const HB=12;
-  const hist=(FC.pf&&FC.pf.w)?fcHistBuild(FC.pf.w,now,HB,p.inv0,_fcLiveH()):{inv:[p.inv0],crew:[],any:false};
+  /* .134 · histórico elegible (12 h base · 24 h · 48 h · pozo completo) en reloj Central */
+  const clk=FC._clk=_fcClk();const wF=(FC.pf&&FC.pf.w)||null;
+  const HB=FC.hb==='all'?_fcSpanH(wF,now,clk):((FC.hb===24||FC.hb===48)?FC.hb:12);
+  const hist=wF?fcHistBuildW(wF,now,HB,p.inv0,_fcLiveH(),clk):{inv:[p.inv0],crew:[],sup:[],burn:[],any:false};
   const iNow=FC.lay.hist&&hist.any?HB:0;
   const N=iNow+SIM.m.solid.length;            /* puntos totales */
+  const _lf=HB>24?{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}:{weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false};
   const lab=i=>{const d=new Date(now+(i-iNow)*36e5);
-    return i===iNow?'Now':d.toLocaleString('en-US',{weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false});};
+    return i===iNow?'Now':d.toLocaleString('en-US',_lf);};
   const labs=Array.from({length:N},(_,i)=>lab(i));
   const fmtT=hF=>{if(hF==null)return null;const d=new Date(now+hF*36e5);
     return d.toLocaleString('en-US',{weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false});};
@@ -5351,8 +5833,54 @@ function fcCalc(){
     else if(allShort){al.className='amb on';
       al.innerHTML='▲ Roster short vs every pace — supply never catches burn; inventory only drains.';}
     else{al.className='';al.innerHTML='';}}
+  /* .134 · DOWNTIMES del pozo sobre el histórico + comparación con la pila / arena en locación */
+  const hbT=_fcHbTxt(),hbW=FC.hb==='all'?'whole well':'last '+hbT;
+  const nWn=_fcW(now,clk),t0r=now-iNow*36e5;
+  const dEv=wF?fcDtEv(wF,nWn):[];
+  const evR=iNow?dEv.map(e=>Object.assign({},e,{ar:_fcMs(e.a,clk),br:_fcMs(e.b,clk)})).filter(e=>e.br>t0r-36e5&&e.ar<now+36e5):[];
+  const winA=Math.floor(_fcW(now-HB*36e5,clk)/36e5)*36e5;
+  const dWin=hist.any?dtWin(dEv,winA,nWn):dtWin(dEv.filter(e=>e.open),winA,nWn);
+  const invAt=tr=>{if(!hist.any)return null;const f=HB-(now-tr)/36e5;if(!(f>=0&&f<=HB))return null;const k=Math.floor(f),r=f-k;
+    const a=hist.inv[k],b=hist.inv[Math.min(HB,k+1)];return (a==null||b==null)?null:a+(b-a)*r;};
+  const lbB=Math.max(1,FC.lbsBox||45000);
+  const uN=lbs=>FC.belly?Math.round(lbs/2000):Math.round(lbs/lbB);
+  const uL=n=>FC.belly?(fmt(n)+' t'):(fmt(n)+' box'+(Math.abs(n)===1?'':'es'));
+  const uTx=lbs=>uL(uN(lbs));
+  const uD=(a2,b2)=>{const d2=uN(b2)-uN(a2);return '<b class="'+(d2>0?'up':d2<0?'dn':'fl')+'">'+(d2>0?'+':d2<0?'−':'±')+uL(Math.abs(d2))+'</b>';};
+  const stgOn=lbs=>p.tps>0?lbs/(p.tps*2000):null;
+  let dInv=0,nInv=0;const dMap=new Map();
+  dWin.forEach(x=>{const a=invAt(_fcMs(x.a,clk)),b=invAt(_fcMs(x.b,clk));if(a==null||b==null){dMap.set(x,'');return;}
+    const d=b-a;dInv+=d;nInv++;const sA=stgOn(a);
+    const tag=(dtSand(x.e)&&sA!=null)?(sA<1?'<span class="dtc-tag bad">under 1 stage on hand at start</span>'
+      :(sA>=2?'<span class="dtc-tag warn">'+sA.toFixed(1)+' stages on hand at start — check cause</span>':'')):'';
+    dMap.set(x,(FC.belly?'Pile ':'On location ')+'<b>'+uTx(a)+'</b>'+(sA!=null?' ('+sA.toFixed(1)+' stg)':'')+' → <b>'+uTx(b)+'</b> '+uD(a,b)+tag);});
+  const dtc=$('fc-dtc');
+  if(dtc)dtc.innerHTML=(wF&&(hist.any||dEv.length))?dtCardHTML({ev:dWin,A:winA,B:nWn,ids:evR.length?['fcChart']:[],
+    title:hbW+' · '+FC.id,when:'in the '+hbW,sub:'nothing logged in the Downtimes tab for this window',
+    note:nInv?((FC.belly?'pile ':'sand on location ')+(uN(dInv)>0?'built ':uN(dInv)<0?'drained ':'held ')+uD(0,dInv)+' across these stops (rebuilt)'):'',
+    winWord:'in window',delta:x=>dMap.get(x)||'',deltaHdr:FC.belly?'sandpile start → end':'sand on location start → end'}):'';
+  const kd=$('fck-dt');
+  if(kd){const kt=kd.querySelector('.card-t');if(kt)kt.textContent='Downtime · '+hbW;
+    const cl=dWin.filter(x=>!x.e.open),live=dWin.filter(x=>x.e.open),bad=dWin.some(x=>x.e.k==='bad');
+    const tot=cl.reduce((s2,x)=>s2+x.h,0);
+    const byK={wx:0,oth:0,bad:0};cl.forEach(x=>{byK[x.e.k]+=x.h;});
+    set('fck-dt',(cl.length?dtFH(tot):'0 h')+(live.length?' <span class="fck-live">+'+dtFH(live.reduce((s2,x)=>s2+x.h,0))+' live</span>':''),(live.length||bad)?'bad':(dWin.length?'':'okk'));
+    const ks=kd.querySelector('.sb');
+    if(ks)ks.innerHTML=live.length?('<b class="bad2">Frac DOWN now</b> since '+_wHM(live[0].e.a)+' CT · '+live[0].e.resp+' — projection assumes pumping resumes')
+      :cl.length?(cl.length+' event'+(cl.length===1?'':'s')+' · '+['bad','oth','wx'].filter(k=>byK[k]>0).map(k=>DT_K[k].n.toLowerCase()+' '+dtFH(byK[k])).join(' · ')
+        +(nInv?' · '+(FC.belly?'pile ':'on location ')+uD(0,dInv):''))
+      :'nothing logged in the Downtimes tab';}
+  const ld=$('fcl-dt');if(ld&&ld.style)ld.style.display=evR.length?'':'none';
+  const lh=$('fcl-hist');if(lh)lh.textContent='Actual '+hbT;
+  const lgh=$('fc-lgh');if(lgh)lgh.textContent=hbW;
+  /* capturas reales de Stages (◆) en el histórico */
+  const caps=wF?fcCaps(wF,clk,FC.belly,lbB):[];
+  const capData=Array(N).fill(null),capInfo={};
+  if(iNow)caps.forEach(c2=>{const i=Math.round(iNow-(now-c2.ms)/36e5);if(i<0||i>iNow)return;capData[i]=c2.lbs;capInfo[i]=c2;});
+  const capHas=Object.keys(capInfo).length>0;
+  const flow=[null];for(let i=1;i<=iNow;i++)flow.push((hist.sup&&hist.sup[i-1]!=null)?{s:hist.sup[i-1],b:hist.burn[i-1]}:null);
   const maxC=Math.max(4,...crewFull.filter(v=>v!=null))+2;
-  const FD={H:SIM.m.solid.length-1,iNow,red:SIM.b6.red,runWorst:worst,runWorstK:worst!=null?wn.name.toUpperCase():'',goalJ:goalJ,goalTxt:goalTxt,cdDir:cdDir,
+  const FD={flow,caps:capInfo,belly:!!FC.belly,H:SIM.m.solid.length-1,iNow,red:SIM.b6.red,runWorst:worst,runWorstK:worst!=null?wn.name.toUpperCase():'',goalJ:goalJ,goalTxt:goalTxt,cdDir:cdDir,
     solid:SIM.m.solid,curve:p.curve,crewFull,labs,pin:null,histN:iNow,
     SIM:{m:SIM.m.solid,b6:SIM.b6.solid,b12:SIM.b12.solid,b24:SIM.b24.solid},kpiK:K,
     B,sup:SIM.m.sup,reqs:{m:SIM.m.reqDrv,b6:SIM.b6.reqDrv,b12:SIM.b12.reqDrv,b24:SIM.b24.reqDrv},
@@ -5360,20 +5888,22 @@ function fcCalc(){
   const TT={callbacks:{
     title:c=>{const F=c[0].chart.$fc||FD;const i=c[0].dataIndex;
       return F.labs[i]+(i<F.iNow?' — actual (rebuilt)':i===F.iNow?' — current':'');},
-    label:c=>{if(c.dataset&&c.dataset.$cd){const F=c.chart.$fc||FD;const d2=(F.cdDir||[])[c.dataIndex]||0;
+    label:c=>{if(c.dataset&&c.dataset.$cap){const F=c.chart.$fc||FD;const ci=(F.caps||{})[c.dataIndex];if(!ci||c.raw==null)return null;
+        return ' Captured in Stages (S'+ci.stg+'): '+(F.belly?('pile '+fmt(ci.raw)+(ci.raw>20000?' lbs':' t')):(fmt(ci.raw)+' full boxes'))+' = '+fmt(ci.lbs)+' lbs';}
+      if(c.dataset&&c.dataset.$cd){const F=c.chart.$fc||FD;const d2=(F.cdDir||[])[c.dataIndex]||0;
         if(!d2||!Array.isArray(c.raw))return null;
         const from=d2>0?c.raw[0]:c.raw[1],to=d2>0?c.raw[1]:c.raw[0];
         return ' Crew shift: '+from+' → '+to+' drv ('+(d2>0?'▲ +':'▼ −')+Math.abs(to-from)+')';}
       if(c.dataset.yAxisID==='y2')return c.raw!=null?(' Crew on: '+c.raw+' drivers'):null;
       return c.raw!=null?tipL(c,x=>fmt(x)+' lbs'):null;},
     afterBody:it=>{const F=it[0].chart.$fc||FD;const i=it[0].dataIndex;
-      if(i<F.iNow)return [sep,'Actual, rebuilt from hourly deliveries','Crew (board): '+(F.crewFull[i]!=null?F.crewFull[i]:'—')+' drv'];
+      if(i<F.iNow){const fl=(F.flow||[])[i];return [sep,fl?('Actual, rebuilt · prior hour +'+fmt(fl.s)+' in · −'+fmt(fl.b)+' burned'):'Actual, rebuilt from hourly deliveries','Crew (board): '+(F.crewFull[i]!=null?F.crewFull[i]:'—')+' drv'];}
       const j=i-F.iNow;const crew=F.curve[j]||0;
       const kk=F.kpiK||'m';const ee=FC_ESC.find(e2=>e2.k===kk)||FC_ESC[0];const req=F.reqs[kk];
       const rq2=Math.ceil(req-1e-9);
       const out=[sep,'Crew '+crew+' · supply '+fmt(F.sup[j])+' /h',
         (crew>=rq2?'✓ ':'✗ ')+ee.name+': need '+rq2+' drv'+(crew>=rq2?'':' · short '+(rq2-crew))];
-      if(F.red[j])out.push('✗ NPT at 6 h pace');
+      if(F.red[j])out.push('✗ Runout risk at 6 h pace');
       out.push('Click → full hour panel');
       return out;}}};
   const CLICK=(ev,els,chart)=>{try{const sx=chart.scales.x;if(!sx)return;
@@ -5384,7 +5914,7 @@ function fcCalc(){
     if(chart.$fc.pin!=null)fcPinShow(chart.$fc.pin,chart.$fc);else fcPinHide();}catch(_){}};
   const dsHidden=k=>({m:false,b6:false,b12:false,b24:false}[k]);
   let ch=(typeof Chart!=='undefined'&&Chart.getChart)?Chart.getChart('fcChart'):null;
-  const sameShape=ch&&ch.$fcOwn&&ch.data.datasets.length===7&&ch.$fc&&ch.$fc.iNow===iNow;
+  const sameShape=ch&&ch.$fcOwn&&ch.data.datasets.length===8&&ch.$fc&&ch.$fc.iNow===iNow&&ch.data.labels.length===labs.length;
   if(sameShape){
     const keepPin=(ch.$fc&&ch.$fc.pin!=null&&ch.$fc.pin<=iNow+FD.H)?ch.$fc.pin:null;
     FD.pin=keepPin;ch.$fc=FD;
@@ -5394,12 +5924,15 @@ function fcCalc(){
     ch.data.datasets[3].data=proj('b12');ch.data.datasets[4].data=proj('b24');
     ch.data.datasets[5].data=crewFull;ch.data.datasets[5].hidden=!FC.lay.crew;
     ch.data.datasets[6].data=cdData;ch.data.datasets[6].hidden=!FC.lay.cd;
+    ch.data.datasets[7].data=capData;ch.data.datasets[7].$has=capHas;ch.data.datasets[7].hidden=!FC.lay.hist;
+    if(evR.length)DTR.fcChart=Object.assign(DTR.fcChart||{id:'fcChart',alpha:dtOn('fcChart')?1:0},{ev:evR,lin:{t0:t0r,ms:36e5}});else delete DTR.fcChart;
     if(ch.options.scales.y2)ch.options.scales.y2.max=maxC;
     try{ch.update();}catch(_){}
     if(keepPin!=null)fcPinShow(keepPin,FD);
     return;}
-  const cfg={type:'line',data:{labels:labs,datasets:[
-    {label:'Actual (last 12 h)',data:histSeries,borderColor:'#1C3D54',backgroundColor:'rgba(28,61,84,.06)',fill:false,cubicInterpolationMode:'monotone',pointRadius:0,pointHoverRadius:5,borderWidth:2.6,borderJoinStyle:'round',hidden:!FC.lay.hist},
+  const cfg={dt:evR.length?{ev:evR,lin:{t0:t0r,ms:36e5}}:null,scroll:FC.hb===12?null:{n:N,px:12,at:iNow,frac:.62},
+    type:'line',data:{labels:labs,datasets:[
+    {label:'Actual ('+hbW+')',data:histSeries,borderColor:'#1C3D54',backgroundColor:'rgba(28,61,84,.06)',fill:false,cubicInterpolationMode:'monotone',pointRadius:0,pointHoverRadius:5,borderWidth:2.6,borderJoinStyle:'round',hidden:!FC.lay.hist},
     {label:'Avg pace (editable)',data:proj('m'),borderColor:'#1f6f6f',backgroundColor:mkGrad('fcChart','rgba(31,111,111,.15)','rgba(31,111,111,.01)',300),fill:true,tension:.3,cubicInterpolationMode:'monotone',pointRadius:0,pointHoverRadius:6,borderWidth:2.6,borderJoinStyle:'round'},
     {label:'Last 6 h pace',data:proj('b6'),borderColor:'#d47272',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.3,cubicInterpolationMode:'monotone'},
     {label:'Last 12 h pace',data:proj('b12'),borderColor:'#e0a63e',borderDash:[6,4],pointRadius:0,pointHoverRadius:5,borderWidth:1.8,fill:false,tension:.3,cubicInterpolationMode:'monotone'},
@@ -5409,12 +5942,15 @@ function fcCalc(){
       backgroundColor:c=>{const d2=((c.chart.$fc||{}).cdDir||[])[c.dataIndex]||0;return d2>0?'rgba(76,168,130,.32)':'rgba(212,114,114,.32)';},
       borderColor:c=>{const d2=((c.chart.$fc||{}).cdDir||[])[c.dataIndex]||0;return d2>0?'#2F7A45':'#c24545';},
       borderWidth:1.3,borderRadius:2.5,borderSkipped:false,barPercentage:.5,categoryPercentage:.9,
-      hidden:!FC.lay.cd,animation:{delay:c=>((c&&c.dataIndex)||0)*5}}]},
+      hidden:!FC.lay.cd,animation:{delay:c=>((c&&c.dataIndex)||0)*5}},
+    {label:FC.belly?'Pile captured (Stages)':'Boxes captured (Stages)',$cap:true,$has:capHas,data:capData,showLine:false,
+      pointStyle:'rectRot',pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#fff7e6',pointBorderColor:'#b7791f',pointBorderWidth:2,
+      borderColor:'#b7791f',backgroundColor:'#fff7e6',hidden:!FC.lay.hist}]},
     options:{interaction:{mode:'index',intersect:false},layout:{padding:{top:30}},
       onClick:CLICK,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9},filter:(it,dd)=>{const ds=dd&&dd.datasets&&dd.datasets[it.datasetIndex];return !(ds&&ds.$cap&&!ds.$has);}}},crosshair:{},
         tooltip:Object.assign({position:'nearest',backgroundColor:'rgba(18,38,58,.82)',titleFont:{size:11,weight:'800'},bodyFont:{size:9.5},padding:9,cornerRadius:10,caretSize:5,boxPadding:3,borderColor:'rgba(188,211,226,.4)',borderWidth:1},TT)},
-      scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:14}},
+      scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:N>90?Math.round(N/7):14}},
         y:{...gO,min:0,ticks:{callback:v=>fmt(v/1000)+'K'}},
         y2:{position:'right',min:0,max:maxC,grid:{display:false},ticks:{font:{size:8},stepSize:4,color:'#8fa7bb'}}}},
     plugins:[_fcMarks]};
@@ -5914,6 +6450,11 @@ function renderFc(){
         <button id="fch24" class="seg-btn${FC.hz===24?' seg-on':''}" onclick="fcHz(24)">24 h</button>
         <button id="fch48" class="seg-btn${FC.hz===48?' seg-on':''}" onclick="fcHz(48)">48 h</button>
         <button id="fch72" class="seg-btn${FC.hz===72?' seg-on':''}" onclick="fcHz(72)">72 h</button></div></div>
+      <div class="fld"><label>History</label><div class="seg-ctrl" title="How far back the ACTUAL line and its downtime bands go — long windows scroll sideways">
+        <button id="fcb12" class="seg-btn${FC.hb===12?' seg-on':''}" onclick="fcHB(12)">12 h</button>
+        <button id="fcb24" class="seg-btn${FC.hb===24?' seg-on':''}" onclick="fcHB(24)">1 day</button>
+        <button id="fcb48" class="seg-btn${FC.hb===48?' seg-on':''}" onclick="fcHB(48)">2 days</button>
+        <button id="fcball" class="seg-btn${FC.hb==='all'?' seg-on':''}" onclick="fcHB('all')">Whole well</button></div></div>
       <div class="fc-btns">
       <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver board and relearn the roster"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
       <button class="rbtn ghost" id="fc-reset" onclick="fcReset()" disabled title="Already at the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
@@ -5962,21 +6503,24 @@ function renderFc(){
           <span id="fchv-d" class="fc-hvp${FC.holdV==='day'?' on':''}" onclick="fcHoldV('day')" title="UNIQUE drivers to assign across the day's shifts">per day</span>
         </span></div><div class="v">—</div><div class="sb">—</div></div>
       ${kpi('fck-net','Net right now')}
+      ${kpi('fck-dt','Downtime · last 12 h')}
     </div>
     <div class="card mb"><div class="card-t">Pounds on location — roster crew curve × four frac paces</div>
-      <div class="sb fc-legend" onclick="this.classList.toggle('open')" style="margin-bottom:4px">Navy = ACTUAL last 12 h (rebuilt from hourly deliveries − stage burn) · solid teal = avg pace (editable) · dashed red/amber/green = last 6 / 12 / 24 h pace · grey area = crew (past = live board ACTIVES → projected roster) · Crew Δ = one candle per crew rise/drop (stable hours stay clean) · Δ marks layer adds the ▲▼ +N/−N labels · click a pace chip to anchor the KPIs · legend toggles each line · click any hour for the detail panel</div>
+      <div class="sb fc-legend" onclick="this.classList.toggle('open')" style="margin-bottom:4px">Navy = ACTUAL <span id="fc-lgh">last 12 h</span> (rebuilt from hourly deliveries − stage burn · ◆ = pile / boxes captured in Stages) · shaded bands = downtime logged in the Downtimes tab, CT (light green weather · red other · dark red sand / coil tubing) · solid teal = avg pace (editable) · dashed red/amber/green = last 6 / 12 / 24 h pace · grey area = crew (past = live board ACTIVES → projected roster) · Crew Δ = one candle per crew rise/drop (stable hours stay clean) · Δ marks layer adds the ▲▼ +N/−N labels · click a pace chip to anchor the KPIs · legend toggles each line · click any hour for the detail panel</div>
       <div id="fc-alert"></div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px">
         <div class="fc-esc" id="fc-esc" style="margin:0"></div>
         <div class="fc-lay" style="margin-left:auto"><span class="fc-lb2">Layers</span>
-          <span class="fc-lt${FC.lay.hist?' on':''}" id="fcl-hist" onclick="fcLay('hist')">Actual 12 h</span>
+          <span class="fc-lt${FC.lay.hist?' on':''}" id="fcl-hist" onclick="fcLay('hist')">Actual ${_fcHbTxt()}</span>
           <span class="fc-lt${FC.lay.crew?' on':''}" id="fcl-crew" onclick="fcLay('crew')">Crew</span>
           <span class="fc-lt${FC.lay.cd?' on':''}" id="fcl-cd" onclick="fcLay('cd')" title="One candle per real crew change — green up, red down, nothing while stable">Crew Δ</span>
           <span class="fc-lt${FC.lay.dm?' on':''}" id="fcl-dm" onclick="fcLay('dm')" title="▲/▼ labels with the exact delta on every crew rise/drop">Δ marks</span>
-          <span class="fc-lt${FC.lay.bands?' on':''}" id="fcl-bands" onclick="fcLay('bands')">NPT bands</span>
+          <span class="fc-lt${dtOn('fcChart')?' on':''}" id="fcl-dt" data-dtl="fcChart" onclick="dtTog('fcChart')" title="Downtime from the Downtimes tab shaded on the history (CT) — light green weather · red other · dark red sand / coil tubing">Downtime</span>
+          <span class="fc-lt${FC.lay.bands?' on':''}" id="fcl-bands" onclick="fcLay('bands')" title="Red shading where the last-6 h pace empties the pile">Runout risk</span>
           <span class="fc-lt${FC.lay.t48?' on':''}" id="fcl-t48" onclick="fcLay('t48')">Goal target</span></div></div>
       <div class="ch ch-l"><canvas id="fcChart"></canvas></div>
-      <div id="fc-pin"></div></div>`;
+      <div id="fc-pin"></div></div>
+    <div id="fc-dtc"></div>`;
   fcRosterTable();fcGantt();_fcTipBind($('fc-roster'));
   fcCalc();_fcRstBtn();
 }
@@ -6048,7 +6592,7 @@ document.querySelectorAll('#mnav button').forEach(b=>b.onclick=()=>{show(b.datas
   FILTERS.q=$('f-q').value;FILTERS.cust=$('f-cust').value;FILTERS.eq=$('f-eq').value;FILTERS.stat=$('f-stat').value;RS.sel=null;renderResumen();}));
 $('f-clear').onclick=()=>{['f-q','f-cust','f-eq','f-stat'].forEach(id=>$(id).value='');FILTERS.q=FILTERS.cust=FILTERS.eq=FILTERS.stat='';RS.sel=null;RS.d0='';RS.d1='';renderResumen();};
 $('w-sel').addEventListener('change',()=>loadWell($('w-sel').value));
-['w-d0','w-d1'].forEach(id=>$(id).addEventListener('change',()=>{document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));renderPozo();}));
+['w-d0','w-d1'].forEach(id=>$(id).addEventListener('change',()=>{document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));_vt(renderPozo);}));
 document.querySelectorAll('.rng').forEach(ch=>ch.onclick=()=>{
   document.querySelectorAll('.rng').forEach(x=>x.classList.remove('on'));ch.classList.add('on');
   const dv=ch.dataset.d;const tI=todayISO(); // HOY = calendario Central (12:00 AM–11:59 PM CT), NO el last day con data
@@ -6059,7 +6603,7 @@ document.querySelectorAll('.rng').forEach(ch=>ch.onclick=()=>{
     if(!d){$('w-d0').value='';$('w-d1').value='';}
     else{$('w-d0').value=addD(tI,-d+1);$('w-d1').value=tI;}}
   STRIP_END=tI;
-  renderPozo();});
+  _vt(renderPozo);});
 {const _br=$('btn-refresh');
  _br.title='Refresh live data — status + current well straight from the workbook (cache-busting). Shift+click = full page reload.';
  _br.onclick=(e)=>{if(e&&e.shiftKey){location.reload();return;}refreshLive(true);};}
@@ -6402,7 +6946,7 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden&&_rl
    intenta resize(); si no revive, reconstruye la vista. Rate-limit: 1 rebuild/8s, máx 3
    seguidos. Diagnóstico manual: pega __chartAudit() en la consola. */
 const _WD={last:0,streak:0};
-window.__chartAudit=function(){const out=[];document.querySelectorAll('canvas').forEach(cv=>{
+window.__chartAudit=function(){const out=[];document.querySelectorAll('canvas:not(.ch-yov)').forEach(cv=>{
   const vis=cv.offsetParent!==null;const ch=(Chart.getChart&&Chart.getChart(cv))||null;
   out.push({id:cv.id||'(no id)',visible:vis,chart:!!ch,w:ch?ch.width:cv.width,h:ch?ch.height:cv.height});});
   console.table(out);return out;};
@@ -6411,6 +6955,7 @@ setInterval(function(){try{
   const dead=[];const now0=Date.now();
   document.querySelectorAll('canvas').forEach(cv=>{
     if(cv.offsetParent===null)return;
+    if(cv.classList&&cv.classList.contains('ch-yov'))return; /* .134: eje Y fijo del scroll = lienzo copia, no es un chart */
     const ch=(Chart.getChart&&Chart.getChart(cv))||CH[cv.id]||null;
     if(!ch){dead.push(cv);return;}
     // Caso 1: colapsado a 0×0 → resize
