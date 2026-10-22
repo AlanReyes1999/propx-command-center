@@ -1570,7 +1570,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-22.134';
+const VBUILD='2026-10-22.135';
 /* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
    abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
 const CT_TZ='America/Chicago';
@@ -2528,13 +2528,16 @@ function dtCardHTML(o){
   const clsB=['bad','oth','wx'].map(k=>{const n=cls.filter(x=>x.e.k===k).length;if(!n)return '';
     return '<div class="dtc-r"><span><b>'+DT_K[k].n+'</b> · '+n+' event'+(n===1?'':'s')+'</span><span class="mono">'+dtFH(byK[k])+' · '+pct(byK[k])+'%</span>'
       +'<span class="bar"><span style="width:'+pct(byK[k])+'%;background:rgba('+DT_K[k].rgb+',.85)"></span></span></div>';}).join('');
-  return '<div class="card dtc mb">'
+  const hdr=''
     +'<div class="dtc-h"><div class="dtc-ti"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="6.5" y="5" width="3.6" height="14" rx="1.2"/><rect x="13.9" y="5" width="3.6" height="14" rx="1.2"/></svg></div>'
-    +'<div class="dtc-hd"><div class="card-t" style="margin:0">Downtime — '+(o.title||'this range')+'</div>'
+    +'<div class="dtc-hd"><div class="card-t" style="margin:0">'+(o.head||'Downtime')+' — '+(o.title||'this range')+'</div>'
     +'<div class="dtc-sum"><b>'+dtFH(tot)+'</b> NPT · '+cls.length+' event'+(cls.length===1?'':'s')+' · <b>'+(tot/span*100).toFixed(1)+'%</b> of the '+(span>=48?Math.round(span/24)+'-day':Math.round(span)+'-hour')+' window'
     +(live.length?' · <b style="color:#b23b3b">'+live.length+' ongoing</b>':'')+(o.note?' · '+o.note:'')+'</div></div>'
-    +(ids.length?'<button type="button" class="dtc-tog'+(ids.every(dtOn)?' on':'')+'" data-ids="'+ids.join(',')+'" onclick="dtTogAll(\''+ids.join(',')+'\'.split(\',\'),!this.classList.contains(\'on\'))" title="Show or hide the downtime bands on every chart of this view"><i></i>Bands on charts</button>':'')
+    +(ids.length?'<button type="button" class="dtc-tog'+(ids.every(dtOn)?' on':'')+'" data-ids="'+ids.join(',')+'" onclick="dtTogAll(\''+ids.join(',')+'\'.split(\',\'),!this.classList.contains(\'on\'))" title="Show or hide the downtime bands on every chart of this view"><i></i>'+(o.togLbl||'Bands on charts')+'</button>':'')
     +'</div>'
+;
+  if(o.compact)return '<div class="card dtc dtc-c mb">'+hdr+'<div class="dtc-st">Events · CT'+(o.deltaHdr?' · '+o.deltaHdr:'')+'</div><div class="dtc-list">'+evs+'</div></div>';
+  return '<div class="card dtc mb">'+hdr
     +'<div class="dtc-bar">'+seg+'</div><div class="dtc-leg">'+leg+'</div>'
     +'<div class="dtc-tl">'+tl+ticks+'</div>'
     +'<div class="dtc-g"><div class="dtc-resp"><div class="dtc-st">By responsible</div>'+resp+'</div>'
@@ -3549,7 +3552,6 @@ function bSrc(){
       ${kpiCard('Avg Net Weight',fmt(anAvg)+' lbs','cg',fmt(Math.round(m.SRC.reduce((s,x)=>s+x.lbs,0)/1e6))+'M lbs delivered','2-Box avg ✓','dn')}
       ${m.WT&&m.WT.has?kpiCard('Avg Gross Weight',fmt(m.WT.gAvg)+' lbs',gwBand(m.WT.gAvg).cls,(m.WT.ov?fmt(m.WT.ov)+' over 80k':'none over 80k')+' · '+(m.WT.lw?fmt(m.WT.lw)+' under 70k':'none under 70k'),gwBand(m.WT.gAvg).t,gwBand(m.WT.gAvg).k):''}
     </div>
-    ${dtCardFor(m,['chWt'],{note:'weight trend shows the bands'})}
     <div class="grid g2 mb">
       <div class="card"><div class="card-t">Design vs Actual Mix (%)</div><div class="ch ch-s"><canvas id="chSrcComp"></canvas></div></div>
       <div class="card"><div class="card-t">Loads by Terminal: Design vs Actual</div><div class="ch ch-s"><canvas id="chSrcLoads"></canvas></div></div>
@@ -3746,7 +3748,6 @@ function bCycle(){
         <div class="sb" style="margin-bottom:8px">Actual component breakdown · Total ${Math.round(m.AVG.tot)} min avg</div>
         <div class="ch"><canvas id="cCycDough"></canvas></div></div>
     </div>
-    ${dtCardFor(m,['cCycStack','cCycLine'])}
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
         <div class="card-t" style="margin:0">${m.HRX?'Hourly Cycle Breakdown — '+(m.HRX.multi?m.D[0]+' – '+m.D[m.n-1]:m.D[0])+(m.HRX.term?' · '+m.HRX.term:'')+' · by Delivered hour':'Daily Cycle Breakdown — Stacked Components'}</div>
@@ -3892,7 +3893,6 @@ function bStg(){
         return kpiCard('Avg Stage + WL',avgTt?fmtMin(avgTt):'—','co','Design: '+fmtMin(m.durTotD),avgTt?pctS(avgTt,m.durTotD):'',(avgTt&&avgTt<=m.durTotD*1.15)?'dn':'dw');})()}
       ${kpiCard('Outliers / NPT',outl,outl>0?'co':'cg','tons <68% · ±15% · dur >'+Math.round(m.durStageD*1.5)+'m','','dw')}
     </div>
-    ${dtCardFor(m,['cStgMain','cDurChart','cDayCombo','cFracStg','cFracTons'],{note:'a stage carries the downtime of its pumping + the WL/transition after it'})}
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
         <div class="card-t" style="margin:0">Per-Stage Performance</div>
@@ -5840,7 +5840,7 @@ function fcCalc(){
   const evR=iNow?dEv.map(e=>Object.assign({},e,{ar:_fcMs(e.a,clk),br:_fcMs(e.b,clk)})).filter(e=>e.br>t0r-36e5&&e.ar<now+36e5):[];
   const winA=Math.floor(_fcW(now-HB*36e5,clk)/36e5)*36e5;
   const dWin=hist.any?dtWin(dEv,winA,nWn):dtWin(dEv.filter(e=>e.open),winA,nWn);
-  const invAt=tr=>{if(!hist.any)return null;const f=HB-(now-tr)/36e5;if(!(f>=0&&f<=HB))return null;const k=Math.floor(f),r=f-k;
+  const invAt=tr=>{if(!hist.any)return null;let f=HB-(now-tr)/36e5;if(!(f>=-1&&f<=HB+1e-6))return null;f=Math.max(0,Math.min(HB,f));const k=Math.floor(f),r=f-k; /* el borde de la ventana va a la hora cerrada: hasta 1 h antes del 1er punto = 1er punto */
     const a=hist.inv[k],b=hist.inv[Math.min(HB,k+1)];return (a==null||b==null)?null:a+(b-a)*r;};
   const lbB=Math.max(1,FC.lbsBox||45000);
   const uN=lbs=>FC.belly?Math.round(lbs/2000):Math.round(lbs/lbB);
@@ -5856,6 +5856,7 @@ function fcCalc(){
     dMap.set(x,(FC.belly?'Pile ':'On location ')+'<b>'+uTx(a)+'</b>'+(sA!=null?' ('+sA.toFixed(1)+' stg)':'')+' → <b>'+uTx(b)+'</b> '+uD(a,b)+tag);});
   const dtc=$('fc-dtc');
   if(dtc)dtc.innerHTML=(wF&&(hist.any||dEv.length))?dtCardHTML({ev:dWin,A:winA,B:nWn,ids:evR.length?['fcChart']:[],
+    compact:true,head:'Downtime vs '+(FC.belly?'sandpile':'sand on location'),togLbl:'Bands on chart', /* .134b: solo la comparación — el desglose completo vive en el tab Downtime */
     title:hbW+' · '+FC.id,when:'in the '+hbW,sub:'nothing logged in the Downtimes tab for this window',
     note:nInv?((FC.belly?'pile ':'sand on location ')+(uN(dInv)>0?'built ':uN(dInv)<0?'drained ':'held ')+uD(0,dInv)+' across these stops (rebuilt)'):'',
     winWord:'in window',delta:x=>dMap.get(x)||'',deltaHdr:FC.belly?'sandpile start → end':'sand on location start → end'}):'';
