@@ -800,6 +800,77 @@ td.mono{font-family:'Plus Jakarta Sans',sans-serif;font-variant-numeric:tabular-
 .dtc-e .dx b{color:#1e293b}.dtc-e .dx b.up{color:#2f7a45}.dtc-e .dx b.dn{color:#b23b3b}.dtc-e .dx b.fl{color:#64748b}
 .dtc-e .inw{display:inline-block;margin-right:6px;padding:0 7px;border-radius:999px;background:#eef2f6;color:#475569;font-size:8.5px;font-weight:800;vertical-align:1px}
 .fck-live{font-size:11px;font-weight:800;color:#b23b3b;letter-spacing:0;vertical-align:3px}
+/* .136 · lista de paros: riel de color por clase, columnas fijas (nada se encima), causa en 2 líneas */
+.dtx-wrap{margin-top:2px}
+.dtx-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.dtx-f{display:inline-flex;gap:5px;flex-wrap:wrap}
+.dtx-f button{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;border:1px solid #e5e9ef;background:#fff;color:#64748b;font:700 9.5px/1 'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all .18s}
+.dtx-f button i{width:8px;height:8px;border-radius:50%}
+.dtx-f button b{color:#94a3b8;font-weight:800}
+.dtx-f button.on{background:#1c3d54;border-color:#1c3d54;color:#fff}.dtx-f button.on b{color:#bcd3e2}
+.dtx-f button:hover:not(.on){border-color:#c9d6e2;color:#1c3d54}
+.dtx{border:1px solid #e9eef4;border-radius:12px;overflow:hidden;background:#fff}
+.dtx-hd,.dtx-row{display:grid;grid-template-columns:128px 112px minmax(0,1fr);column-gap:18px;align-items:center}
+.dtx.has-sand .dtx-hd,.dtx.has-sand .dtx-row{grid-template-columns:128px 112px minmax(0,1fr) minmax(250px,310px)}
+.dtx.has-loads .dtx-hd,.dtx.has-loads .dtx-row{grid-template-columns:128px 112px minmax(0,1fr) 92px}
+.dtx-hd{padding:9px 16px 9px 20px;background:#f8fafc;border-bottom:1px solid #edf1f5;font-size:8.5px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#94a3b8}
+.dtx-row{position:relative;padding:12px 16px 12px 20px;border-bottom:1px solid #f1f4f8;font-size:10.5px;color:#334155;transition:background .18s}
+.dtx-row::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--k)}
+.dtx-row:last-of-type{border-bottom:0}
+.dtx-row:hover{background:#f8fbfe}
+.dtx-row.go{cursor:pointer}
+.dtx-row.go:hover::after{content:'Show on chart ›';position:absolute;right:12px;top:6px;font-size:8px;font-weight:800;color:#2d5a7b;letter-spacing:.3px}
+.dtx-row.live{background:linear-gradient(90deg,#fff4f4,#fff 60%)}
+.dtx.anim .dtx-row{animation:dtxIn .34s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--i,0)*24ms)}
+@keyframes dtxIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+.dtx-when,.dtx-dur,.dtx-what,.dtx-sand,.dtx-loads{min-width:0}
+.dtx-when b{display:block;font-size:11px;color:#0f172a;font-weight:800;white-space:nowrap}
+.dtx-when span{display:block;margin-top:2px;font-size:10px;color:#64748b;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dtx-when em{font-style:normal;font-size:8px;font-weight:800;color:#d97706;margin-left:3px}
+.dtx-dur b{display:block;font-size:12.5px;color:#0f172a;font-variant-numeric:tabular-nums;white-space:nowrap}
+.dtx-dur span{display:inline-block;margin-top:4px;padding:1px 8px;border-radius:999px;background:#eef2f6;color:#475569;font-size:8.5px;font-weight:800;white-space:nowrap}
+.dtx-top{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:3px}
+.dtx-cls{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:999px;background:var(--kb);color:var(--k);font-size:8.5px;font-weight:800;white-space:nowrap}
+.dtx-cls i{width:6px;height:6px;border-radius:50%;background:var(--k);flex:0 0 6px}
+.dtx-top b{color:#0f172a;font-size:10.5px}
+.dtx-live{padding:2px 8px;border-radius:999px;background:#b23b3b;color:#fff;font-size:8px;font-weight:800;letter-spacing:.5px;animation:wpulse 1.6s ease-in-out infinite}
+.dtx-cause{color:#5b6b7c;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.dtx-sand{display:flex;flex-direction:column;gap:5px}
+.dtx-lv{display:flex;align-items:center;gap:9px;font-variant-numeric:tabular-nums}
+.dtx-v{display:flex;flex-direction:column;line-height:1.15;min-width:0}
+.dtx-v b{font-size:12px;color:#0f172a;white-space:nowrap}
+.dtx-v small{font-size:8.5px;color:#94a3b8;font-weight:700;white-space:nowrap}
+.dtx-arr{color:#a3b1bf;font-size:13px;line-height:1}
+.dtx-d{margin-left:auto;padding:3px 9px;border-radius:999px;font-size:9.5px;font-weight:800;white-space:nowrap}
+.dtx-d.up{background:#e8f6ee;color:#2f7a45}.dtx-d.dn{background:#fbecec;color:#b23b3b}.dtx-d.fl{background:#f1f5f9;color:#64748b}
+.dtx-na{font-size:9px;color:#94a3b8}
+.dtx-sand .dtc-tag{margin-left:0;align-self:flex-start}
+.dtx-loads{text-align:right;font-variant-numeric:tabular-nums;color:#64748b;font-size:9px}
+.dtx-loads b{display:block;color:#0f172a;font-size:11.5px}
+.dtx-row.dtx-x{display:none}
+.dtx-more{display:block;width:100%;padding:10px;border:0;border-top:1px solid #edf1f5;background:#fafbfd;color:#2d5a7b;font:800 10px/1 'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:background .18s}
+.dtx-more:hover{background:#eef5fb}
+.dtx-foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:11px 16px 11px 20px;background:#f0fdf4;border-top:1px solid #dcf2e3;font-size:10.5px;font-weight:800;color:#166534}
+.dtx-empty{padding:16px 20px;font-size:11px;color:#2f7a45;background:linear-gradient(90deg,#f1faf4,#fff 70%)}
+@media(max-width:760px){.dtx-hd{display:none}
+  .dtx-row,.dtx.has-sand .dtx-row,.dtx.has-loads .dtx-row{grid-template-columns:1fr auto;row-gap:7px}
+  .dtx-what,.dtx-sand{grid-column:1/-1}.dtx-dur{text-align:right}.dtx-loads{grid-column:1/-1;text-align:left}}
+@media(prefers-reduced-motion:reduce){.dtx.anim .dtx-row{animation:none}}
+/* .136 · línea de ARENA EN LOCACIÓN (Cycle Times) */
+.sd-chip{display:inline-flex;align-items:center;gap:7px;padding:4px 11px;border-radius:999px;border:1px solid #e5e9ef;background:#fff;color:#7b8794;font-size:9.5px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .2s,color .2s,border-color .2s,box-shadow .2s;white-space:nowrap}
+.sd-chip i{width:7px;height:7px;transform:rotate(45deg);border:1.8px solid #b7791f;background:#fff8eb;border-radius:1.5px;opacity:.45;transition:opacity .2s}
+.sd-chip.on{background:#fff8eb;border-color:#ecd3a5;color:#8a5a12;box-shadow:0 1px 4px rgba(183,121,31,.12)}
+.sd-chip.on i{opacity:1}
+.sd-chip:hover{border-color:#e3c48d}
+/* .136 · línea de tiempo (navegador) bajo charts con scroll */
+.ch-mini{position:relative;height:42px;margin:8px 0 0;border-radius:9px;background:#f8fafc;border:1px solid #e6ecf2;overflow:hidden;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:none}
+.ch-mini canvas{display:block;width:100%;height:100%;opacity:.8}
+.ch-mini-w{position:absolute;top:0;bottom:0;left:0;border:2px solid #2d5a7b;border-radius:8px;background:rgba(45,90,123,.06);box-shadow:0 0 0 9999px rgba(241,245,249,.62);cursor:grab;transition:transform .14s ease-out,width .14s ease-out}
+.ch-mini.drag .ch-mini-w{cursor:grabbing;transition:none}
+.ch-mini-h{position:absolute;right:8px;bottom:3px;font-size:8px;font-weight:800;letter-spacing:.3px;color:#8fa1b3;pointer-events:none;background:rgba(248,250,252,.85);padding:0 4px;border-radius:4px}
+.fc-hrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:2px 0 8px}
+.fc-hrow .seg-btn{padding:4px 12px}
+.fc-hhint{font-size:9px;color:#8fa1b3;font-weight:600}
 .dtc-tag{display:inline-block;margin-left:7px;padding:1px 8px;border-radius:999px;font-size:8.5px;font-weight:800;vertical-align:1px}
 .dtc-tag.bad{background:#fbe9e9;color:#8f1d1d}.dtc-tag.warn{background:#fdf3e3;color:#9a6b1f}
 #fcl-dt::before{content:'';display:inline-block;width:11px;height:7px;border-radius:2px;margin-right:5px;vertical-align:0;opacity:.45;background:linear-gradient(90deg,rgba(125,201,146,.95) 0 33%,rgba(212,114,114,.95) 33% 66%,rgba(128,22,22,.95) 66%)}
@@ -1570,7 +1641,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-22.135';
+const VBUILD='2026-10-22.136';
 /* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
    abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
 const CT_TZ='America/Chicago';
@@ -2470,7 +2541,10 @@ function _dtTip(id,i){const R=DTR[id];if(!R||!dtOn(id))return [];let A0,B0;
   if(hits.length>3)L.push('+'+(hits.length-3)+' more');
   return L;}
 if(typeof Chart!=='undefined'&&Chart.register){try{
-  Chart.register({id:'ppxDT',beforeDatasetsDraw(c){try{const id=c.canvas&&c.canvas.id;const R=id&&DTR[id];if(R)_dtPaint(c,R);}catch(_){}}});
+  Chart.register({id:'ppxDT',beforeDatasetsDraw(c){try{const id=c.canvas&&c.canvas.id;const R=id&&DTR[id];if(R)_dtPaint(c,R);}catch(_){}},
+    afterDatasetsDraw(c){try{const id=c.canvas&&c.canvas.id;const R=id&&DTR[id];if(R&&R.focus&&R.fk>0&&R.alpha!==0)_dtFocusPaint(c,R);}catch(_){}}});
+  Chart.register({id:'ppxSand',beforeDatasetDraw(c,a){const ds=c.data.datasets[a.index];if(ds&&ds.$sand&&c.$sdA!=null&&c.$sdA<1){c.ctx.save();c.ctx.globalAlpha=Math.max(0,c.$sdA);c.$sdS=1;}},
+    afterDatasetDraw(c){if(c.$sdS){c.ctx.restore();c.$sdS=0;}}});
   /* eje Y fijo para charts con scroll horizontal: copia el área del eje a un lienzo que no se mueve */
   Chart.register({id:'ppxSticky',afterRender(c){try{
     const el=c.canvas;const host=el&&el.closest&&el.closest('.ch.ch-sc');if(!host||!c.chartArea)return;
@@ -2481,7 +2555,13 @@ if(typeof Chart!=='undefined'&&Chart.register){try{
       const yb=Math.min(Hh,Math.ceil(A.bottom)+2);g.drawImage(el,Math.round(sx*dpr),0,Math.round(w*dpr),Math.round(yb*dpr),0,0,o.width,Math.round(yb*dpr));};
     const L=Math.ceil(A.left),Rw=Math.ceil(c.width-A.right);
     paint(host.querySelector(':scope > .ch-yov-l'),0,L);paint(host.querySelector(':scope > .ch-yov-r'),c.width-Rw,Rw>6?Rw:0);
-    host.style.setProperty('--yl',L+'px');host.style.setProperty('--yr',(Rw>6?Rw:0)+'px');}catch(_){}}});
+    host.style.setProperty('--yl',L+'px');host.style.setProperty('--yr',(Rw>6?Rw:0)+'px');
+    const mi=host.nextElementSibling;
+    if(mi&&mi.classList&&mi.classList.contains('ch-mini')){
+      if(!(c._cx&&c._cx.draw)&&!((c.getActiveElements&&c.getActiveElements())||[]).length){const cv=mi.querySelector('canvas');const W=mi.clientWidth,Hm=cv&&cv.clientHeight||40;
+        if(cv&&W>0){cv.width=Math.round(W*dpr);cv.height=Math.round(Hm*dpr);const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);
+          g.drawImage(el,0,Math.round(A.top*dpr),el.width,Math.max(1,Math.round((A.bottom-A.top)*dpr)),0,0,cv.width,cv.height);}}
+      _miniSync(host);}}catch(_){}}});
 }catch(e){console.error('[dt-layer]',e);}}
 /* chip de capa por chart (solo si el rango trae downtimes) */
 function dtChip(id,has){if(!has)return '';
@@ -2497,6 +2577,123 @@ window.dtTog=function(id,on){const nv=(on==null)?!dtOn(id):!!on;DTV[id]=nv;
     try{ch.draw();}catch(_){}if(k<1)requestAnimationFrame(st);});};
 window.dtTogAll=function(ids,on){(ids||[]).forEach(id=>dtTog(id,on));
   document.querySelectorAll('.dtc-tog').forEach(b=>{const own=(b.dataset.ids||'').split(',');if(own.some(x=>(ids||[]).indexOf(x)>=0))b.classList.toggle('on',!!on);});};
+/* .136 · utilidades */
+const _eh=v=>String(v==null?'':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* .136 · LISTA DE PAROS (Forecast y tab Downtime): riel de color por clase, columnas que no se enciman,
+   causa en 2 líneas, comparación de arena como indicador, filtro por clase, Latest | Longest, "ver todos"
+   y click → enfoca el paro en su gráfica. Estado (filtro / orden / abierto) por lista. */
+const DTX={},DTX_ST={};
+function dtListHTML(id,rows,o){o=o||{};DTX[id]={rows:rows||[],o};
+  const st=DTX_ST[id]||(DTX_ST[id]={sort:o.sort||'latest',k:'all',open:false});
+  const all=rows||[];
+  if(!all.length)return '<div class="dtx-wrap" id="dtx-'+id+'"><div class="dtx"><div class="dtx-empty">✓ '+(o.empty||'No downtime logged in this range')+'</div></div></div>';
+  if(st.k!=='all'&&!all.some(x=>x.e.k===st.k))st.k='all';
+  let L=all.filter(x=>st.k==='all'||x.e.k===st.k);
+  const dur=x=>x.e.h!=null?x.e.h:x.h;
+  L.sort((p,q)=>(q.e.open?1:0)-(p.e.open?1:0)||(st.sort==='longest'?dur(q)-dur(p):q.e.a-p.e.a));
+  const tools=o.tools?('<div class="dtx-tools"><div class="dtx-f">'+['all','bad','oth','wx'].map(k=>{const n=k==='all'?all.length:all.filter(x=>x.e.k===k).length;if(k!=='all'&&!n)return '';
+      return '<button type="button" class="'+(st.k===k?'on':'')+'" onclick="dtxSet(\''+id+'\',\'k\',\''+k+'\')">'+(k==='all'?'All':'<i style="background:'+DT_K[k].c+'"></i>'+DT_K[k].n)+' <b>'+n+'</b></button>';}).join('')+'</div>'
+    +'<div class="seg-ctrl"><button type="button" class="seg-btn'+(st.sort==='latest'?' seg-on':'')+'" onclick="dtxSet(\''+id+'\',\'sort\',\'latest\')">Latest</button><button type="button" class="seg-btn'+(st.sort==='longest'?' seg-on':'')+'" onclick="dtxSet(\''+id+'\',\'sort\',\'longest\')">Longest</button></div></div>'):'';
+  const c4=o.sand?' has-sand':(o.loads?' has-loads':'');
+  const hd='<div class="dtx-hd"><span>When · CT</span><span>Duration</span><span>Class · responsible · cause</span>'
+    +(o.sand?'<span>'+(o.sandHdr||'Sand on location · start → end')+'</span>':(o.loads?'<span style="text-align:right">Est. loads lost</span>':''))+'</div>';
+  const lim=o.limit||6,more=L.length>lim;
+  const body=L.map((x,i)=>{const e=x.e,K=DT_K[e.k]||DT_K.oth;const full=(e.b-e.a)/36e5,clip=x.h<full-1/60;
+    const go=o.focus?' go" onclick="dtFocus(\''+o.focus+'\','+e.a+','+e.b+')':'';
+    const nd=e.clk&&!e.open&&_wISO(e.b)!==_wISO(e.a);
+    return '<div class="dtx-row'+(e.open?' live':'')+(more&&!st.open&&i>=lim?' dtx-x':'')+go+'" style="--k:'+K.c+';--kb:rgba('+K.rgb+',.13);--i:'+Math.min(i,14)+'">'
+      +'<div class="dtx-when"><b>'+_wDow(e.a)+' '+_wMD(e.a)+'</b><span>'+(e.clk?_wHM(e.a)+' → '+(e.open?'now':_wHM(e.b)+(nd?'<em>+1d</em>':'')):'all day')+'</span></div>'
+      +'<div class="dtx-dur"><b>'+dtFH(dur(x))+'</b>'+(clip?'<span>'+dtFH(x.h)+' '+(o.winWord||'in range')+'</span>':'')+'</div>'
+      +'<div class="dtx-what"><div class="dtx-top"><span class="dtx-cls"><i></i>'+K.n+'</span><b>'+_eh(e.resp)+'</b>'+(e.open?'<span class="dtx-live">ONGOING</span>':'')+'</div>'
+      +'<div class="dtx-cause" title="'+_eh(e.cause)+'">'+_eh(e.cause)+'</div></div>'
+      +(o.sand?'<div class="dtx-sand">'+(o.sand(x)||'<span class="dtx-na">no rebuilt inventory for this stop</span>')+'</div>':(o.loads?'<div class="dtx-loads">'+o.loads(x)+'</div>':''))
+      +'</div>';}).join('');
+  return '<div class="dtx-wrap" id="dtx-'+id+'">'+tools
+    +'<div class="dtx'+c4+(o.anim?' anim':'')+(more&&!st.open?' clip':'')+'">'+hd+body
+    +(more?'<button type="button" class="dtx-more" onclick="dtxMore(\''+id+'\')">'+(st.open?'Show less':'Show all '+L.length+' events')+'</button>':'')
+    +(o.foot?'<div class="dtx-foot">'+o.foot+'</div>':'')+'</div></div>';}
+window.dtxSet=function(id,k,v){const s2=DTX_ST[id];const D=DTX[id];if(!s2||!D)return;s2[k]=v;
+  const el=document.getElementById('dtx-'+id);if(el)el.outerHTML=dtListHTML(id,D.rows,Object.assign({},D.o,{anim:true}));};
+window.dtxMore=function(id){const s2=DTX_ST[id];const D=DTX[id];if(!s2||!D)return;s2.open=!s2.open;
+  const el=document.getElementById('dtx-'+id);if(el)el.outerHTML=dtListHTML(id,D.rows,Object.assign({},D.o,{anim:false}));};
+/* .136 · click en un paro → lleva la gráfica a ese tramo y lo resalta unos segundos */
+function _dtXr(c,R,e){const A=c.chartArea,xs=c.scales&&c.scales.x;if(!A||!xs||!e)return null;
+  if(R.lin){const p0=xs.getPixelForValue(0),st=xs.getPixelForValue(1)-p0;const a=e.ar!=null?e.ar:e.a,b=e.br!=null?e.br:e.b;
+    return [p0+(a-R.lin.t0)/R.lin.ms*st,p0+(b-R.lin.t0)/R.lin.ms*st];}
+  const S=R.slots||[],n=S.length;if(!n)return null;const p0=xs.getPixelForValue(0),st=n>1?(xs.getPixelForValue(1)-p0):(A.right-A.left);
+  const xL=i=>xs.getPixelForValue(i)-st/2;
+  if(R.contig){let i0=0;while(i0<n&&!S[i0])i0++;if(i0>=n)return null;const T0=S[i0].a,ms=(S[i0].b-S[i0].a)||36e5;return [xL(i0)+(e.a-T0)/ms*st,xL(i0)+(e.b-T0)/ms*st];}
+  const i=S.findIndex(s2=>s2&&e.a<s2.b&&e.b>s2.a);if(i<0)return null;let j=i;for(let k=i;k<n;k++){if(S[k]&&e.b>S[k].a)j=k;}
+  return [xL(i)+Math.max(0,(e.a-S[i].a)/(S[i].b-S[i].a))*st,xL(j)+Math.min(1,(e.b-S[j].a)/(S[j].b-S[j].a))*st];}
+function _dtFocusPaint(c,R){const xr=_dtXr(c,R,R.focus);if(!xr)return;const A=c.chartArea,ctx=c.ctx,k=R.fk,K=DT_K[R.focus.k]||DT_K.oth;
+  const x0=Math.max(A.left,xr[0]),x1=Math.min(A.right,xr[1]);if(x1<=x0)return;const w=Math.max(3,x1-x0);
+  ctx.save();ctx.fillStyle='rgba('+K.rgb+','+(.24*k).toFixed(3)+')';ctx.fillRect(x0,A.top,w,A.bottom-A.top);
+  ctx.strokeStyle='rgba(15,23,42,'+(.85*k).toFixed(3)+')';ctx.lineWidth=2;ctx.setLineDash([5,3]);ctx.strokeRect(x0+1,A.top+1,w-2,A.bottom-A.top-2);ctx.restore();}
+window.dtFocus=function(id,a,b){const R=DTR[id];const c=(typeof CH!=='undefined'&&CH[id])||((typeof Chart!=='undefined'&&Chart.getChart)?Chart.getChart(id):null);if(!R||!c)return;
+  const e=(R.ev||[]).find(x=>x.a===a&&x.b===b)||(R.ev||[]).find(x=>x.a===a);if(!e)return;
+  if(!dtOn(id))dtTog(id,true);
+  R.focus=e;R.fk=1;const xr=_dtXr(c,R,e);const box=c.canvas.closest('.ch-xs');
+  if(box&&xr){const tgt=Math.max(0,Math.min(box.scrollWidth-box.clientWidth,(xr[0]+xr[1])/2-box.clientWidth/2));try{box.scrollTo({left:tgt,behavior:'smooth'});}catch(_){box.scrollLeft=tgt;}}
+  const card=c.canvas.closest('.card');if(card&&card.scrollIntoView){try{card.scrollIntoView({behavior:'smooth',block:'center'});}catch(_){}}
+  if(typeof requestAnimationFrame==='undefined'||typeof performance==='undefined'){try{c.draw();}catch(_){}return;}
+  if(R._fr)cancelAnimationFrame(R._fr);const t0=performance.now();
+  const step=t=>{const q=(t-t0)/2400;R.fk=q<1?1-q*q:0;try{c.draw();}catch(_){}if(q<1)R._fr=requestAnimationFrame(step);else{R.focus=null;R._fr=null;try{c.draw();}catch(_){}}};
+  R._fr=requestAnimationFrame(step);};
+/* .136 · ARENA EN LOCACIÓN por hora (reloj Central). Anclas = capturas REALES de Stages al cierre de
+   cada etapa (cajas llenas × lbs/caja · pila); entre capturas = entregas reales por hora − burn de las
+   etapas (prorrateado); antes de la 1ª captura, hacia atrás. Nunca negativo, nunca en el futuro. */
+function sandSeries(o){o=o||{};const st=o.stages||[],hr=o.hourly||[];const lb=Math.max(1,+o.lbBox||45000),belly=!!o.belly;
+  const SW=stgWins(st);const caps=[];
+  st.forEach((s2,i)=>{const v=+s2.full_or_pila||0;const x=SW[i];if(!(v>0)||!x)return;
+    caps.push({t:x.b!=null?x.b:x.a,lbs:belly?(v>20000?v:v*2000):v*lb,raw:v,stg:+s2.total_stage||+s2.stage||0});});
+  if(!caps.length)return null;caps.sort((p,q)=>p.t-q.t);
+  let W0=null,W1=null;const lo=t=>{if(t!=null&&(W0==null||t<W0))W0=t;},hi=t=>{if(t!=null&&(W1==null||t>W1))W1=t;};
+  hr.forEach(d=>{const t=_wms(d.date,'00:00');if(t!=null){lo(t);hi(t+864e5);}});
+  caps.forEach(c=>{lo(Math.floor(c.t/864e5)*864e5);hi(Math.ceil((c.t+1)/864e5)*864e5);});
+  (o.iso||[]).forEach(d=>{const t=_wms(d,'00:00');if(t!=null){lo(t);hi(t+864e5);}});
+  if(W0==null)return null;W1=Math.min(W1,Math.ceil(_wNow()/36e5)*36e5);if(!(W1>W0))return null;
+  const N=Math.round((W1-W0)/36e5),nf=new Float64Array(N);
+  hr.forEach(d=>{const t=_wms(d.date,'00:00');if(t==null)return;const i0=Math.round((t-W0)/36e5);
+    for(let h=0;h<24;h++){const i=i0+h;if(i>=0&&i<N)nf[i]+=((d.tn&&+d.tn[h])||0)*2000;}});
+  st.forEach((s2,k)=>{const x=SW[k];if(!(+s2.used_tons>0)||!x)return;const a=x.a,b=x.b!=null?x.b:a+2*36e5,tot=(+s2.used_tons)*2000;
+    for(let i=Math.max(0,Math.floor((a-W0)/36e5));i<N;i++){const s0=W0+i*36e5;if(s0>=b)break;const o0=Math.max(a,s0),o1=Math.min(b,s0+36e5);if(o1>o0)nf[i]-=tot*(o1-o0)/(b-a);}});
+  const cum=new Float64Array(N+1);for(let i=0;i<N;i++)cum[i+1]=cum[i]+nf[i];
+  const C=t=>{const f=(t-W0)/36e5;if(f<=0)return 0;if(f>=N)return cum[N];const k=Math.floor(f);return cum[k]+nf[k]*(f-k);};
+  const at=t=>{if(t==null||t<W0||t>W1)return null;let c=null;for(let j=caps.length-1;j>=0;j--){if(caps[j].t<=t){c=caps[j];break;}}
+    const v=c?c.lbs+C(t)-C(c.t):caps[0].lbs-(C(caps[0].t)-C(t));return Math.max(0,v);};
+  const hourMid=a=>(a==null||a<W0||a>=W1)?null:at(Math.min(a+18e5,W1));
+  const day=iso=>{const a=_wms(iso,'00:00');if(a==null)return null;let s2=0,n=0,mn=null,mx=null;
+    for(let h=0;h<24;h++){const v=hourMid(a+h*36e5);if(v==null)continue;s2+=v;n++;mn=mn==null?v:Math.min(mn,v);mx=mx==null?v:Math.max(mx,v);}
+    if(!n)return null;return {avg:s2/n,min:mn,max:mx,h:n,caps:caps.filter(c=>c.t>=a&&c.t<a+864e5).length};};
+  return {belly,lb,caps,W0,W1,at,hourMid,day,unit:belly?'t':'boxes',u:v=>belly?v/2000:v/lb};}
+let SDV={};try{SDV=JSON.parse(localStorage.getItem('ppx_sdv')||'{}')||{};}catch(_){SDV={};}
+const sdOn=id=>SDV[id]!==false;
+function sdChip(id,has,belly){if(!has)return '';
+  return '<button type="button" class="sd-chip'+(sdOn(id)?' on':'')+'" data-sd="'+id+'" onclick="sdTog(\''+id+'\')" title="'+(belly?'Average sandpile':'Average sand on location')+' — hour by hour from the Stages captures + real deliveries − stage burn"><i></i>'+(belly?'Sandpile':'Sand on location')+'</button>';}
+window.sdTog=function(id,on){const nv=on==null?!sdOn(id):!!on;SDV[id]=nv;try{localStorage.setItem('ppx_sdv',JSON.stringify(SDV));}catch(_){}
+  document.querySelectorAll('.sd-chip[data-sd="'+id+'"]').forEach(b=>b.classList.toggle('on',nv));
+  const ch=(typeof CH!=='undefined'&&CH[id])||null;if(!ch)return;const i=ch.data.datasets.findIndex(d=>d.$sand);if(i<0)return;
+  const fin=()=>{ch.$sdA=null;if(!nv){ch.setDatasetVisibility(i,false);try{ch.update();}catch(_){}}else{try{ch.draw();}catch(_){}}};
+  if(nv){ch.$sdA=0;ch.setDatasetVisibility(i,true);try{ch.update();}catch(_){}}
+  if(typeof requestAnimationFrame==='undefined'||typeof performance==='undefined'){fin();return;}
+  const t0=performance.now();requestAnimationFrame(function st(t){const k=Math.min(1,(t-t0)/280);ch.$sdA=nv?k:1-k;try{ch.draw();}catch(_){}if(k<1)requestAnimationFrame(st);else fin();});};
+/* .136 · línea de tiempo bajo charts con scroll: miniatura del chart completo + ventana arrastrable */
+function _miniSync(host){const mi=host&&host.nextElementSibling;if(!mi||!mi.classList||!mi.classList.contains('ch-mini'))return;
+  const box=host.querySelector(':scope > .ch-xs');const w=mi.querySelector('.ch-mini-w');if(!box||!w)return;
+  const W=mi.clientWidth||1,sw=box.scrollWidth||1,cw=box.clientWidth;const ww=Math.max(26,cw/sw*W);
+  w.style.width=ww+'px';w.style.transform='translateX('+Math.max(0,Math.min(W-ww,box.scrollLeft/sw*W))+'px)';}
+function _miniWire(host,mi){let drag=null;
+  const go=(ev,smooth)=>{const box=host.querySelector(':scope > .ch-xs');if(!box)return;const r=mi.getBoundingClientRect();
+    const x=Math.max(0,Math.min(r.width,ev.clientX-r.left));const sw=box.scrollWidth,cw=box.clientWidth;
+    const tgt=Math.max(0,Math.min(sw-cw,(x/Math.max(1,r.width))*sw-(drag?drag.off:cw/2)));
+    if(smooth){try{box.scrollTo({left:tgt,behavior:'smooth'});}catch(_){box.scrollLeft=tgt;}}else box.scrollLeft=tgt;};
+  mi.addEventListener('pointerdown',ev=>{const box=host.querySelector(':scope > .ch-xs');const w=mi.querySelector('.ch-mini-w');if(!box||!w)return;
+    const r=mi.getBoundingClientRect(),wr=w.getBoundingClientRect();const inW=ev.clientX>=wr.left&&ev.clientX<=wr.right;
+    drag={off:inW?((ev.clientX-wr.left)/Math.max(1,r.width))*box.scrollWidth:box.clientWidth/2};
+    try{mi.setPointerCapture(ev.pointerId);}catch(_){}mi.classList.add('drag');if(!inW)go(ev,true);ev.preventDefault();});
+  mi.addEventListener('pointermove',ev=>{if(drag)go(ev,false);});
+  const end=ev=>{if(!drag)return;drag=null;mi.classList.remove('drag');try{mi.releasePointerCapture(ev.pointerId);}catch(_){}};
+  mi.addEventListener('pointerup',end);mi.addEventListener('pointercancel',end);}
 /* tarjeta de desglose (rango / día / forecast) */
 function dtCardHTML(o){
   o=o||{};const rows=(o.ev||[]).slice().sort((x,y)=>x.a-y.a);const ids=(o.ids||[]).filter(Boolean);
@@ -2520,11 +2717,7 @@ function dtCardHTML(o){
   const leg=['wx','oth','bad'].map(k=>'<span><i style="background:rgba('+DT_K[k].rgb+',.9)"></i>'+DT_K[k].n+' <b>'+(byK[k]?dtFH(byK[k]):'0 h')+'</b>'+(byK[k]?' · '+pct(byK[k])+'%':'')+'</span>').join('');
   const resp=R2.slice(0,6).map(([r,v])=>'<div class="dtc-r"><span><b>'+r+'</b> · '+v.n+' event'+(v.n===1?'':'s')+'</span><span class="mono">'+dtFH(v.h)+' · '+pct(v.h)+'%</span>'+
     '<span class="bar"><span style="width:'+pct(v.h)+'%;background:rgba('+DT_K[v.k].rgb+',.85)"></span></span></div>').join('');
-  const evs=rows.slice().reverse().map(x=>{const e=x.e,K=DT_K[e.k];const d=o.delta?o.delta(x):null;
-    return '<div class="dtc-e'+(e.open?' on':'')+'"><span class="d" style="background:'+K.c+'"></span><span class="t">'+_wMD(e.a)+'</span>'
-      +'<span class="t">'+(e.clk?_wHM(e.a)+'–'+(e.open?'now':_wHM(e.b)):'all day')+'</span><span class="t">'+dtFH(e.h!=null?e.h:x.h)+'</span>'
-      +'<span class="c" title="'+String(e.resp+' — '+e.cause).replace(/"/g,"'")+'">'+((x.h<(x.e.b-x.e.a)/36e5-1/60)?'<span class="inw">'+dtFH(x.h)+' '+(o.winWord||'in range')+'</span>':'')+'<b class="r">'+e.resp+'</b> — '+e.cause+(e.open?' <b style="color:#b23b3b">· ONGOING</b>':'')+'</span>'
-      +(d?'<span class="dx">'+d+'</span>':'')+'</div>';}).join('');
+  const evs=dtListHTML(o.listId||'card',rows,Object.assign({winWord:o.winWord},o.list||{}));
   const clsB=['bad','oth','wx'].map(k=>{const n=cls.filter(x=>x.e.k===k).length;if(!n)return '';
     return '<div class="dtc-r"><span><b>'+DT_K[k].n+'</b> · '+n+' event'+(n===1?'':'s')+'</span><span class="mono">'+dtFH(byK[k])+' · '+pct(byK[k])+'%</span>'
       +'<span class="bar"><span style="width:'+pct(byK[k])+'%;background:rgba('+DT_K[k].rgb+',.85)"></span></span></div>';}).join('');
@@ -2536,18 +2729,19 @@ function dtCardHTML(o){
     +(ids.length?'<button type="button" class="dtc-tog'+(ids.every(dtOn)?' on':'')+'" data-ids="'+ids.join(',')+'" onclick="dtTogAll(\''+ids.join(',')+'\'.split(\',\'),!this.classList.contains(\'on\'))" title="Show or hide the downtime bands on every chart of this view"><i></i>'+(o.togLbl||'Bands on charts')+'</button>':'')
     +'</div>'
 ;
-  if(o.compact)return '<div class="card dtc dtc-c mb">'+hdr+'<div class="dtc-st">Events · CT'+(o.deltaHdr?' · '+o.deltaHdr:'')+'</div><div class="dtc-list">'+evs+'</div></div>';
+  if(o.compact)return '<div class="card dtc dtc-c mb">'+hdr+evs+'</div>';
   return '<div class="card dtc mb">'+hdr
     +'<div class="dtc-bar">'+seg+'</div><div class="dtc-leg">'+leg+'</div>'
     +'<div class="dtc-tl">'+tl+ticks+'</div>'
     +'<div class="dtc-g"><div class="dtc-resp"><div class="dtc-st">By responsible</div>'+resp+'</div>'
     +(o.noList?('<div class="dtc-resp"><div class="dtc-st">By class</div>'+clsB+'</div>')
-      :('<div><div class="dtc-st">Events · CT'+(o.deltaHdr?' · '+o.deltaHdr:'')+'</div><div class="dtc-list">'+evs+'</div></div>'))+'</div></div>';}
+      :('<div><div class="dtc-st">Events · CT</div>'+evs+'</div>'))+'</div></div>';}
 /* scroll horizontal (vista por hora de varios días): el lienzo crece, el eje Y queda fijo */
 function _chScroll(el,sc){const host=el&&(el.closest&&el.closest('.ch'));if(!host)return null;
   const xs=host.querySelector(':scope > .ch-xs');
   const unwrap=()=>{if(xs){host.insertBefore(el,xs);xs.remove();}
-    host.querySelectorAll(':scope > .ch-yov,:scope > .ch-nav,:scope > .ch-leg').forEach(n=>n.remove());host.classList.remove('ch-sc');};
+    host.querySelectorAll(':scope > .ch-yov,:scope > .ch-nav,:scope > .ch-leg').forEach(n=>n.remove());host.classList.remove('ch-sc');
+    const mi0=host.nextElementSibling;if(mi0&&mi0.classList&&mi0.classList.contains('ch-mini'))mi0.remove();};
   if(!sc||!(sc.n>0)){unwrap();return null;}
   const vw=host.clientWidth||0;const need=Math.min(16000,Math.round(sc.n*(sc.px||16)+(sc.pad||96)));
   if(!vw||need<=vw+8){unwrap();return null;}
@@ -2560,6 +2754,11 @@ function _chScroll(el,sc){const host=el&&(el.closest&&el.closest('.ch'));if(!hos
     mk('l','‹');mk('r','›');host.classList.add('ch-sc');}
   else if(el.parentElement!==box.firstChild)box.firstChild.appendChild(el);
   box.firstChild.style.width=need+'px';
+  let mi=host.nextElementSibling;if(!(mi&&mi.classList&&mi.classList.contains('ch-mini')))mi=null;
+  if(sc.mini&&!mi){mi=document.createElement('div');mi.className='ch-mini';mi.title='Timeline — drag the window or click to jump';
+    mi.innerHTML='<canvas class="ch-mini-c"></canvas><div class="ch-mini-w"></div><span class="ch-mini-h">TIMELINE · drag ⟷</span>';host.insertAdjacentElement('afterend',mi);_miniWire(host,mi);}
+  else if(!sc.mini&&mi)mi.remove();
+  if(!box._mw){box._mw=1;box.addEventListener('scroll',()=>_miniSync(host),{passive:true});}
   return {host,box,need};}
 function _chLegend(c,flt){try{if(!c||!c.canvas)return;const host=c.canvas.closest('.ch.ch-sc');if(!host)return;
   let lg=host.querySelector(':scope > .ch-leg');if(!lg){lg=document.createElement('div');lg.className='ch-leg';host.appendChild(lg);}
@@ -2932,6 +3131,14 @@ function buildM(){
       HRM.TOT=HRM.lab.map((_,i)=>(HRM.TEh[i]>0||HRM.TRh[i]>0||HRM.DEh[i]>0)?Math.round(HRM.TRh[i]*2+HRM.TEh[i]+HRM.DEh[i]):null);
       if(!HRM.L.some(v=>v>0))HRM=null;}}}catch(e){console.warn('[hora-multi]',e);HRM=null;HLM=null;}
   const HRX=(n===1)?HRC:(((typeof HV!=='undefined')&&HV.cyc==='hour'&&HRM)?HRM:null);
+  /* .136 · ARENA EN LOCACIÓN (cajas / pila) por hora y promedio por día — línea combinada de Cycle Times */
+  let SAND=null,SANDD=[],sandTps=0;
+  try{const _reg=((typeof REGISTRY!=='undefined'&&REGISTRY)||[]).find(x=>x.id===CURRENT_ID)||{};
+    const _inv=(typeof ACTIVE_META!=='undefined'&&ACTIVE_META&&ACTIVE_META.inventory)||null;
+    const _bel=!!((_inv&&_inv.type==='pila')||(typeof fcIsBelly==='function'&&fcIsBelly(_reg)));
+    SAND=sandSeries({stages:SD,hourly:(typeof HOURLY!=='undefined'&&HOURLY)||[],lbBox:+T.net_weight_load||45000,belly:_bel,iso:ISO});
+    if(SAND){SANDD=ISO.map(d=>SAND.day(d));const _u=STGrows.filter(x=>x.t>0).slice(-8);sandTps=_u.length?_u.reduce((a2,x)=>a2+x.t,0)/_u.length:tonsStageD;}}
+  catch(e){console.warn('[sand]',e);SAND=null;SANDD=[];}
   /* .91: TR del range SOLO con días pumping (ST>0); un range/pozo sin etapas cae a todos */
   const _trI=[];for(let i=0;i<n;i++){if(Tt[i]>0&&(+ST[i]||0)>0)_trI.push(i);}
   const _trF=_trI.length?_trI:L.map((_,i)=>i).filter(i=>Tt[i]>0);
@@ -2940,7 +3147,7 @@ function buildM(){
   const bestI=runI.length?runI.reduce((b,i)=>L[i]>L[b]?i:b,runI[0]):0;
   const DTR=+T.turn_rate_target||3.27;
   return {ISO,D:Dl,L,TD:Tt,TR:TRr,TN,ST,PH,H,AN,CUMACT,CUMPL,CUMREV,CUMREVPL,
-    CTR,CTE,CDE,CTOT,AVG,DSN,dCT,dCTbuf,CYC_TERMS,cycHas,cycSel:PZCYC,CN,cycNone,cycInR,TRM,HRC,HRM,HLM,HRX,DTALL,DTW,dtA,dtB,runIdx:runI,bestI,
+    CTR,CTE,CDE,CTOT,AVG,DSN,dCT,dCTbuf,CYC_TERMS,cycHas,cycSel:PZCYC,CN,cycNone,cycInR,TRM,HRC,HRM,HLM,HRX,DTALL,DTW,dtA,dtB,SAND,SANDD,sandTps,runIdx:runI,bestI,
     DR,CD:CDl,VMAX:Math.max.apply(null,DR.map(d=>d[2]).concat([1])),
     DTE,dtExcl,openHid,DT_RESP,nptTot,nptLog,SRC,SRC_RANGED,WT,AST,PART,RD,
     STG:STGrows,RMIX:RMIXA,RUN_DL,RUN_DL_STG,RUN_ISO:_dayKeys,SPD,TPD,DAY_TONS,DAY_DUR,tonsStageD,stagesDayD,durStageD,durFracD,durChgD,durTotD,validDays:_validDays,
@@ -3622,7 +3829,7 @@ function bSrc(){
       {label:'70k light',data:TH(70000),borderColor:'rgba(224,166,62,.8)',borderWidth:1.2,borderDash:[5,4],pointRadius:0,yAxisID:'y'});}
     if(incOn)dsArr.push({label:'Income/Truck·Day',data:inc,borderColor:'#9b8ec4',borderDash:[6,4],borderWidth:2,pointRadius:3,tension:.3,spanGaps:true,yAxisID:'y2'});
     mkChart('chWt',{dt:oneD?{ev:m.DTALL,slots:_dtHourSlots([m.ISO[0]]),contig:true}:hrM?{ev:m.DTALL,slots:_dtHourSlots(m.ISO).slice(0,labels.length),contig:true}:dtDays(m,dayKeys),
-      scroll:hrM?{n:labels.length,px:14}:null,type:'line',data:{labels:labels,datasets:dsArr},options:{interaction:{mode:'index',intersect:false},
+      scroll:hrM?{n:labels.length,px:14,mini:true}:null,type:'line',data:{labels:labels,datasets:dsArr},options:{interaction:{mode:'index',intersect:false},
       onHover:(e,els)=>{try{if(e.native&&e.native.target)e.native.target.style.cursor=(!oneD&&!hrM&&els&&els.length)?'pointer':'default';}catch(_){}},
       onClick:(e,els)=>{try{if(oneD||hrM||!els||!els.length)return;const d=dayKeys[els[0].index];if(!d)return;
         window._wtPrevR={d0:$('w-d0').value,d1:$('w-d1').value};
@@ -3668,11 +3875,10 @@ function bDT(){
       <div class="card"><div class="card-t">NPT by Event (hours)</div><div class="ch ch-s"><canvas id="chDTbar"></canvas></div></div>
       <div class="card"><div class="card-t">NPT Distribution by Responsible Party</div><div class="ch ch-s"><canvas id="chDTpie"></canvas></div></div>
     </div>
-    <div class="card"><div class="card-tl">Downtime Event Log</div>
-      <table><thead><tr><th>Date</th><th>Cause</th><th>Responsible</th><th>Start</th><th>End</th><th>Duration</th><th>Est. Loads Lost</th></tr></thead><tbody>
-      ${m.DTE.map((e,i)=>`<tr${i===0?' style="background:#fee2e2"':''}><td>${e.date}</td><td>${e.cause}</td><td><span class="bs" style="background:rgba(${DT_K[evK(e)].rgb},.16);color:${DT_K[evK(e)].c}" title="${DT_K[evK(e)].n}">${e.resp}</span></td><td class="mono">${e.start||'—'}</td><td class="mono">${e.end?e.end+(e.ed&&e.date&&e.ed>e.date?'<span style="font-size:8px;font-weight:800;color:#d97706"> +1d</span>':''):'—'}</td><td><strong>${hToHM(e.h)}</strong></td><td>~${Math.round(e.h*m.dTgt/24)} loads</td></tr>`).join('')}
-      <tr style="background:#f0fdf4"><td colspan="5"><strong>Total</strong></td><td><strong>${m.nptTot}h</strong></td><td><strong>~${Math.round(m.nptTot*m.dTgt/24)} loads est.</strong></td></tr>
-      </tbody></table></div>`;
+    <div class="card"><div class="card-tl" style="margin-bottom:10px">Downtime Event Log</div>
+      ${dtListHTML('dtlog',m.DTW||[],{tools:true,sort:'longest',anim:true,limit:8,empty:'No downtime logged in this range',
+        loads:x=>'<b>~'+Math.round((x.e.h!=null?x.e.h:x.h)*m.dTgt/24)+'</b>loads',
+        foot:'<span>Total · '+(m.DTW||[]).filter(x=>!x.e.open).length+' events · '+fmtH(m.nptTot)+' NPT</span><span>~'+Math.round(m.nptTot*m.dTgt/24)+' loads est.</span>'})}</div>`;
   const top=m.DTE.slice(0,8);
   mkChart('chDTbar',{type:'bar',data:{labels:top.map(e=>e.date+' — '+e.cause.slice(0,26)),datasets:[{label:'NPT Hours',data:top.map(e=>e.h),backgroundColor:top.map(evCol),borderRadius:8,borderSkipped:false}]},
     options:{indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{title:c=>`${c[0].label}`,label:c=>`${c.parsed.x.toFixed(2)}h — ${(c.parsed.x/Math.max(m.nptTot,1)*100).toFixed(0)}% of total NPT`,afterLabel:c=>'Responsible: '+top[c.dataIndex].resp+' · '+DT_K[evK(top[c.dataIndex])].n+' · MEDS '+m.nptLog+'h'}}},
@@ -3751,12 +3957,12 @@ function bCycle(){
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
         <div class="card-t" style="margin:0">${m.HRX?'Hourly Cycle Breakdown — '+(m.HRX.multi?m.D[0]+' – '+m.D[m.n-1]:m.D[0])+(m.HRX.term?' · '+m.HRX.term:'')+' · by Delivered hour':'Daily Cycle Breakdown — Stacked Components'}</div>
-        <div class="ch-ctl">${dtChip('cCycStack',m.DTW.length>0)}${hvSeg('cyc',m.n>1&&!!m.HRM)}${m.HRX?'':`<div class="seg-ctrl"><button id="cvAll" class="seg-btn seg-on" onclick="cycView('all')">All Days</button><button id="cvRun" class="seg-btn" onclick="cycView('run')">Running Only</button></div>`}</div></div>
+        <div class="ch-ctl">${dtChip('cCycStack',m.DTW.length>0)}${sdChip('cCycStack',!!m.SAND,m.SAND&&m.SAND.belly)}${hvSeg('cyc',m.n>1&&!!m.HRM)}${m.HRX?'':`<div class="seg-ctrl"><button id="cvAll" class="seg-btn seg-on" onclick="cycView('all')">All Days</button><button id="cvRun" class="seg-btn" onclick="cycView('run')">Running Only</button></div>`}</div></div>
       <div class="ch ch-l"><canvas id="cCycStack"></canvas></div></div>
     <div class="card mb">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
         <div class="card-t" style="margin:0">Component Trend vs Design &amp; Threshold${m.HRX&&m.HRX.multi?' · by hour':''}</div>
-        <div class="ch-ctl">${dtChip('cCycLine',m.DTW.length>0)}<div class="seg-ctrl"><button id="ccTot" class="seg-btn seg-on" onclick="cycComp('total')">Total</button><button id="ccTrn" class="seg-btn" onclick="cycComp('transit')">Transit</button><button id="ccTrm" class="seg-btn" onclick="cycComp('terminal')">Terminal</button><button id="ccDst" class="seg-btn" onclick="cycComp('offload')">Offload</button></div></div></div>
+        <div class="ch-ctl">${dtChip('cCycLine',m.DTW.length>0)}${sdChip('cCycLine',!!m.SAND,m.SAND&&m.SAND.belly)}<div class="seg-ctrl"><button id="ccTot" class="seg-btn seg-on" onclick="cycComp('total')">Total</button><button id="ccTrn" class="seg-btn" onclick="cycComp('transit')">Transit</button><button id="ccTrm" class="seg-btn" onclick="cycComp('terminal')">Terminal</button><button id="ccDst" class="seg-btn" onclick="cycComp('offload')">Offload</button></div></div></div>
       <div class="ch"><canvas id="cCycLine"></canvas></div></div>
     <div class="grid g2 mb">
       <div class="card"><div class="card-t">Cycle vs Daily Loads — correlation</div><div class="ch ch-s"><canvas id="cCycScat"></canvas></div></div>
@@ -3778,18 +3984,19 @@ function buildCycStack(){
   if(M.HRX)return buildCycStackH(); /* v72: 1 day → por hora · .133 por terminal · .134 varios días */
   const m=M,idx=getCycIdx(),labels=idx.map(i=>m.D[i]);
   const THR={trans:m.DSN.trans*1.5,term:m.DSN.term*1.5,dest:m.DSN.dest*1.5};
+  const sdS=cycSandDS(m,'cCycStack',idx.map(i=>{const d=(m.SANDD||[])[i];return d?{v:d.avg,min:d.min,max:d.max,caps:d.caps}:null;}),true);
   mkChart('cCycStack',{dt:dtDays(m,idx.map(i=>m.ISO[i])),type:'bar',data:{labels,datasets:[
     {label:'Transit OW',data:idx.map(i=>m.CTR[i]),backgroundColor:'rgba(58,124,165,.75)',stack:'s',borderSkipped:false},
     {label:'Terminal',data:idx.map(i=>m.CTE[i]),backgroundColor:'rgba(155,142,196,.75)',stack:'s',borderSkipped:false},
-    {label:'Offload',data:idx.map(i=>m.CDE[i]),backgroundColor:'rgba(212,114,114,.75)',stack:'s',borderSkipped:true,borderRadius:4}]},
-    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
-      tooltip:{callbacks:{title:c=>`${labels[c[0].dataIndex]} — Cycle Breakdown`,label:c=>tipL(c,x=>x+'m'),
+    {label:'Offload',data:idx.map(i=>m.CDE[i]),backgroundColor:'rgba(212,114,114,.75)',stack:'s',borderSkipped:true,borderRadius:4}].concat(sdS?[sdS]:[])},
+    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9},filter:_sdLeg}},crosshair:{},
+      tooltip:{callbacks:{title:c=>`${labels[c[0].dataIndex]} — Cycle Breakdown`,label:c=>c.dataset.$sand?sandLbl(c):tipL(c,x=>x+'m'),
         afterBody:it=>{const i=idx[it[0].dataIndex],tot=m.CTOT[i],gap=tot-m.dCTbuf;
           return[sep,`Total Cycle: ${tot} min`,`vs Design ${m.dCTbuf}: ${gap>=0?'+':''}${+(+gap).toFixed(1)}m (${(gap/m.dCTbuf*100).toFixed(0)}%)`,
             `Transit: ${m.CTR[i]}m (dsn ${m.DSN.trans}) ${m.CTR[i]>THR.trans?'▲':'✓'}`,
             `Terminal: ${m.CTE[i]}m (dsn ${m.DSN.term}) ${m.CTE[i]>THR.term?'▲':'✓'}`,
             `Offload: ${m.CDE[i]}m (dsn ${m.DSN.dest}) ${m.CDE[i]>THR.dest?'▲':'✓'}`];}}}},
-      scales:{x:{stacked:true,...gO,ticks:{font:{size:9},maxRotation:0,maxTicksLimit:14}},y:{stacked:true,...gO,title:{display:true,text:'Minutes',font:{size:8}},ticks:{callback:v=>v+'m'}}}}});
+      scales:Object.assign({x:{stacked:true,...gO,ticks:{font:{size:9},maxRotation:0,maxTicksLimit:14}},y:{stacked:true,...gO,title:{display:true,text:'Minutes',font:{size:8}},ticks:{callback:v=>v+'m'}}},sdS?{yS:cycSandAxis(m)}:{})}});
 }
 function buildCycLine(){
   if(M.HRX)return buildCycLineH(); /* v72: 1 day → por hora · .133 por terminal · .134 varios días */
@@ -3800,17 +4007,18 @@ function buildCycLine(){
     offload:{data:m.CDE,dsn:m.DSN.dest,col:'rgba(212,149,106,.8)',fillA:'rgba(212,149,106,.18)',fillB:'rgba(212,149,106,.02)',lbl:'Offload'}}[_cycComp];
   const data=idx.map(i=>cm.data[i]);
   const ptColor=data.map(v=>v<=cm.dsn*1.05?'rgba(106,184,154,.9)':v<=cm.dsn*1.5?'rgba(212,160,90,.9)':'rgba(212,114,114,.9)');
+  const sdL=cycSandDS(m,'cCycLine',idx.map(i=>{const d=(m.SANDD||[])[i];return d?{v:d.avg,min:d.min,max:d.max,caps:d.caps}:null;}),true);
   mkChart('cCycLine',{dt:dtDays(m,idx.map(i=>m.ISO[i])),type:'line',data:{labels,datasets:[
     {label:cm.lbl,data,borderColor:cm.col,backgroundColor:mkGrad('cCycLine',cm.fillA,cm.fillB,220),fill:true,tension:.4,pointRadius:5,pointHoverRadius:10,pointBackgroundColor:ptColor,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5},
     {label:`Design ${cm.dsn}m`,data:Array(idx.length).fill(cm.dsn),borderColor:'rgba(106,184,154,.6)',borderDash:[6,3],pointRadius:0,borderWidth:1.5},
-    {label:`Threshold ${Math.round(cm.dsn*1.5)}m`,data:Array(idx.length).fill(Math.round(cm.dsn*1.5)),borderColor:'rgba(212,114,114,.4)',borderDash:[3,3],pointRadius:0,borderWidth:1}]},
-    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
-      tooltip:{callbacks:{title:c=>`${labels[c[0].dataIndex]} — ${cm.lbl}`,label:c=>tipL(c,x=>x+'m'),
+    {label:`Threshold ${Math.round(cm.dsn*1.5)}m`,data:Array(idx.length).fill(Math.round(cm.dsn*1.5)),borderColor:'rgba(212,114,114,.4)',borderDash:[3,3],pointRadius:0,borderWidth:1}].concat(sdL?[sdL]:[])},
+    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9},filter:_sdLeg}},crosshair:{},
+      tooltip:{callbacks:{title:c=>`${labels[c[0].dataIndex]} — ${cm.lbl}`,label:c=>c.dataset.$sand?sandLbl(c):tipL(c,x=>x+'m'),
         afterBody:it=>{const i=idx[it[0].dataIndex],v=cm.data[i],gap=v-cm.dsn;
           const status=v<=cm.dsn*1.05?'ON DESIGN ✓':v<=cm.dsn*1.5?'ABOVE DESIGN':'CRITICAL OVERRUN ✗';
           return[sep,`vs Design: ${gap>=0?'+':''}${gap.toFixed(1)}m (${(gap/cm.dsn*100).toFixed(0)}%)`,`Status: ${status}`,
             _cycComp==='total'?`Loads: ${m.L[i]} | TR: ${m.TR[i]}`:`Contribution: ${(v/Math.max(m.CTOT[i],1)*100).toFixed(0)}% of cycle`];}}}},
-      scales:{x:{...gO,ticks:{font:{size:9},maxRotation:0,maxTicksLimit:14}},y:{...gO,min:0,ticks:{callback:v=>v+'m'}}}}});
+      scales:Object.assign({x:{...gO,ticks:{font:{size:9},maxRotation:0,maxTicksLimit:14}},y:{...gO,min:0,ticks:{callback:v=>v+'m'}}},sdL?{yS:cycSandAxis(m)}:{})}});
 }
 function buildCycScat(){
   if(M.HRX)return buildCycScatH(); /* v72: 1 day → por hora · .133 por terminal · .134 varios días */
@@ -3825,19 +4033,36 @@ function buildCycScat(){
         y:{...gO,title:{display:true,text:'Cycle Time (min)',font:{size:9,weight:'600'}},min:0,ticks:{callback:v=>v+'m'}}}}});
 }
 
+/* .136 · línea combinada de ARENA EN LOCACIÓN (promedio por día · por hora) — eje derecho, chip on/off */
+function cycSandDS(m,id,pts,day){const S=m.SAND;if(!S||!pts||!pts.some(p=>p&&p.v!=null))return null;
+  const tps=m.sandTps||0;const u=v=>v==null?null:+S.u(v).toFixed(S.belly?0:1);
+  return {label:(S.belly?'Sandpile':'Sand on location')+(day?' · avg/day':' · by hour'),$sand:true,$unit:S.unit,type:'line',yAxisID:'yS',stack:'sand',order:-1,
+    data:pts.map(p=>p&&p.v!=null?u(p.v):null),
+    $info:pts.map(p=>p&&p.v!=null?{stg:tps>0?p.v/(tps*2000):null,min:p.min!=null?u(p.min):null,max:p.max!=null?u(p.max):null,caps:p.caps||0}:null),
+    borderColor:'#b7791f',backgroundColor:'rgba(183,121,31,.10)',borderWidth:2.3,tension:.35,cubicInterpolationMode:'monotone',spanGaps:true,fill:false,
+    pointStyle:'rectRot',pointRadius:day?5:0,pointHoverRadius:7,pointBackgroundColor:'#fff8eb',pointBorderColor:'#b7791f',pointBorderWidth:2,
+    hidden:!sdOn(id)};}
+function cycSandAxis(m){const S=m.SAND;return {position:'right',display:'auto',min:0,grace:'30%',grid:{drawOnChartArea:false},border:{display:false},
+  title:{display:true,text:S&&S.belly?'Pile (t)':'Boxes on location',font:{size:8,weight:'700'},color:'#b7791f'},ticks:{color:'#b7791f',font:{size:8.5},callback:v=>fmt(v)}};}
+function sandLbl(c){if(c.raw==null)return null;const I=(c.dataset.$info||[])[c.dataIndex];const u=c.dataset.$unit||'';
+  const L=[' '+String(c.dataset.label).replace(/ · .*$/,'')+': '+fmt(c.raw)+' '+u+(c.dataset.pointRadius?' avg':'')+(I&&I.stg!=null?' · '+I.stg.toFixed(1)+' stg':'')];
+  if(I&&I.min!=null&&I.max!=null)L.push('   '+fmt(I.min)+'–'+fmt(I.max)+' '+u+' through the day'+(I.caps?' · '+I.caps+' Stages capture'+(I.caps===1?'':'s'):''));
+  return L;}
+const _sdLeg=(it,d)=>!((d&&d.datasets&&d.datasets[it.datasetIndex])||{}).$sand;
 /* ── v72 · charts de ciclo POR HORA (range de 1 day + GAS v9.2 hourly) ── */
 function buildCycStackH(){const m=M,h=m.HRX;
-  mkChart('cCycStack',{dt:dtHours(m,h),scroll:h.multi?{n:h.lab.length,px:15}:null,type:'bar',data:{labels:h.lab,datasets:[
+  const sdS=cycSandDS(m,'cCycStack',(h.slots||[]).map(s2=>s2&&m.SAND?{v:m.SAND.hourMid(s2.a)}:null),false);
+  mkChart('cCycStack',{dt:dtHours(m,h),scroll:h.multi?{n:h.lab.length,px:15,mini:true}:null,type:'bar',data:{labels:h.lab,datasets:[
     {label:'Transit OW',data:h.TRh.map(v=>v>0?v:null),backgroundColor:'rgba(58,124,165,.75)',stack:'s',borderSkipped:false},
     {label:'Terminal',data:h.TEh.map(v=>v>0?v:null),backgroundColor:'rgba(155,142,196,.75)',stack:'s',borderSkipped:false},
-    {label:'Offload',data:h.DEh.map(v=>v>0?v:null),backgroundColor:'rgba(212,114,114,.75)',stack:'s',borderSkipped:true,borderRadius:4}]},
-    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
-      tooltip:{callbacks:{title:c=>`${h.lab[c[0].dataIndex]} — Cycle by hour${h.term?' · '+h.term:''}`,label:c=>tipL(c,x=>x+'m'),
+    {label:'Offload',data:h.DEh.map(v=>v>0?v:null),backgroundColor:'rgba(212,114,114,.75)',stack:'s',borderSkipped:true,borderRadius:4}].concat(sdS?[sdS]:[])},
+    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9},filter:_sdLeg}},crosshair:{},
+      tooltip:{callbacks:{title:c=>`${h.lab[c[0].dataIndex]} — Cycle by hour${h.term?' · '+h.term:''}`,label:c=>c.dataset.$sand?sandLbl(c):tipL(c,x=>x+'m'),
         afterBody:it=>{const i=it[0].dataIndex;if(!h.L[i])return['No deliveries this hour'];const tot=h.TOT[i];
           const out=[sep,`${h.L[i]} load${h.L[i]===1?'':'s'} · ${h.DRH[i]} driver${h.DRH[i]===1?'':'s'}`];
           if(tot!=null){const gap=tot-m.dCTbuf;out.push(`Avg cycle: ${tot}m`,`vs Design ${m.dCTbuf}: ${gap>=0?'+':''}${+(+gap).toFixed(1)}m (${(gap/m.dCTbuf*100).toFixed(0)}%)`);}
           return out;}}}},
-      scales:{x:h.multi?_hrX(h.lab,true):{stacked:true,...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{stacked:true,...gO,title:{display:true,text:'Minutes',font:{size:8}},ticks:{callback:v=>v+'m'}}}}});
+      scales:Object.assign({x:h.multi?_hrX(h.lab,true):{stacked:true,...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{stacked:true,...gO,title:{display:true,text:'Minutes',font:{size:8}},ticks:{callback:v=>v+'m'}}},sdS?{yS:cycSandAxis(m)}:{})}});
 }
 function buildCycLineH(){const m=M,h=m.HRX;
   const cm={total:{data:h.TOT,dsn:m.dCTbuf,col:'rgba(212,114,114,.8)',fillA:'rgba(212,114,114,.18)',fillB:'rgba(212,114,114,.02)',lbl:'Total Cycle'},
@@ -3845,15 +4070,16 @@ function buildCycLineH(){const m=M,h=m.HRX;
     terminal:{data:h.TEh.map(v=>v>0?v:null),dsn:m.DSN.term,col:'rgba(155,142,196,.8)',fillA:'rgba(155,142,196,.18)',fillB:'rgba(155,142,196,.02)',lbl:'Terminal'},
     offload:{data:h.DEh.map(v=>v>0?v:null),dsn:m.DSN.dest,col:'rgba(212,149,106,.8)',fillA:'rgba(212,149,106,.18)',fillB:'rgba(212,149,106,.02)',lbl:'Offload'}}[_cycComp];
   const ptColor=cm.data.map(v=>v==null?'rgba(0,0,0,0)':v<=cm.dsn*1.05?'rgba(106,184,154,.9)':v<=cm.dsn*1.5?'rgba(212,160,90,.9)':'rgba(212,114,114,.9)');
-  mkChart('cCycLine',{dt:dtHours(m,h),scroll:h.multi?{n:h.lab.length,px:15}:null,type:'line',data:{labels:h.lab,datasets:[
+  const sdL=cycSandDS(m,'cCycLine',(h.slots||[]).map(s2=>s2&&m.SAND?{v:m.SAND.hourMid(s2.a)}:null),false);
+  mkChart('cCycLine',{dt:dtHours(m,h),scroll:h.multi?{n:h.lab.length,px:15,mini:true}:null,type:'line',data:{labels:h.lab,datasets:[
     {label:cm.lbl+' (hour)',data:cm.data,borderColor:cm.col,backgroundColor:mkGrad('cCycLine',cm.fillA,cm.fillB,220),fill:true,tension:.35,pointRadius:h.multi?2.6:5,pointHoverRadius:10,pointBackgroundColor:ptColor,pointBorderColor:'#fff',pointBorderWidth:1.5,borderWidth:2.5,spanGaps:true},
     {label:`Design ${cm.dsn}m`,data:Array(h.lab.length).fill(cm.dsn),borderColor:'rgba(106,184,154,.6)',borderDash:[6,3],pointRadius:0,borderWidth:1.5},
-    {label:`Threshold ${Math.round(cm.dsn*1.5)}m`,data:Array(h.lab.length).fill(Math.round(cm.dsn*1.5)),borderColor:'rgba(212,114,114,.4)',borderDash:[3,3],pointRadius:0,borderWidth:1}]},
-    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
-      tooltip:{callbacks:{title:c=>`${h.lab[c[0].dataIndex]} — ${cm.lbl}`,label:c=>tipL(c,x=>x+'m'),
+    {label:`Threshold ${Math.round(cm.dsn*1.5)}m`,data:Array(h.lab.length).fill(Math.round(cm.dsn*1.5)),borderColor:'rgba(212,114,114,.4)',borderDash:[3,3],pointRadius:0,borderWidth:1}].concat(sdL?[sdL]:[])},
+    options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9},filter:_sdLeg}},crosshair:{},
+      tooltip:{callbacks:{title:c=>`${h.lab[c[0].dataIndex]} — ${cm.lbl}`,label:c=>c.dataset.$sand?sandLbl(c):tipL(c,x=>x+'m'),
         afterBody:it=>{const i=it[0].dataIndex,v=cm.data[i];if(v==null)return['No measurable cycle this hour'];
           const gap=v-cm.dsn;return[sep,`vs Design: ${gap>=0?'+':''}${gap.toFixed(1)}m (${(gap/cm.dsn*100).toFixed(0)}%)`,`Loads this hour: ${h.L[i]}`];}}}},
-      scales:{x:h.multi?_hrX(h.lab):{...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{...gO,min:0,ticks:{callback:v=>v+'m'}}}}});
+      scales:Object.assign({x:h.multi?_hrX(h.lab):{...gO,ticks:{font:{size:8.5},maxRotation:0,maxTicksLimit:24}},y:{...gO,min:0,ticks:{callback:v=>v+'m'}}},sdL?{yS:cycSandAxis(m)}:{})}});
 }
 function buildCycScatH(){const m=M,h=m.HRX;
   const pts=h.lab.map((lb,i)=>({x:h.L[i],y:h.TOT[i],hh:lb,dr:h.DRH[i]})).filter(p=>p.x>0&&p.y!=null);
@@ -5853,13 +6079,18 @@ function fcCalc(){
     const d=b-a;dInv+=d;nInv++;const sA=stgOn(a);
     const tag=(dtSand(x.e)&&sA!=null)?(sA<1?'<span class="dtc-tag bad">under 1 stage on hand at start</span>'
       :(sA>=2?'<span class="dtc-tag warn">'+sA.toFixed(1)+' stages on hand at start — check cause</span>':'')):'';
-    dMap.set(x,(FC.belly?'Pile ':'On location ')+'<b>'+uTx(a)+'</b>'+(sA!=null?' ('+sA.toFixed(1)+' stg)':'')+' → <b>'+uTx(b)+'</b> '+uD(a,b)+tag);});
+    const sB=stgOn(b),dn=uN(b)-uN(a),un=FC.belly?'t':'boxes';
+    dMap.set(x,'<div class="dtx-lv"><span class="dtx-v"><b>'+fmt(uN(a))+' '+un+'</b><small>'+(sA!=null?sA.toFixed(1)+' stg · start':'start')+'</small></span><span class="dtx-arr">→</span>'
+      +'<span class="dtx-v"><b>'+fmt(uN(b))+' '+un+'</b><small>'+(sB!=null?sB.toFixed(1)+' stg · end':'end')+'</small></span>'
+      +'<span class="dtx-d '+(dn>0?'up':dn<0?'dn':'fl')+'">'+(dn>0?'+':dn<0?'−':'±')+fmt(Math.abs(dn))+(FC.belly?' t':'')+'</span></div>'+tag);});
+  const _dk=dWin.map(x=>x.e.a+'-'+x.e.b).join('|')+'·'+hbW;const _anim=_dk!==FC._dtKey;FC._dtKey=_dk;
   const dtc=$('fc-dtc');
   if(dtc)dtc.innerHTML=(wF&&(hist.any||dEv.length))?dtCardHTML({ev:dWin,A:winA,B:nWn,ids:evR.length?['fcChart']:[],
     compact:true,head:'Downtime vs '+(FC.belly?'sandpile':'sand on location'),togLbl:'Bands on chart', /* .134b: solo la comparación — el desglose completo vive en el tab Downtime */
     title:hbW+' · '+FC.id,when:'in the '+hbW,sub:'nothing logged in the Downtimes tab for this window',
     note:nInv?((FC.belly?'pile ':'sand on location ')+(uN(dInv)>0?'built ':uN(dInv)<0?'drained ':'held ')+uD(0,dInv)+' across these stops (rebuilt)'):'',
-    winWord:'in window',delta:x=>dMap.get(x)||'',deltaHdr:FC.belly?'sandpile start → end':'sand on location start → end'}):'';
+    winWord:'in window',listId:'fc',list:{sort:'latest',anim:_anim,limit:5,focus:evR.length?'fcChart':null,
+      sand:x=>dMap.get(x)||'',sandHdr:FC.belly?'Sandpile · start → end':'Sand on location · start → end',empty:'No downtime in the '+hbW}}):'';
   const kd=$('fck-dt');
   if(kd){const kt=kd.querySelector('.card-t');if(kt)kt.textContent='Downtime · '+hbW;
     const cl=dWin.filter(x=>!x.e.open),live=dWin.filter(x=>x.e.open),bad=dWin.some(x=>x.e.k==='bad');
@@ -5874,6 +6105,7 @@ function fcCalc(){
   const ld=$('fcl-dt');if(ld&&ld.style)ld.style.display=evR.length?'':'none';
   const lh=$('fcl-hist');if(lh)lh.textContent='Actual '+hbT;
   const lgh=$('fc-lgh');if(lgh)lgh.textContent=hbW;
+  const hh=$('fc-hhint');if(hh)hh.textContent=FC.hb===12?'':'timeline · scroll the chart, use ‹ › or drag the window below';
   /* capturas reales de Stages (◆) en el histórico */
   const caps=wF?fcCaps(wF,clk,FC.belly,lbB):[];
   const capData=Array(N).fill(null),capInfo={};
@@ -5931,7 +6163,7 @@ function fcCalc(){
     try{ch.update();}catch(_){}
     if(keepPin!=null)fcPinShow(keepPin,FD);
     return;}
-  const cfg={dt:evR.length?{ev:evR,lin:{t0:t0r,ms:36e5}}:null,scroll:FC.hb===12?null:{n:N,px:12,at:iNow,frac:.62},
+  const cfg={dt:evR.length?{ev:evR,lin:{t0:t0r,ms:36e5}}:null,scroll:FC.hb===12?null:{n:N,px:16,at:iNow,frac:.62,mini:true},
     type:'line',data:{labels:labs,datasets:[
     {label:'Actual ('+hbW+')',data:histSeries,borderColor:'#1C3D54',backgroundColor:'rgba(28,61,84,.06)',fill:false,cubicInterpolationMode:'monotone',pointRadius:0,pointHoverRadius:5,borderWidth:2.6,borderJoinStyle:'round',hidden:!FC.lay.hist},
     {label:'Avg pace (editable)',data:proj('m'),borderColor:'#1f6f6f',backgroundColor:mkGrad('fcChart','rgba(31,111,111,.15)','rgba(31,111,111,.01)',300),fill:true,tension:.3,cubicInterpolationMode:'monotone',pointRadius:0,pointHoverRadius:6,borderWidth:2.6,borderJoinStyle:'round'},
@@ -6451,11 +6683,6 @@ function renderFc(){
         <button id="fch24" class="seg-btn${FC.hz===24?' seg-on':''}" onclick="fcHz(24)">24 h</button>
         <button id="fch48" class="seg-btn${FC.hz===48?' seg-on':''}" onclick="fcHz(48)">48 h</button>
         <button id="fch72" class="seg-btn${FC.hz===72?' seg-on':''}" onclick="fcHz(72)">72 h</button></div></div>
-      <div class="fld"><label>History</label><div class="seg-ctrl" title="How far back the ACTUAL line and its downtime bands go — long windows scroll sideways">
-        <button id="fcb12" class="seg-btn${FC.hb===12?' seg-on':''}" onclick="fcHB(12)">12 h</button>
-        <button id="fcb24" class="seg-btn${FC.hb===24?' seg-on':''}" onclick="fcHB(24)">1 day</button>
-        <button id="fcb48" class="seg-btn${FC.hb===48?' seg-on':''}" onclick="fcHB(48)">2 days</button>
-        <button id="fcball" class="seg-btn${FC.hb==='all'?' seg-on':''}" onclick="fcHB('all')">Whole well</button></div></div>
       <div class="fc-btns">
       <button class="rbtn" id="fc-sync" onclick="fcSync()" title="Re-pull workbook + driver board and relearn the roster"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.7-6M20 4v5h-5"/></svg><span class="btxt"> Live sync</span></button>
       <button class="rbtn ghost" id="fc-reset" onclick="fcReset()" disabled title="Already at the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
@@ -6519,6 +6746,13 @@ function renderFc(){
           <span class="fc-lt${dtOn('fcChart')?' on':''}" id="fcl-dt" data-dtl="fcChart" onclick="dtTog('fcChart')" title="Downtime from the Downtimes tab shaded on the history (CT) — light green weather · red other · dark red sand / coil tubing">Downtime</span>
           <span class="fc-lt${FC.lay.bands?' on':''}" id="fcl-bands" onclick="fcLay('bands')" title="Red shading where the last-6 h pace empties the pile">Runout risk</span>
           <span class="fc-lt${FC.lay.t48?' on':''}" id="fcl-t48" onclick="fcLay('t48')">Goal target</span></div></div>
+      <div class="fc-hrow"><span class="fc-lb2">History</span>
+        <div class="seg-ctrl" title="How far back the ACTUAL line (and its downtime bands) goes — longer windows become a timeline you scroll">
+          <button id="fcb12" class="seg-btn${FC.hb===12?' seg-on':''}" onclick="fcHB(12)">Last 12 h</button>
+          <button id="fcb24" class="seg-btn${FC.hb===24?' seg-on':''}" onclick="fcHB(24)">24 h</button>
+          <button id="fcb48" class="seg-btn${FC.hb===48?' seg-on':''}" onclick="fcHB(48)">48 h</button>
+          <button id="fcball" class="seg-btn${FC.hb==='all'?' seg-on':''}" onclick="fcHB('all')">Whole well</button></div>
+        <span class="fc-hhint" id="fc-hhint"></span></div>
       <div class="ch ch-l"><canvas id="fcChart"></canvas></div>
       <div id="fc-pin"></div></div>
     <div id="fc-dtc"></div>`;
@@ -6947,7 +7181,7 @@ document.addEventListener('visibilitychange',function(){if(!document.hidden&&_rl
    intenta resize(); si no revive, reconstruye la vista. Rate-limit: 1 rebuild/8s, máx 3
    seguidos. Diagnóstico manual: pega __chartAudit() en la consola. */
 const _WD={last:0,streak:0};
-window.__chartAudit=function(){const out=[];document.querySelectorAll('canvas:not(.ch-yov)').forEach(cv=>{
+window.__chartAudit=function(){const out=[];document.querySelectorAll('canvas:not(.ch-yov):not(.ch-mini-c)').forEach(cv=>{
   const vis=cv.offsetParent!==null;const ch=(Chart.getChart&&Chart.getChart(cv))||null;
   out.push({id:cv.id||'(no id)',visible:vis,chart:!!ch,w:ch?ch.width:cv.width,h:ch?ch.height:cv.height});});
   console.table(out);return out;};
@@ -6956,7 +7190,7 @@ setInterval(function(){try{
   const dead=[];const now0=Date.now();
   document.querySelectorAll('canvas').forEach(cv=>{
     if(cv.offsetParent===null)return;
-    if(cv.classList&&cv.classList.contains('ch-yov'))return; /* .134: eje Y fijo del scroll = lienzo copia, no es un chart */
+    if(cv.classList&&(cv.classList.contains('ch-yov')||cv.classList.contains('ch-mini-c')))return; /* .134/.136: eje Y fijo y línea de tiempo = lienzos copia, no son charts */
     const ch=(Chart.getChart&&Chart.getChart(cv))||CH[cv.id]||null;
     if(!ch){dead.push(cv);return;}
     // Caso 1: colapsado a 0×0 → resize
