@@ -1,4 +1,17 @@
-/** MEDS · PropX Live API — Code.gs v10.7. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v10.8. PEGAR TAL CUAL → Nueva versión.
+ *  v10.8 CIERRES QUE NO SE QUEDAN VIEJOS: (1) la web app corre SIN permiso de Drive (almacén en la
+ *  pestaña _SNAP_CACHE) y así un pozo Closed se servía 24 h a ciegas: State Scarab quedó en 200/201
+ *  stages porque la etapa 201 se capturó 40 s después del cálculo. Ahora cada snapshot guarda la
+ *  FIRMA del contenido (MD5 de Loads Report · Stages · Downtimes · Targets + su renglón del
+ *  Registry, tomada de la MISMA lectura del cálculo) y antes de servirlo se compara contra el
+ *  workbook (1-3 s, solo lectura): igual → se sirve · distinta → se recalcula. Revisión máx. cada
+ *  10 min en cierres recientes (≤7 días desde end_date) y cada 6 h en cierres viejos. Con Drive la
+ *  comparación exacta ahora es contra el INICIO de la lectura (t0): una edición a media corrida ya
+ *  no se pierde. (2) _SNAP_CACHE: escritura con candado (se acabaron las llaves duplicadas de
+ *  pedidos simultáneos) y lectura solo de las celdas del snapshot pedido (antes leía la pestaña
+ *  completa, varios MB, por cada pozo del portafolio). (3) Registry memorizado por ejecución.
+ *  (4) targets_notes: notas de Targets ("unit / notas") — el portal toma de ahí la mezcla de diseño
+ *  por etapa (toe prep · 1W · 2W/3W) y compara cada etapa contra SU diseño, no contra el promedio.
  *  v10.7 TERMINALES SIN TOPE: (1) el match de terminales normaliza guiones Unicode. PropX
  *  escribe "Covia – Pronto" (guion largo) y Targets "Covia - Pronto": la terminal principal de
  *  Olgin (166 cargas) salía como AJENA en diag.foreign_terminals y con terminals_strict se
@@ -208,7 +221,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v10.7';
+const API_VERSION='v10.8';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -221,18 +234,50 @@ const API_VERSION='v10.7';
    con el que ya corre el script, así que funciona aunque el proyecto no tenga Drive autorizado.
    El cambio es automático: si Drive lanza error de permisos, se degrada sola y el congelador,
    el portafolio y los cierres siguen trabajando igual.                                      */
-function _wbUpdated(id){ if(!id)return 0;
-  try{ return DriveApp.getFileById(id).getLastUpdated().getTime(); }catch(e){ return 0; } }
-// ¿El snapshot sigue sirviendo? Con Drive: comparación exacta contra la última edición del
-// workbook. Sin Drive: ventana por tiempo (los cierres no cambian; los live los refresca el
-// trigger cada 6 h y el portal revalida por su cuenta).
-function _snapFresh(ssId,s,closed){
-  if(!s)return false;
-  const ssT=_wbUpdated(ssId);
-  if(ssT&&!closed&&Date.now()-(s.time||0)>6e5)return false; /* v10.4: Live nunca > 10 min (lag de Drive / IMPORTRANGE) */
-  if(ssT)return ssT<=s.time;
-  const age=Date.now()-(s.time||0);
-  return closed ? age<864e5 : age<6e5; }   // 24 h cierres · 10 min lives
+var _WBU_OFF=false; /* v10.8: Drive falló una vez en esta ejecución → no se reintenta por cada pozo */
+function _wbUpdated(id){ if(!id||_WBU_OFF)return 0;
+  try{ return DriveApp.getFileById(id).getLastUpdated().getTime(); }catch(e){ _WBU_OFF=true; return 0; } }
+/* v10.8 · FIRMA DE CONTENIDO — detecta ediciones del workbook SIN Drive.
+   MD5 de los VALORES de las 4 pestañas que lee getWell (Loads Report · Stages · Downtimes · Targets)
+   + los campos del pozo en el Registry. Al calcular se toma de la MISMA lectura de getWell (sin
+   carrera con ediciones a media corrida); para revisar se releen solo valores (1-3 s vs 20-60 s). */
+const _SIG_RECENT=7*864e5;  // cierre RECIENTE: hasta 7 días después de end_date (la captura final sigue entrando)
+const _SIG_REG=['well_id','name','customer','equipment','status','spreadsheet_id','sheet_name','log_match','start_date','end_date'];
+var _SIG=null;              // buffer de firma: lo abre wellFrozen alrededor de getWell
+function _md5(s){ return Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.MD5,String(s),Utilities.Charset.UTF_8)); }
+function _sigTabs(reg){ return [reg.sheet_name||CFG.tabs.loads,CFG.tabs.stages,CFG.tabs.downtimes,CFG.tabs.targets]; }
+function _sigTap(name,v){ if(_SIG&&_SIG.want[name]&&!(name in _SIG.p))_SIG.p[name]=v?_md5(JSON.stringify(v)):'-'; }
+function _sigJoin(P,reg){
+  return _md5(_sigTabs(reg).map(function(n){return n+'='+(P[n]||'-');}).join('|')
+    +'|reg='+JSON.stringify(_SIG_REG.map(function(k){return reg[k]==null?'':reg[k];}))); }
+function _wbSigNow(reg){
+  const ss=SpreadsheetApp.openById(reg.spreadsheet_id), P={};
+  _sigTabs(reg).forEach(function(n){const sh=ss.getSheetByName(n); P[n]=sh?_md5(JSON.stringify(sh.getDataRange().getValues())):'-';});
+  return _sigJoin(P,reg); }
+function _recentClose(reg){ const e=reg&&reg.end_date?new Date(reg.end_date).getTime():0;
+  return !(e>0)||Date.now()-e<_SIG_RECENT; }
+// ¿El snapshot sigue sirviendo?  j = snapshot ya parseado · lite = portafolio (cierre viejo: ventana de 24 h sin revisar)
+//  · Con Drive: exacto — última edición del workbook ≤ INICIO de la lectura del cálculo (t0).
+//  · Sin Drive: <10 min sirve · Live >10 min recalcula · Closed: compara la FIRMA del contenido,
+//    máx. cada 10 min si el cierre es reciente y cada 6 h si es viejo (marca en CacheService).
+//    v10.7 le daba 24 h a ciegas a un cierre: State Scarab se quedó en 200/201 stages todo el día.
+function _snapFresh(reg,s,closed,j,lite){
+  if(!s||!j||!reg)return false;
+  const sm=j.snapshot||{}, tPut=+s.time||0, t0=+sm.t0||tPut, age=Date.now()-tPut;
+  const ssT=_wbUpdated(reg.spreadsheet_id);
+  if(ssT){ if(!closed&&age>6e5)return false; /* v10.4: Live nunca > 10 min (lag de Drive / IMPORTRANGE) */
+    return ssT<=t0; }
+  if(age<6e5)return true;
+  if(!closed)return false;
+  const old=!_recentClose(reg);
+  if(old&&(lite||!sm.sig)&&age<864e5)return true;   // cierre viejo: portafolio o snapshot ≤v10.7 sin firma
+  if(!sm.sig)return false;                          // sin firma → se recalcula una vez para tenerla
+  const C=CacheService.getScriptCache(), ck='sg:'+reg.well_id;
+  try{ if(C.get(ck)===sm.sig)return true; }catch(_){}
+  let now=''; try{ now=_wbSigNow(reg); }catch(e){ return old&&age<864e5; }
+  if(now!==sm.sig)return false;
+  try{ C.put(ck,sm.sig,old?21600:600); }catch(_){}
+  return true; }
 var _STORE_MODE=null;
 function _storeMode(){
   if(_STORE_MODE)return _STORE_MODE;
@@ -252,10 +297,19 @@ function _storeGet(name){
       if(!it.hasNext())return null; const f=it.next();
       return {text:f.getBlob().getDataAsString('UTF-8'), time:f.getLastUpdated().getTime()};
     }catch(e){ _STORE_MODE='sheet'; } }
-  try{ const v=_snapSheet().getDataRange().getValues(); const parts=[]; let t=0,found=false;
-    for(let i=1;i<v.length;i++){ if(String(v[i][0])!==name)continue;
-      found=true; parts[+v[i][1]||0]=String(v[i][2]||''); t=Math.max(t,+v[i][3]||0); }
-    return found?{text:parts.join(''), time:t}:null;
+  /* v10.8: solo la versión MÁS NUEVA de la llave (renglones duplicados de escrituras simultáneas ya
+     no se mezclan) y solo SUS celdas de datos — antes se leía la pestaña completa (MB) por pozo. */
+  try{ const sh=_snapSheet(), n=sh.getLastRow()-1; if(n<1)return null;
+    const kb=sh.getRange(2,1,n,2).getValues(), ts=sh.getRange(2,4,n,1).getValues();
+    const G={}; let best=-1;
+    for(let i=0;i<n;i++){ if(String(kb[i][0])!==name)continue; const t=+ts[i][0]||0;
+      (G[t]=G[t]||[]).push([+kb[i][1]||0,i]); if(t>best)best=t; }
+    if(best<0)return null;
+    const R=G[best]; let lo=n,hi=-1; R.forEach(function(r){if(r[1]<lo)lo=r[1]; if(r[1]>hi)hi=r[1];});
+    const dat=sh.getRange(2+lo,3,hi-lo+1,1).getValues(), parts=[];
+    R.forEach(function(r){const c=dat[r[1]-lo][0]; parts[r[0]]=String(c==null?'':c);});
+    for(let k=0;k<parts.length;k++)if(parts[k]==null)return null;   // versión incompleta → se recalcula
+    return {text:parts.join(''), time:best};
   }catch(e){ return null; } }
 function _storePut(name,text){
   if(_storeMode()==='drive'){
@@ -263,13 +317,22 @@ function _storePut(name,text){
       if(it.hasNext())it.next().setContent(text); else fo.createFile(name,text,'application/json');
       return true;
     }catch(e){ _STORE_MODE='sheet'; } }
-  try{ const sh=_snapSheet(), v=sh.getDataRange().getValues();
-    for(let i=v.length-1;i>=1;i--) if(String(v[i][0])===name) sh.deleteRow(i+1);
+  /* v10.8: con CANDADO — dos pedidos simultáneos del mismo pozo dejaban la llave duplicada (y un
+     borrado por índice viejo podía tocar renglones de otra llave). Solo se lee la columna de llaves. */
+  const lk=LockService.getScriptLock(); let got=false; try{ got=lk.tryLock(20000); }catch(_){}
+  if(!got){ Logger.log('storePut '+name+': ocupado (otra escritura en curso) — se omite'); return false; }
+  try{ const sh=_snapSheet(), n=sh.getLastRow()-1;
+    if(n>0){ const k=sh.getRange(2,1,n,1).getValues();
+      for(let i=n-1;i>=0;){ if(String(k[i][0])!==name){i--;continue;}
+        let j=i; while(j>0&&String(k[j-1][0])===name)j--;
+        sh.deleteRows(2+j,i-j+1); i=j-1; } }
     const CH=45000, rows=[], now=Date.now();          // 45k < límite de 50k caracteres por celda
     for(let i=0;i<text.length;i+=CH) rows.push([name, rows.length, text.substr(i,CH), now]);
     if(rows.length) sh.getRange(sh.getLastRow()+1,1,rows.length,4).setValues(rows);
+    SpreadsheetApp.flush();
     return true;
-  }catch(e){ Logger.log('storePut '+name+': '+e); return false; } }
+  }catch(e){ Logger.log('storePut '+name+': '+e); return false; }
+  finally{ try{ lk.releaseLock(); }catch(_){} } }
 
 function _snapFolder(){
   const P=PropertiesService.getScriptProperties();
@@ -281,30 +344,39 @@ function _snapFolder(){
   return f;}
 function _snapGet(id){ return _storeGet('well_'+id+'.json'); }
 function _snapPut(id,text){ _storePut('well_'+id+'.json',text); }
-function wellFrozen(id,fresh){
+function wellFrozen(id,fresh,lite){ return _regScope(function(){ return _wellFrozen(id,fresh,lite); }); }
+function _wellFrozen(id,fresh,lite){
   let reg=null; try{reg=(getRegistry().wells||[]).filter(function(w){return String(w.well_id)===String(id);})[0];}catch(_){ }
   const closed=reg&&String(reg.status).toLowerCase()==='closed';
   // v7.8 UNIVERSAL: sirve snapshot si el workbook NO cambio desde el ultimo calculo — valido
   // tambien para pozos LIVE (entre ediciones de dispatch, el snapshot ES el dato actual).
   // Live: de 20-60s por request a ~1-2s; solo el PRIMER request tras una edicion recalcula.
   if(!fresh&&reg&&reg.spreadsheet_id){
-    const s=_snapGet(id);
-    if(_snapFresh(reg.spreadsheet_id,s,closed)){try{const j=JSON.parse(s.text);
-      /* v10.5: un Live calculado por otra versión NO se sirve (reglas de día/lectura cambian) */
-      if(closed||(j&&j.api_version===API_VERSION))return j;}catch(_){/* corrupto → regenerar */}}}
-  const w=getWell(id);
+    const s=_snapGet(id); let j=null;
+    if(s&&s.text){ try{ j=JSON.parse(s.text); }catch(_){ j=null; /* corrupto → regenerar */ } }
+    /* v10.5: un Live calculado por otra versión NO se sirve (reglas de día/lectura cambian) */
+    if(j&&(closed||j.api_version===API_VERSION)&&_snapFresh(reg,s,closed,j,lite))return j;}
+  /* v10.8: t0 = INICIO de la lectura · la firma sale de los mismos valores que usa getWell */
+  const t0=Date.now(); let SG=null;
+  if(reg){ _SIG={want:{},p:{}}; _sigTabs(reg).forEach(function(n){_SIG.want[n]=1;}); }
+  let w; try{ w=getWell(id); }finally{ SG=_SIG; _SIG=null; }
   if(w&&!w.error){
-    w.snapshot={frozen:true,at:new Date().toISOString(),live:!closed};
-    _snapPut(id,JSON.stringify(w));}
+    let sig=''; try{ if(SG&&reg)sig=_sigJoin(SG.p,reg); }catch(_){}
+    w.snapshot={frozen:true,at:new Date().toISOString(),live:!closed,t0:t0,sig:sig};
+    _snapPut(id,JSON.stringify(w));
+    try{ if(sig)CacheService.getScriptCache().put('sg:'+id,sig,_recentClose(reg)?600:21600); }catch(_){} }
   return w;}
 /** ▶ CONGELAR AHORA — corre una vez para precalentar todos los cierres (y cada 6h vía trigger). */
-function congelarCierres(){
+function congelarCierres(){ return _regScope(_congelarCierres); }
+function _congelarCierres(){
   const reg=(getRegistry().wells||[]).filter(function(w){return !!w.spreadsheet_id;}); // v7.8: precalienta TODOS (Live incluido)
   let hechos=0,frescos=0,pend=0; const t0=Date.now();
   reg.forEach(function(w){
-    const s=_snapGet(w.well_id);
-    let curV=false; try{curV=!!(s&&s.text&&JSON.parse(s.text).api_version===API_VERSION);}catch(_){}
-    if(curV&&_snapFresh(w.spreadsheet_id,s,String(w.status).toLowerCase()==='closed')){frescos++;return;}
+    if(Date.now()-t0>270000){pend++;return;} /* v10.8: el presupuesto cubre también la revisión de firma */
+    const s=_snapGet(w.well_id); let j=null;
+    try{ j=(s&&s.text)?JSON.parse(s.text):null; }catch(_){ j=null; }
+    const curV=!!(j&&j.api_version===API_VERSION);
+    if(curV&&_snapFresh(w,s,String(w.status).toLowerCase()==='closed',j,false)){frescos++;return;}
     if(Date.now()-t0>270000){pend++;return;} /* v10.5: presupuesto 4.5 min — la siguiente corrida sigue */
     const wj=wellFrozen(w.well_id,true); if(wj&&!wj.error)hechos++;});
   if(pend)Logger.log('congelarCierres: '+pend+' pozos pendientes para la siguiente corrida');
@@ -330,10 +402,11 @@ function _portfolioSlim(w,r){
     totals:w.totals, targets:w.targets, daily:w.daily, byTerminal:w.byTerminal,
     cycleDaily:w.cycleDaily, downtimeEvents:w.downtimeEvents, assets:w.assets, slim:true };
 }
-function buildPortfolio(){
+function buildPortfolio(){ return _regScope(_buildPortfolio); }
+function _buildPortfolio(){
   const reg=(getRegistry().wells||[]); const out=[]; let ok=0,fail=0;
   reg.forEach(function(r){ if(!r.spreadsheet_id)return;
-    try{ const s=_portfolioSlim(wellFrozen(r.well_id,false),r);
+    try{ const s=_portfolioSlim(wellFrozen(r.well_id,false,true),r);
       if(s){out.push(s);ok++;} else fail++; }catch(e){fail++;} });
   const pack={ generated:new Date().toISOString(), api_version:API_VERSION, store:_storeMode(), count:out.length, failed:fail, wells:out };
   try{ _storePut('portfolio.json', JSON.stringify(pack)); }catch(e){ Logger.log('portfolio save: '+e); }
@@ -342,10 +415,12 @@ function buildPortfolio(){
 }
 function getPortfolio(fresh){
   if(!fresh){ try{ const s=_storeGet('portfolio.json'); if(s&&s.text){const P=JSON.parse(s.text);
-      /* v10.5: misma versión y, si hay pozos Live, menos de 15 min — si no, se reconstruye */
-      const live=(P.wells||[]).some(function(w){return String(w.status||'').toLowerCase()!=='closed';});
+      /* v10.5: misma versión y, si hay pozos Live, menos de 15 min — si no, se reconstruye.
+         v10.8: un cierre RECIENTE (≤7 días de end_date) cuenta como Live (su captura final sigue
+         entrando) y sin pozos vivos el paquete ya no se reusa para siempre: máx. 6 h. */
+      const live=(P.wells||[]).some(function(w){return String(w.status||'').toLowerCase()!=='closed'||_recentClose({end_date:w.end});});
       const age=Date.now()-new Date(P.generated||0).getTime();
-      if(P.api_version===API_VERSION&&(!live||age<9e5))return P;}}catch(e){} }
+      if(P.api_version===API_VERSION&&age<(live?9e5:216e5))return P;}}catch(e){} }
   return buildPortfolio();
 }
 
@@ -611,12 +686,16 @@ function TESTDT(){
 }
 
 // ---------- Hub: Registry / Rates ----------
+var _REG_MEMO=null; /* v10.8: memo SOLO dentro de un lote (portafolio · congelador · un pozo) — se leía 2 veces por pozo */
 function getRegistry(){
+  if(_REG_MEMO)return _REG_MEMO;
   const v=SpreadsheetApp.getActive().getSheetByName(CFG.registrySheet).getDataRange().getValues();
   const h=findHeader(v,'well_id'); const H=v[h].map(x=>String(x).trim());
   const wells=v.slice(h+1).filter(r=>r[0]).map(r=>{const o={};H.forEach((k,i)=>o[k]=r[i]);return o;});
   return { generated:new Date().toISOString(), count:wells.length, wells };
 }
+function _regScope(fn){ const own=!_REG_MEMO; if(own){ try{ _REG_MEMO=getRegistry(); }catch(_){ _REG_MEMO=null; } }
+  try{ return fn(); }finally{ if(own)_REG_MEMO=null; } }
 function getRates(){
   const sh=SpreadsheetApp.getActive().getSheetByName(CFG.ratesSheet); if(!sh) return {};
   const v=sh.getDataRange().getValues(); const h=findHeader(v,'customer'); if(h<0) return {};
@@ -690,12 +769,15 @@ function getWell(id){
   let TZS=(ss.getSpreadsheetTimeZone&&ss.getSpreadsheetTimeZone())||Session.getScriptTimeZone();
 
   // Targets
-  const targets={}; const T=readTab(ss,CFG.tabs.targets,'key');
+  const targets={}; const _tNotes={}; const T=readTab(ss,CFG.tabs.targets,'key');
   const _dTerm={}; /* v10.7: prefijo → nombre de la terminal de diseño (encabezado "— TERMINAL · X —") */
   if(T){const ki=colmap(T.H,['key','value']); let _curT='';
+    /* v10.8: notas de Targets (columna "unit / notas") → targets_notes (p. ej. mezcla de diseño por etapa) */
+    const ni=T.H.findIndex(function(h,i){return i!==ki.key&&i!==ki.value&&/nota|note|unit/i.test(h);});
   for(const r of T.rows){const k=String(r[ki.key]||'').trim(); if(!k)continue;
     if(k.charAt(0)==='—'){const mh=k.match(/terminal\s*[·:\-\u2013]\s*(.+?)\s*[\u2014\u2013-]*\s*$/i);_curT=mh?mh[1].trim():'';continue;}
     targets[k]=r[ki.value];
+    if(ni>=0){const nt=String(r[ni]==null?'':r[ni]).trim(); if(nt)_tNotes[k]=nt.slice(0,300);}
     const mp=_curT?k.match(/^([A-Za-z0-9]+)_(mix_pct|mix|rate_ton|miles|ct_total|ct_load|ct_transit|ct_unload|drivers_shift)$/):null;
     if(mp&&!_dTerm[mp[1]])_dTerm[mp[1]]=_curT;}}
   _DT=declaredTerms(targets); _STRICT=/^(1|true|si|sí|yes)$/i.test(String((targets&&targets.terminals_strict)||''));
@@ -998,7 +1080,7 @@ function getWell(id){
   const statusBoard=lastK?Object.entries(statusByHour[lastK]).map(([s,n])=>({status:s,count:n})).sort((a,b)=>b.count-a.count):[];
 
   return {
-    api_version:API_VERSION, well_id:reg.well_id, name:reg.name, customer:client, status:reg.status, targets,
+    api_version:API_VERSION, well_id:reg.well_id, name:reg.name, customer:client, status:reg.status, targets, targets_notes:_tNotes,
     diag:{ file:ss.getName(), sheets:ss.getSheets().map(function(x){return x.getName();}),
       loads_tab:(reg.sheet_name||CFG.tabs.loads), loads_found:!!L, loads_rows:L?L.rows.length:0,
       tons_delivered:Math.round(tons), loads_skipped_no_loadnum:_skipNoNum, footer_rows_cut:_footRows,
@@ -1367,10 +1449,10 @@ function fmtT(v){ if(v instanceof Date) return ('0'+v.getHours()).slice(-2)+':'+
   if(typeof v==='number'&&v<=2){const m=Math.round(v*1440);return ('0'+Math.floor(m/60)).slice(-2)+':'+('0'+(m%60)).slice(-2);}
   return String(v==null?'':v); }
 
-function readTab(ss,name,keyword){const sh=ss.getSheetByName(name); if(!sh)return null; const v=sh.getDataRange().getValues(); const h=findHeader(v,keyword); if(h<0)return null; return {H:v[h].map(x=>String(x).trim()),rows:v.slice(h+1).filter(r=>r.some(c=>c!==''))};}
+function readTab(ss,name,keyword){const sh=ss.getSheetByName(name); if(!sh){_sigTap(name,null);return null;} const v=sh.getDataRange().getValues(); _sigTap(name,v); const h=findHeader(v,keyword); if(h<0)return null; return {H:v[h].map(x=>String(x).trim()),rows:v.slice(h+1).filter(r=>r.some(c=>c!==''))};}
 // v7.0 — lee la pestaña con VALORES typed + DISPLAY strings alineados fila a fila.
 // Los DISPLAY son el texto exacto que ves en la celda → inmunes a la zona horaria.
-function readTabD(ss,name,keyword){const sh=ss.getSheetByName(name); if(!sh)return null; const rg=sh.getDataRange(); const v=rg.getValues(),dv=rg.getDisplayValues(); const h=findHeader(v,keyword); if(h<0)return null;
+function readTabD(ss,name,keyword){const sh=ss.getSheetByName(name); if(!sh){_sigTap(name,null);return null;} const rg=sh.getDataRange(); const v=rg.getValues(),dv=rg.getDisplayValues(); _sigTap(name,v); const h=findHeader(v,keyword); if(h<0)return null;
   const keep=[]; for(let i=h+1;i<v.length;i++){ if(v[i].some(c=>c!=='')) keep.push(i); }
   return {H:v[h].map(x=>String(x).trim()), rows:keep.map(i=>v[i]), disp:keep.map(i=>dv[i])};}
 // Duración desde string de celda "0:57:00" | "18:27" | "1:36:30" → minutos. NUNCA usa TZ.
