@@ -220,6 +220,9 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fcr-t tr:hover td{background:#f6f9fb}
 .fcr-nm{color:#1c5d8f;cursor:pointer;font-weight:700}.fcr-nm:hover{text-decoration:underline}
 .fcr-new{font:800 8px/1 'Plus Jakarta Sans';background:#e8f1fb;color:#2b6a92;border-radius:999px;padding:3px 7px;letter-spacing:.06em}
+.fcr-new.tm{background:#efe8fa;color:#5b3fa0}.fcr-new.on{background:#e3f4ea;color:#2f7a45}
+.fcr-note{margin:0 0 10px;padding:8px 11px;border-radius:12px;background:#fff7e8;border:1px solid #f0dcae;color:#6f5414;font:500 11px/1.5 'Plus Jakarta Sans'}
+.fcr-note b{color:#5a420c}
 .fcr-sc{font-weight:800;font-variant-numeric:tabular-nums}
 .fcr-win{font-variant-numeric:tabular-nums;color:#2E4057}
 .fcr-tra{font:800 9px/1 'Plus Jakarta Sans';margin-left:4px}
@@ -1761,7 +1764,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-10-28.138';
+const VBUILD='2026-11-02.139';
 /* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
    abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
 const CT_TZ='America/Chicago';
@@ -5569,9 +5572,13 @@ function fcIsBelly(reg){return /belly/i.test(String(reg&&reg.equipment||''))
    Cada driver proyecta su ventana media real [aS, aS+sp) todos los días; un driver NUEVO
    (nw) proyecta [activación, +12 h] por día hasta tener historial. Solo proyectan drivers
    vistos en las últimas 36 h (último load) y no excluidos a mano. */
+/* .139: 'YYYY-MM-DD HH:MM' (o 'YYYY-MM-DD HH') → ms locales · null si no hay */
+function _fcTSm(s){s=String(s||'');if(s.length<13)return null;return _fcTS(s.slice(0,10),s.length>=16?s.slice(11,16):(s.slice(11,13)+':00'));}
+function _fcClkTxt(ms){const d=new Date(ms),n=new Date();const p=x=>('0'+x).slice(-2);
+  return p(d.getHours())+':'+p(d.getMinutes())+(d.toDateString()!==n.toDateString()?' ('+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()]+')':'');}
 function _fcTS(day,hm){if(!day)return null;const m=String(hm||'').match(/^(\d{1,2}):(\d{2})/);
-  const d=new Date(day+'T00:00:00');if(isNaN(d))return null;
-  return d.getTime()+(m?(+m[1]*36e5+ +m[2]*6e4):0);}
+  const q=String(day).match(/^(\d{4})-(\d{2})-(\d{2})/);if(!q)return null; /* .139: hora local real también el día del cambio de horario */
+  const d=new Date(+q[1],+q[2]-1,+q[3],m?+m[1]:0,m?+m[2]:0);return isNaN(d)?null:d.getTime();}
 /* Rangos 'más activo' (p ≥ 0.75) del mapa horario de un driver → 'HH–HH · HH–HH' */
 /* .116: banda semáforo de Gross Weight (78–80k verde · <78k ámbar · <70k y >80k rojo) */
 function gwBand(g){g=+g||0;if(!g)return {cls:'co',t:'—',k:'dw',col:'#8a97a6'};
@@ -5594,19 +5601,27 @@ function fcRosterProj(w,now,H){
     const lastTS=_fcTS((r.last||'').slice(0,10),(r.last||'').slice(11,13)+':00');
     const fresh=lastTS!=null&&(now-lastTS)<=RECENT;
     const inc=fresh&&!exc[r.d];
-    let aS=+r.aS||0,sp=Math.min(20,Math.max(4,+r.sp||12));
-    if(r.nw){const _a=(r.nwS||r.fs||'');const f=_fcTS(_a.slice(0,10),_a.slice(11,13)+':00');
-      if(f!=null){aS=new Date(f).getHours();sp=12;}}
+    let aS=+r.aS||0,sp=Math.min(r.tm?24:20,Math.max(4,+r.sp||12));
+    if(r.nw){const _a=(r.nwS||r.cs||r.fs||'');const f=_fcTSm(_a); /* .139: arranque real con minutos */
+      if(f!=null){const d0=new Date(f);aS=d0.getHours()+d0.getMinutes()/60;sp=12;}}
     /* .96: si el GAS publica su mapa horario (hw), cada hora pesa lo que el driver
        realmente trabaja esa hora; sin hw (o driver NEW) manda la ventana rectangular */
     const hwA=(!r.nw&&typeof r.hw==='string'&&r.hw.length===24)?r.hw.split('').map(c3=>(+c3||0)/9):null;
-    const pres=t=>{const d4=new Date(now+t*36e5);const hh=d4.getHours()+d4.getMinutes()/60;
+    /* .139 · TURNO EN CURSO anclado a su arranque REAL (GAS v10.9: cs = 1er At Terminal de la jornada,
+       lm = su último load, op = sigue en turno a la hora del dato): sale en arranque + sus horas (o 1 h
+       después de su último load si ya las rebasó) y descansa 10 h (HOS) antes de volver a su patrón.
+       Turno cerrado → 10 h de descanso desde su último load. 24/7 (tm) y GAS < v10.9 → sin ancla. */
+    const csT=_fcTSm(r.cs),lmT=_fcTSm(r.lm);let curEnd=null,restEnd=null;
+    if(!r.tm&&csT!=null&&lmT!=null){curEnd=(+r.op===1)?Math.max(csT+sp*36e5,lmT+36e5):lmT;restEnd=curEnd+10*36e5;}
+    const pat=t=>{const d4=new Date(now+t*36e5);const hh=d4.getHours()+d4.getMinutes()/60;
       if(!hwA){let x=hh-aS;if(x<0)x+=24;return x<sp?1:0;}
       return hwA[d4.getHours()]||0;};
+    const pres=t=>{if(curEnd!=null){const T=now+t*36e5;if(T<curEnd)return (+r.op===1)?1:0;if(T<restEnd)return 0;}return pat(t);};
     const onAt=t=>pres(t)>=0.5;
     if(inc)for(let t=0;t<=H;t++)curveF[t]+=pres(t);
     rows.push({d:r.d,c:r.c||'',n:+r.n||0,aS,sp,tp:+r.tp||0,days:+r.days||0,pd:+r.pd||0,
-      nw:!!r.nw,fs:r.fs||'',nwS:r.nwS||'',last:r.last||'',fresh,inc,onAt,hwA,shd:r.shd||[],pw:r.pw!==false,src:r.src||((r.pw!==false)?'pump':'all'),xw:r.xw||'',xwL:r.xwL||'',nwA:+r.nwA||0,gwA:+r.gwA||0});
+      nw:!!r.nw,fs:r.fs||'',nwS:r.nwS||'',last:r.last||'',fresh,inc,onAt,hwA,shd:r.shd||[],pw:r.pw!==false,src:r.src||((r.pw!==false)?'pump':'all'),xw:r.xw||'',xwL:r.xwL||'',nwA:+r.nwA||0,gwA:+r.gwA||0,
+      tm:+r.tm||0,op:+r.op||0,cs:r.cs||'',lm:r.lm||'',curEnd,restEnd,hx:r.hx||null,ln:+r.ln||0});
   });
   for(let t=0;t<=H;t++)curve[t]=Math.round(curveF[t]);
   /* piso histórico: las ventanas medias comprimen la cobertura; si el patrón real
@@ -5657,7 +5672,7 @@ function fcScore2(row,rows,dtr,padDays,T,bd){
   add('wt','Weight',15,gwA>0?(gwA>80000?40:gwA>=78000?100:gwA>=70000?70:40):null,
     gwA>0?(gwA>80000?'avg OVER 80k — overweight risk':gwA>=78000?'in the 78–80k window':gwA>=70000?'below the 78k efficiency floor':'under-loaded <70k'):'');
   const sp=+row.sp||0;
-  add('win','Work window',10,sp>0?((sp>=11&&sp<=14)?100:((sp>=9&&sp<11)||(sp>14&&sp<=16))?70:40):null,
+  add('win','Work window',10,(sp>0&&!row.tm)?((sp>=11&&sp<=14)?100:((sp>=9&&sp<11)||(sp>14&&sp<=16))?70:40):null,
     sp>0?(sp.toFixed(1)+' h/day — '+((sp>=11&&sp<=14)?'healthy':((sp>=9&&sp<11)||(sp>14&&sp<=16))?'watch':'out of range')):'');
   const wSum=P.reduce((a,p)=>a+p.w,0)||1;
   const sc=Math.min(100,Math.round(P.reduce((a,p)=>a+Math.min(100,p.pct)*p.w,0)/wSum));
@@ -5666,7 +5681,8 @@ function fcScore2(row,rows,dtr,padDays,T,bd){
   if(gwA>80000)AL.push({t:'Avg gross OVER 80k ('+fmt(gwA)+' lbs)',k:'bad'});
   else if(gwA>0&&gwA<70000)AL.push({t:'Under-loaded — avg gross '+fmt(gwA)+' lbs',k:'warn'});
   else if(gwA>0&&gwA<78000)AL.push({t:'Gross below the 78k efficiency floor',k:'warn'});
-  if(sp>0&&(sp<9||sp>16))AL.push({t:'Work window '+sp.toFixed(1)+' h/day — out of healthy range',k:'warn'});
+  if(!row.tm&&sp>0&&(sp<9||sp>16))AL.push({t:'Work window '+sp.toFixed(1)+' h/day — out of healthy range',k:'warn'});
+  if(row.tm)AL.push({t:'24/7 unit — one login hauls around the clock (likely two drivers)',k:'warn'}); /* .139 */
   if(rvPct!=null&&rvPct<85)AL.push({t:'Revenue pace at '+Math.round(rvPct)+'% of design',k:'warn'});
   return {s:sc,parts:P,alerts:AL};}
 function fcScore(row,rows,dtr,padDays,T,bd){return fcScore2(row,rows,dtr,padDays,T||null,bd||null).s;}
@@ -6672,7 +6688,7 @@ function fcGanttData(proj,H24){
     for(let t=0;t<=H24;t++){const on=t<H24&&r.onAt(t);
       if(on&&s==null)s=t;
       if(!on&&s!=null){segs.push([s,t]);s=null;}}
-    rows.push({d:r.d,c:r.c,n:+r.n||0,sp:r.sp,nw:r.nw,hwA:r.hwA,band:fcHrsBand(r.sp).cls,segs});});
+    rows.push({d:r.d,c:r.c,n:+r.n||0,sp:r.sp,nw:r.nw,hwA:r.hwA,band:r.tm?'fcw-y':fcHrsBand(r.sp).cls,segs,op:r.op,cs:r.cs,curEnd:r.curEnd,tm:r.tm});});
   rows.sort((a,b)=>(a.segs[0]?a.segs[0][0]:99)-(b.segs[0]?b.segs[0][0]:99));
   const peak=Math.max(0,...curve),low=Math.min(...curve);
   const sorted=curve.slice().sort((a,b)=>a-b);const med=sorted[Math.floor(sorted.length/2)];
@@ -6699,7 +6715,9 @@ function fcGantt(){
       const pkT=_fcPkHrs(r.hwA);
       /* .109: etiqueta honesta — tramo de 24 h = arranque que se mueve día a día, no un turno de 24 h */
       const vr=_fcVr(r);const f24=(sg[1]-sg[0])>=24;
-      const tipG=encodeURIComponent('<b>'+r.d+'</b>'+(f24
+      const tipG=encodeURIComponent('<b>'+r.d+'</b>'
+        +((sg[0]===0&&r.op&&r.curEnd)?'\n<b>On shift now</b> — since '+String(r.cs).slice(11,16)+' (first At Terminal) · projected off ~'+_fcClkTxt(r.curEnd):'')
+        +(r.tm?'\n<b>24/7 unit</b> — hauls 24+ h without a 4 h break (one login, likely two drivers)':'')+(f24
         ?'\n<b>On at ANY hour</b> somewhere in his days — his start moves day to day\navg <b>'+r.sp.toFixed(1)+' h/day</b> · lane heat = share of his days covering each hour'
         :'\nUsually on <b>'+hl(sg[0])+' – '+hl(sg[1])+'</b>'+(vr?' — varies day to day':'')+' · avg <b>'+r.sp.toFixed(1)+' h/day</b>')
         +(pkT?'\nMost active: <b>'+pkT+'</b>':''));
@@ -6715,7 +6733,7 @@ function fcGantt(){
         if(stops.length===1)stops.push(stops[0].replace(/ [\d.]+%$/,' 100%'));
         sty='background:linear-gradient(90deg,'+stops.join(',')+');box-shadow:inset 0 0 0 1px rgba('+base+',.45);';}
       return '<div class="fg-bar '+(r.band==='fcw-g'?'bg-g':r.band==='fcw-y'?'bg-y':'bg-r')+'" style="'+sty+'left:'+l.toFixed(1)+'%;width:'+w.toFixed(1)+'%;animation-delay:'+(ri*55)+'ms;--ri:'+ri+'" data-tip="'+tipG+'">'+truck+'</div>';}).join('');
-    return '<div class="fg-row"><span class="fg-nm" data-d="'+String(r.d).replace(/"/g,'&quot;')+'" onclick="fcGotoDriver(this.dataset.d)">'+r.d+(r.nw?' <span class="fcr-new">NEW</span>':'')+'</span><div class="fg-lane">'+bars+'</div></div>';}).join('');
+    return '<div class="fg-row"><span class="fg-nm" data-d="'+String(r.d).replace(/"/g,'&quot;')+'" onclick="fcGotoDriver(this.dataset.d)">'+r.d+(r.nw?' <span class="fcr-new">NEW</span>':'')+(r.tm?' <span class="fcr-new tm">24/7</span>':'')+'</span><div class="fg-lane">'+bars+'</div></div>';}).join('');
   const reinf=G.reinf.map((x,ix)=>'<span class="fg-chip rf" style="cursor:pointer" onclick="fcGapWho('+ix+')" title="Click: who from the learned roster could cover this dip">Reinforce '+hl(x[0])+'–'+hl(x[1])+' · dips to '+x[2]+' drv</span>').join('');
   const bd=(FC.pf&&FC.pf.padOk)?+FC.pf.brdOn:null;
   const lvOk=bd!=null&&Math.abs(bd-(G.curve[0]||0))<=2;
@@ -6789,8 +6807,13 @@ function _whAudit(){try{
   if(unp)L2.push('<b>'+unp+'</b> delivered value'+(unp===1?'':'s')+' unreadable — <b>not counted</b>');
   if(skip)L2.push('<b>'+skip+'</b> row'+(skip===1?'':'s')+' with data but <b>no Load #</b> — not counted');
   if(fN)L2.push('Foreign-terminal loads: <b>'+fN+'</b> ('+fT.join(', ')+')'+(dg.terminals_strict?' — <b>EXCLUDED</b> (terminals_strict)':' — counted, flagged in Sourcing'));
+  const cp=dg.cross_pad,cpN=(cp&&+cp.loads)||0; /* .139: GAS v10.9 — filas de otro pozo */
+  if(cpN){const bl=(cp.blocks||[]).map(b=>b[0]===b[1]?('row '+b[0]):('rows '+b[0]+'–'+b[1])).join(', ');
+    L2.push('<b>'+cpN+' load'+(cpN===1?'':'s')+' from another pad excluded</b>'+(bl?' — '+bl:'')+' match <b>'+(cp.peers||[]).map(p=>p.name||p.id).join(', ')+'</b> (same Load IDs, its terminals) · delete them from this Loads Report');}
+  const rc=dg.roster_clock;
+  if(rc&&rc.v)L2.push('Roster hours: real clock (first At Terminal → last delivery)'+(+rc.off_fixed?' · <b>'+rc.off_fixed+'</b> offline delivery stamp'+(+rc.off_fixed===1?'':'s')+' corrected':'')+(rc.leg?' · typical At Terminal → delivered '+rc.leg+' h':'')+(+rc.team?' · '+rc.team+' login'+(+rc.team===1?'':'s')+' running 24/7':''));
   if(age)L2.push('Snapshot age: '+age+(ACTIVE_META&&ACTIVE_META.api_ver?' · computed by GAS <b>'+ACTIVE_META.api_ver+'</b>':''));
-  const issueN=futN+skip+unp+(dg.terminals_strict?fN:0)+(!v104?(+dg.dates_normalized||0):0);
+  const issueN=futN+skip+unp+(dg.terminals_strict?fN:0)+cpN+(!v104?(+dg.dates_normalized||0):0);
   if(!issueN&&v104)L2.push('Nothing dropped — every delivered row is counted ✓');
   const cls=futN?'aud-bad':(issueN?'aud-warn':'aud-ok');
   return '<span class="pill wh-aud '+cls+'" data-tip="'+encodeURIComponent(L2.join('\n'))+'">DATA AUDIT'+(issueN?' · '+issueN:' ✓')+'</span>';
@@ -6867,7 +6890,7 @@ function drvRender(){
   const trCol=(D.tgt>0&&r.tp>0)?(r.tp>=D.tgt?'#7fd4a8':(r.tp/D.tgt>=.85?'#e8c56f':'#f3a0a0')):'#dce8f2';
   const trMark=(D.tgt>0&&r.tp>0)?(r.tp>=D.tgt?' ▲':' ▼'):'';
   const gB=gwBand(gwA);
-  const srcTxt=r.src==='xwell'?('inherited from '+r.xw):(r.src==='prefill'?'prefill window':(r.src==='all'?'all-days window':(r.pw?'pump window':'')));
+  const srcTxt=r.tm?'24/7 unit (likely two drivers)':(r.src==='xwell'?('inherited from '+r.xw):(r.src==='new'?'first trip · 12 h default':(r.src==='prefill'?'prefill window':(r.src==='all'?'all-days window':(r.pw?((r.hx&&r.hx.w<1)?('pump window · blended '+Math.round(r.hx.w*100)+'%'):'pump window'):''))))); /* .139 */
   const stale=r.fresh===false;
   const kp=(t,v,s2)=>'<div class="dvp-k"><div class="t">'+t+'</div><div class="v">'+v+'</div>'+(s2?'<div class="s">'+s2+'</div>':'')+'</div>';
   const hasBD=!!D.bd&&dates.length>0;
@@ -7011,6 +7034,29 @@ window.drvPrint=function(){try{
 function _fcHM(hF){let hh=Math.floor(((hF%24)+24)%24),mm=Math.round((hF-Math.floor(hF))*60);
   if(mm===60){mm=0;hh=(hh+1)%24;}
   return ('0'+hh).slice(-2)+':'+('0'+mm).slice(-2);}
+/* .139: cómo se estimaron las horas de un driver (GAS v10.9 · hx) — texto del tooltip */
+function _fcHxTxt(r){const x=r.hx||{};const L=[];
+  const SK={f:'his first day here',d1:'pad day-1',pf:'prefill',open:'in progress'};
+  const h1=v=>(v==null?'—':(+v).toFixed(1)+' h');
+  L.push('<b>How his hours are estimated</b> — real clock: first At Terminal → last delivery (offline stamps corrected)');
+  if(r.shd&&r.shd.length)L.push(r.shd.map(s2=>'• '+s2[0]+' — start '+_fcHM(s2[1])+' · '+(+s2[2]).toFixed(1)+' h').join('\n'));
+  const M={pattern:'Repeats ~'+h1(x.mode)+' most days → ½ that + ¼ last day ('+h1(x.last)+') + ¼ average ('+h1(x.mean)+')',
+    'dip-last':'Short day(s) in his log; his last day ('+h1(x.last)+') is above his average ('+h1(x.mean)+') → ½ last day + ½ average',
+    'dip-skip':'His last day ('+h1(x.last)+') was short — read as a partial day → ½ median ('+h1(x.med)+') + ½ average of his full days',
+    'trend-down':'Two short days in a row — the drop looks real → recent days weigh more',
+    trend:'Steady days → ½ recency-weighted average + ½ median ('+h1(x.med)+')',
+    xwell:'No learning day on this pad yet (prefill · pad day-1 · his first day) → his hours from his latest pad <b>'+(r.xw||'—')+'</b>',
+    'new':'First trip, no history on any pad → <b>12 h</b> from his real start '+String(r.nwS||r.cs||'').slice(11,16),
+    prior:'No days to learn from — default'};
+  L.push('Method: '+(M[x.m]||x.m||'—')+' = <b>'+(+r.sp).toFixed(1)+' h</b>');
+  if(x.n>0&&x.w<1){const pv=x.ps==='xwell'?('his latest pad <b>'+(r.xw||'—')+'</b>'):(x.ps==='prefill'?'his prefill days':(x.ps==='24h'?'a 24 h unit':'the 12 h default'));
+    L.push('Only '+x.n+' learning day'+(x.n===1?'':'s')+' here → '+Math.round(x.w*100)+'% this pad + '+(100-Math.round(x.w*100))+'% '+pv+' ('+h1(x.pr)+')');}
+  if(r.src==='prefill')L.push('Fallback: prefill days only — no learning day after pad day-1 yet');
+  if(r.src==='all')L.push('Fallback: every closed day he has here — no learning day yet');
+  if(x.mean!=null&&Math.abs(x.mean-(+r.sp))>=0.5)L.push('Plain average would be '+h1(x.mean));
+  if(x.sk&&x.sk.length)L.push('Not used: '+x.sk.map(k=>k[0]+' '+(SK[k[1]]||k[1])).join(' · '));
+  if(r.tm)L.push('<b>24/7 unit</b> — hauled 24+ h without a 4 h break: one login is likely two drivers (slip seat) · projected around the clock');
+  return L.join('\n');}
 function fcRosterTable(){
   const host=$('fcr-body');if(!host)return;
   const rows=((FC._proj&&FC._proj.rows)||[]).slice().sort((a,b)=>b.n-a.n);
@@ -7026,11 +7072,19 @@ function fcRosterTable(){
   const _wT=RES_DATA[FC.id]&&RES_DATA[FC.id].ok&&RES_DATA[FC.id].w;
   const trT=(_wT&&_wT.targets&&+_wT.targets.turn_rate_target)||0;
   const _bdM2={};(((_wT||{}).byDriver)||[]).forEach(x=>{_bdM2[String(x.driver).toUpperCase()]=x;}); /* .124 */
+  {const nt=$('fcr-note');if(nt){const cp=_wT&&_wT.diag&&_wT.diag.cross_pad; /* .139: GAS v10.9 cross-pad */
+    if(cp&&+cp.loads>0){const pe=cp.peers||[];const only=pe.reduce((a,p)=>a+((p.only||[]).length),0);
+      const bl=(cp.blocks||[]).map(b=>b[0]===b[1]?('row '+b[0]):('rows '+b[0]+'–'+b[1])).join(', ');
+      nt.innerHTML='<div class="fcr-note"><b>'+fmt(cp.loads)+' loads from '+pe.map(p=>p.name||p.id).join(', ')+'</b> sit in this Loads Report'+(bl?' ('+bl+')':'')
+        +' — excluded automatically: same Load IDs as that pad and its terminals.'+(only?' '+only+' driver'+(only===1?' who only appears':'s who only appear')+' there '+(only===1?'is':'are')+' not in this roster.':'')
+        +' Delete those rows from the sheet.</div>';}
+    else nt.innerHTML='';}}
   const _mkR=r=>{const sc2=fcScore2(r,rows,dtr,padDays,_wT&&_wT.targets,_bdM2[String(r.d).toUpperCase()]||null);const sc=sc2.s;
     const stale=!r.fresh;
     const wb2=fcHrsBand(r.sp);const vr2=_fcVr(r);
     let audit='No shift log yet — projecting defaults';
-    if(r.shd&&r.shd.length){
+    if(r.hx)audit=_fcHxTxt(r); /* .139: GAS v10.9 — método ponderado y jornadas reales */
+    else if(r.shd&&r.shd.length){
       const perDay={};r.shd.forEach(s2=>{perDay[s2[0]]=(perDay[s2[0]]||0)+(+s2[2]||0);});
       const pdK=Object.keys(perDay).sort();
       audit='Learned from '+(r.pw?'pumping-day (day-1 skipped)':(r.src==='xwell'?('his LATEST PAD — '+r.xw):(r.src==='prefill'?'PREVIOUS-JOB (prefill)':'all')))+' closed shifts:\n'
@@ -7040,18 +7094,22 @@ function fcRosterTable(){
     const tip=encodeURIComponent('<b>'+r.d+'</b>'+(r.c?' — '+r.c:'')
       +'\nWork window <b>'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+'</b> · avg <b>'+r.sp.toFixed(1)+' h</b> ('+wb2.t+')'
       +(vr2?'\nhis start MOVES day to day — the average window is weak; the lane heat shows how often he covers each hour':'')
-      +(r.nw?'\nNEW (first 2 days) — 12 h from his real start'+(r.nwS?' at '+String(r.nwS).slice(11,13)+':00':''):'')
-      +(r.pw?'':(r.src==='xwell'?('\nInherited from '+r.xw+' (his latest pad · last load there '+String(r.xwL||'').slice(5)+':00)'):(r.src==='prefill'?'\nprefill fallback — windows inherited from the previous job':'\nall-days fallback — no closed pump shifts yet')))
+      +((r.op&&r.curEnd)?'\n<b>On shift now</b> — since '+String(r.cs).slice(11,16)+' · projected off ~'+_fcClkTxt(r.curEnd)+' · then 10 h rest':'')
+      +(r.hx?'':(r.nw?'\nNEW (first 2 days) — 12 h from his real start'+(r.nwS?' at '+String(r.nwS).slice(11,13)+':00':''):''))
+      +(r.hx||r.pw?'':(r.src==='xwell'?('\nInherited from '+r.xw+' (his latest pad · last load there '+String(r.xwL||'').slice(5)+':00)'):(r.src==='prefill'?'\nprefill fallback — windows inherited from the previous job':'\nall-days fallback — no closed pump shifts yet')))
       +(r.hwA&&_fcPkHrs(r.hwA)?'\nMost active: <b>'+_fcPkHrs(r.hwA)+'</b>':'')
       +'\n'+audit);
     return '<tr class="'+(r.inc?'':'exc')+'" data-tip="'+tip+'">'
     +'<td><input type="checkbox" '+(r.inc?'checked':'')+(stale?' disabled':'')+' onchange="fcTogDrv(\''+encodeURIComponent(r.d)+'\')"></td>'
     +'<td><span class="fcr-nm" onclick="fcGotoDriver(\''+String(r.d).replace(/'/g,"\\'")+'\')">'+r.d+'</span>'
       +' <span class="fcp-o" title="Open profile" onclick="drvProfile(\''+String(r.d).replace(/'/g,"\\'")+'\')">\u2197</span>'
-      +(r.nw?' <span class="fcr-new">NEW +12H</span>':'')+'</td>'
+      +(r.nw?' <span class="fcr-new">NEW +12H</span>':'')+(r.tm?' <span class="fcr-new tm" title="Hauls 24+ h without a 4 h break — one login, likely two drivers (slip seat)">24/7</span>':'')+'</td>'
     +'<td>'+(r.c||'—')+'</td>'
-    +'<td class="fcr-win">'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+(r.pw?'':' <span style="font-size:8px;color:'+(r.src==='xwell'?'#1c5d8f':'#b45309')+'">'+(r.src==='xwell'?('from '+r.xw):(r.src==='prefill'?'prefill':'all-days'))+'</span>')+(vr2?' <span style="font-size:8px;color:#9a7b2d">~ varies</span>':'')+'</td>'
-    +'<td><span class="fcw '+fcHrsBand(r.sp).cls+'">'+r.sp.toFixed(1)+' h · '+fcHrsBand(r.sp).t+'</span></td>'
+    +'<td class="fcr-win">'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+(function(){ /* .139: etiqueta de dónde salen sus horas */
+        const bl=r.hx&&r.src==='pump'&&r.hx.w<1&&r.hx.ps==='xwell';
+        const tg=r.src==='xwell'?('from '+r.xw):(bl?('blend '+r.xw):(r.src==='prefill'?'prefill':(r.src==='all'?'all-days':'')));
+        return tg?' <span style="font-size:8px;color:'+((r.src==='xwell'||bl)?'#1c5d8f':'#b45309')+'">'+tg+'</span>':'';})()+(vr2?' <span style="font-size:8px;color:#9a7b2d">~ varies</span>':'')+'</td>'
+    +'<td><span class="fcw '+(r.tm?'fcw-y':fcHrsBand(r.sp).cls)+'">'+r.sp.toFixed(1)+' h · '+(r.tm?'24/7 unit':fcHrsBand(r.sp).t)+'</span></td>'
     +(function(){if(!(trT>0&&r.tp>0))return '<td>'+r.tp.toFixed(2)+'</td>';
       const dT=r.tp-trT,pT=r.tp/trT,sg=dT>=0?'+':'−';
       const st=pT>=1?['ok','▲','meets the well target']:(pT>=0.85?['wn','▼','close — just below target']:['bad','▼','below target']);
@@ -7157,6 +7215,7 @@ function renderFc(){
         <div class="card-t" style="margin:0">Projected truck roster — learned from this pad</div>
         <span class="sb" id="fcr-cnt" style="margin-left:auto"></span></div>
       <div class="rbody">
+        <div id="fcr-note"></div>
         <div id="fc-gantt"></div>
         <div style="overflow-x:auto"><table class="fcr-t"><thead><tr>
           <th>On</th><th>Driver</th><th>Co.</th><th>Window</th><th>Avg hrs</th><th>TR pump</th><th>Net avg</th><th>Gross avg</th><th>Score</th><th>Days</th><th>Last load</th>
