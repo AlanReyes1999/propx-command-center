@@ -6810,6 +6810,7 @@ function _whAudit(){try{
   const cp=dg.cross_pad,cpN=(cp&&+cp.loads)||0; /* .139: GAS v10.9 — filas de otro pozo */
   if(cpN){const bl=(cp.blocks||[]).map(b=>b[0]===b[1]?('row '+b[0]):('rows '+b[0]+'–'+b[1])).join(', ');
     L2.push('<b>'+cpN+' load'+(cpN===1?'':'s')+' from another pad excluded</b>'+(bl?' — '+bl:'')+' match <b>'+(cp.peers||[]).map(p=>p.name||p.id).join(', ')+'</b> (same Load IDs, its terminals) · delete them from this Loads Report');}
+  if(cp&&+cp.incomplete&&(cp.failed||[]).length)L2.push('Cross-pad check could not open <b>'+cp.failed.join(', ')+'</b> — re-checked automatically');
   const rc=dg.roster_clock;
   if(rc&&rc.v)L2.push('Roster hours: real clock (first At Terminal → last delivery)'+(+rc.off_fixed?' · <b>'+rc.off_fixed+'</b> offline delivery stamp'+(+rc.off_fixed===1?'':'s')+' corrected':'')+(rc.leg?' · typical At Terminal → delivered '+rc.leg+' h':'')+(+rc.team?' · '+rc.team+' login'+(+rc.team===1?'':'s')+' running 24/7':''));
   if(age)L2.push('Snapshot age: '+age+(ACTIVE_META&&ACTIVE_META.api_ver?' · computed by GAS <b>'+ACTIVE_META.api_ver+'</b>':''));
