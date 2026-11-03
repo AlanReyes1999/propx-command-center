@@ -1792,7 +1792,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-11-02.141';
+const VBUILD='2026-11-02.142';
 /* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
    abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
 const CT_TZ='America/Chicago';
@@ -3606,7 +3606,7 @@ function buildM(){
   try{const _reg=((typeof REGISTRY!=='undefined'&&REGISTRY)||[]).find(x=>x.id===CURRENT_ID)||{};
     const _inv=(typeof ACTIVE_META!=='undefined'&&ACTIVE_META&&ACTIVE_META.inventory)||null;
     const _bel=!!((_inv&&_inv.type==='pila')||(typeof fcIsBelly==='function'&&fcIsBelly(_reg)));
-    SAND=sandSeries({stages:SD,hourly:(typeof HOURLY!=='undefined'&&HOURLY)||[],lbBox:+T.net_weight_load||45000,belly:_bel,iso:ISO});
+    SAND=sandSeries({stages:SD,hourly:(typeof HOURLY!=='undefined'&&HOURLY)||[],lbBox:(typeof lbsPerBox==='function'?lbsPerBox(_reg,T):(+T.net_weight_load||45000)),belly:_bel,iso:ISO}); /* .142: lbs por CAJA */
     if(SAND){SANDD=ISO.map(d=>SAND.day(d));const _u=STGrows.filter(x=>x.t>0).slice(-8);sandTps=_u.length?_u.reduce((a2,x)=>a2+x.t,0)/_u.length:tonsStageD;}}
   catch(e){console.warn('[sand]',e);SAND=null;SANDD=[];}
   /* .91: TR del range SOLO con días pumping (ST>0); un range/pozo sin etapas cae a todos */
@@ -5784,6 +5784,14 @@ function _fcAt(id){const r2=RES_DATA[id];if(!(r2&&r2.at))return null;
   const d2=new Date(r2.at);const p2=n2=>('0'+n2).slice(-2);
   return p2(d2.getHours())+':'+p2(d2.getMinutes())+':'+p2(d2.getSeconds());}
 function _fcN(v,d){v=parseFloat(v);return isFinite(v)?v:d;}
+/* .142 · CAJAS POR LOAD — double boxes = 2 cajas por load (Loads Report: "Box Number" 8475 | 908 · "Box Unit" 21,730 | 21,730).
+   "Full boxes at destination" (Stages) cuenta cajas SUELTAS: en Casselman la etapa 1 capturó 110 llenas y el flujo da 108
+   (62 loads × 2 cajas − lo quemado ÷ 21,450). Peso por caja = net por load ÷ cajas por load (antes cada caja valía un load
+   completo → la arena en locación salía al DOBLE en pozos double boxes). Targets puede fijarlo con boxes_per_load o lbs_per_box. */
+function boxesPerLoad(reg,T){const n=+(T&&T.boxes_per_load);if(n>=1&&n<=4)return Math.round(n);
+  return /doubl|doble|dual|2\s*box/i.test(String((reg&&reg.equipment)||'')+' '+String((T&&T.equipment)||''))?2:1;}
+function lbsPerBox(reg,T){const x=+(T&&T.lbs_per_box);if(x>5000&&x<60000)return Math.round(x);
+  return Math.round((+(T&&T.net_weight_load)||45000)/boxesPerLoad(reg,T));}
 function fcIsBelly(reg){return /belly/i.test(String(reg&&reg.equipment||''))
   ||/^(BW\b|BAYSWATER)/i.test(String(reg&&reg.customer||''))
   ||/BAYSWATER/i.test(String(reg&&reg.name||''));}
@@ -6050,7 +6058,7 @@ function fcPrefill(id){
   const R=RES_DATA[id];const w=(R&&R.ok)?R.w:null;
   const T=(w&&w.targets)||{};
   const belly=fcIsBelly(reg);
-  const lbsBox=+T.net_weight_load||45000;
+  const lbsLoad=+T.net_weight_load||45000,bpl=boxesPerLoad(reg,T),lbsBox=lbsPerBox(reg,T); /* .142: lbs por CAJA (double boxes = net ÷ 2) */
   let invType=null,boxes=0,pilaT=0,pilaIsLbs=false,inv=0,emptyB=0,invStg=0,invStale=false;
   if(w&&w.inventory){invStg=+w.inventory.stage||0;invStale=!!w.inventory.stale;
     const rawPila=(w.inventory.pila!=null)?+w.inventory.pila:(belly?+w.inventory.full:null);
@@ -6082,7 +6090,7 @@ function fcPrefill(id){
   const _spR=(((w&&w.roster)||[]).map(r=>+r.sp||0).filter(v=>v>=4&&v<=20).sort((a,b)=>a-b));
   const _shF=_spR.length?Math.min(16,Math.max(8,_spR[Math.floor(_spR.length/2)])):12;
   let tons=0,lds=0;dl.forEach(d=>{tons+=(+d.tons||0);lds+=(+d.loads||0);});
-  const avgLoad=lds?Math.round(tons*2000/lds):lbsBox;
+  const avgLoad=lds?Math.round(tons*2000/lds):lbsLoad;
   const cd=(w&&w.cycleDaily)||[];const lastC=cd.slice(-3);
   const cycH=lastC.length?lastC.reduce((s,c)=>s+(((+c.terminal||0)+(+c.transit||0)*2+(+c.offload||0))/60),0)/lastC.length/2:((+T.weighted_ct||192)/60/2);
   /* board on-duty (chip + loads in motion) */
@@ -6097,7 +6105,7 @@ function fcPrefill(id){
     shift:_sr?_sr.sh:+_shF.toFixed(1),srN:_sr?_sr.n:0,srW:_sr?_sr.W:0,spdSrc:_sp48!=null?'48h':'days',
     avgLoad,bump:brdOn,cycH:+cycH.toFixed(1),belly:belly||invType==='pila',
     hasInv:!!(w&&w.inventory),hasW:!!w,slim:!!(w&&w.slim),invType,boxes,empty:emptyB,invStg,invStale,
-    pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox,padOk,brdOn,brdAt,dtr,padDays,w};}
+    pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox,bpl,padOk,brdOn,brdAt,dtr,padDays,w};}
 /* .141 · etapas por día en la ventana REAL de las últimas 48 h (reloj Central del workbook) · null sin ventanas */
 function fcStgPace(w,now){const st=(w&&w.stages)||[];if(!st.length)return null;const SW=stgWins(st);const c=_fcClk();const nW=_fcW(now,c);
   let first=null;const win=[];
@@ -6483,7 +6491,7 @@ function fcParams(){
     reg:fcRegTarget(g('tps')), /* .141: meta del despacho */
     burnMean:g('spd')*g('tps')*2000/24};}
 const FC_BELLY_TARGET=3000000, FC_MIN_STG=4, FC_GOAL_STG=6;
-const FC_BAND_K={belly:1.15,box:3.0}; /* .141: σ de la pila en múltiplos del burn/h, plena desde las 6 h (con el despacho regulado el error NO crece con el horizonte) — backtest real: Oasis/Nile ≈1.1 · Casselman ≈2 (conteo de cajas con ±6 de ruido) */
+const FC_BAND_K={belly:1.15,box:3.5}; /* .142: recalibrado con las cajas en su peso real (Casselman 75% dentro de la banda) */ /* .141: σ de la pila en múltiplos del burn/h, plena desde las 6 h (con el despacho regulado el error NO crece con el horizonte) — backtest real: Oasis/Nile ≈1.1 · Casselman ≈2 (conteo de cajas con ±6 de ruido) */
 const FC_REG_TAU=12; /* .141: horas en que el despacho cierra la brecha a la meta (backtest: 8–16 h equivalentes, 12 h el mejor) */
 /* .141 · meta del despacho: belly 3.0M (regla Bayswater) · cajas = la MAYOR entre GOAL etapas × arena/etapa y el nivel
    en que el pad operó sus últimas 48 h (mediana de las capturas de Stages) */
@@ -7530,7 +7538,7 @@ function renderFc(){
       <button class="rbtn ghost" id="fc-reset" onclick="fcReset()" disabled title="Already at the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
       <button class="rbtn ghost" id="fc-share" onclick="fcShare()" title="Open link to share"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.7l6.8-4.4M8.6 13.3l6.8 4.4"/></svg></button>
       </div>
-      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')+_fcNcTxt(pf)):pf.invType==='pila'?(pf.pilaT>0?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')+' · bellydump'+_fcNcTxt(pf)):'sandpile cell EMPTY at last pull (shift change) — re-pulling live · enter lbs if it persists'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
+      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'+(pf.bpl>1?' (net per load ÷ '+pf.bpl+' · double boxes)':'')+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')+_fcNcTxt(pf)):pf.invType==='pila'?(pf.pilaT>0?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')+' · bellydump'+_fcNcTxt(pf)):'sandpile cell EMPTY at last pull (shift change) — re-pulling live · enter lbs if it persists'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
     </div>
     <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· learned truck roster drives the crew curve · 6/12/24 h + avg pace projections</span></div>
     <div class="fc-gwrap mb">
