@@ -1031,6 +1031,26 @@ tr.pg-more button b{margin-left:10px;color:#1c3d54}
 .rh-k .k .t{font:800 8px/1.2 'Plus Jakarta Sans';letter-spacing:.08em;text-transform:uppercase;color:#7b8a99}
 .rh-k .k .v{font:800 16px/1.25 'Plus Jakarta Sans';color:#17293a;margin-top:2px}.rh-k .k .s{font:600 9px/1.3 'Plus Jakarta Sans';color:#8a97a6}
 .rh-note{font:500 10px/1.5 'Plus Jakarta Sans';color:#64748b;margin-top:6px}
+/* .141 · resumen por driver */
+.rs-card{margin:0 0 14px}.rs-fs{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 2px}
+.rs-f{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border-radius:999px;border:1px solid #e3ecf3;background:#f7fafc;font:700 10.5px/1 'Plus Jakarta Sans';color:#33475b;cursor:pointer;transition:transform .14s,box-shadow .14s,background .14s}
+.rs-f b{font:800 12.5px/1 'Plus Jakarta Sans'}.rs-f:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(28,61,84,.10)}
+.rs-f.on{box-shadow:0 0 0 2px rgba(28,61,84,.55) inset}
+.rs-f.rs-well{background:#eaf7f0;border-color:#cdebdb;color:#1f6b45}.rs-f.rs-watch{background:#fdf5e1;border-color:#f3e2b3;color:#8a6414}
+.rs-f.rs-hours{background:#fdecea;border-color:#f6cfca;color:#a3362c}.rs-f.rs-review{background:#f2edfb;border-color:#ddd2f3;color:#5b3fa0}.rs-f.rs-info{background:#eef4fa;border-color:#d8e5f0;color:#2d5a7b}
+.rs-row td{vertical-align:middle;padding-top:7px!important;padding-bottom:7px!important}
+.rs-row.rs-hours{background:rgba(253,236,234,.45)}.rs-row.rs-review{background:rgba(242,237,251,.45)}
+.rs-nm{font-weight:800;color:#1e293b;cursor:pointer;white-space:nowrap}.rs-nm:hover{text-decoration:underline}.rs-co{font:600 9px/1.3 'Plus Jakarta Sans';color:#8a97a6}
+.rs-st{display:inline-block;padding:3px 9px;border-radius:999px;font:800 9.5px/1.3 'Plus Jakarta Sans';white-space:nowrap}
+.rs-st.rs-well{background:#d5f0e1;color:#14532d}.rs-st.rs-watch{background:#fbecc4;color:#7a5a12}.rs-st.rs-hours{background:#fbd5d0;color:#8f1d1d}.rs-st.rs-review{background:#e6dcf7;color:#4c2f8f}
+.rs-n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}.rs-sub{font:600 8.5px/1.3 'Plus Jakarta Sans';color:#94a3b8}
+.rs-tr{padding:2px 7px;border-radius:6px;font:800 10px/1.4 'Plus Jakarta Sans'}.rs-tr.tr-g{background:#dcfce7;color:#166534}.rs-tr.tr-b{background:#dbeafe;color:#1e40af}.rs-tr.tr-r{background:#fee2e2;color:#991b1b}
+.rs-h{padding:2px 7px;border-radius:6px;font-weight:800}.rs-bad{color:#b42318;font-weight:800}.rs-na{color:#cbd5e1}
+.rs-al{min-width:330px}.rs-c{display:inline-block;margin:2px 4px 2px 0;padding:2px 8px;border-radius:7px;font:700 9px/1.4 'Plus Jakarta Sans';white-space:nowrap}
+.rs-c.bad{background:#fde3df;color:#9f2a1f}.rs-c.warn{background:#fdf0d2;color:#80590c}.rs-c.info{background:#e8f0f8;color:#2d5a7b}.rs-c.ok{background:#e3f5ea;color:#1f6b45}
+.rs-last{white-space:nowrap;color:#64748b;font-size:10px}
+.fc-in[readonly]{background:#f3f6f9;color:#51657a;cursor:default}
+.hr-rc{display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;background:#e8f0f8;color:#2d5a7b;font:800 8px/1.3 'Plus Jakarta Sans';letter-spacing:.06em;text-transform:uppercase;vertical-align:middle}
 .c7{background:#86EFAC;color:#14532d}.c56{background:#BBF7D0;color:#166534}.c34{background:#FDE68A;color:#854d0e}.c12{background:#FECACA;color:#991b1b}.c0{color:transparent}
 .sbar{width:72px;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:5px}
 .sfill{height:100%;border-radius:3px}
@@ -1772,7 +1792,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-11-02.140';
+const VBUILD='2026-11-02.141';
 /* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
    abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
 const CT_TZ='America/Chicago';
@@ -3251,6 +3271,8 @@ let _cycView='all',_cycComp='total';
 /* ═══════ ADAPTADOR — construye M desde los globals del portal ═══════ */
 /* .140 · roster[].dh (GAS v11.0) → {NOMBRE:{'YYYY-MM-DD':[{st,en,h,n,k,rb,tm}], _mean, _sp, _tm, _n}}
    st/en = horas desde las 00:00 del día operativo (st<0 = arrancó la noche anterior · en≥24 = terminó al día siguiente) */
+/* .141 · ¿la serie por hora viene en reloj real (GAS v11.1)? */
+function GAS_REAL_CLK(){const dg=(typeof ACTIVE_META!=='undefined'&&ACTIVE_META&&ACTIVE_META.diag)||null;return !!(dg&&dg.hourly_clock&&dg.hourly_clock.mode==='real');}
 function _drvHrsIdx(R){if(!Array.isArray(R)||!R.some(r=>r&&Array.isArray(r.dh)))return null;const o={};
   R.forEach(r=>{if(!r||!Array.isArray(r.dh))return;const D=o[String(r.d).toUpperCase()]={_sp:+r.sp||0,_tm:+r.tm||0,_src:r.src||''};const cl=[];
     r.dh.forEach(x=>{if(!x||!x[0])return;const e={st:+x[1],en:+x[2],h:+x[3]||0,n:+x[4]||0,k:String(x[5]||''),rb:x[6]==null?null:+x[6],tm:+x[7]||0};
@@ -3538,7 +3560,7 @@ function buildM(){
       if(hd&&hd.l&&hd.l.length===24){
         const A=k=>(hd[k]&&hd[k].length===24)?hd[k].map(v=>+v||0):Array(24).fill(0);
         HR={lab:Array.from({length:24},(_,h2)=>String(h2).padStart(2,'0')+':00'),
-          L:A('l'),DRH:A('dr'),RV:A('rv'),FS:A('fs'),TNh:A('tn'),TEh:A('te'),TRh:A('tr'),DEh:A('de')};
+          L:A('l'),DRH:A('dr'),RV:A('rv'),FS:A('fs'),TNh:A('tn'),TEh:A('te'),TRh:A('tr'),DEh:A('de'),AC:A('ac')}; /* .141: ac = en turno (GAS v11.1) */
         HR.TOT=HR.lab.map((_,i)=>(HR.TEh[i]>0||HR.TRh[i]>0||HR.DEh[i]>0)?Math.round(HR.TRh[i]*2+HR.TEh[i]+HR.DEh[i]):null);
         HR.slots=_dtHourSlots([ISO[0]]); /* .134 */
         let _hcum=0;HR.CUM=HR.L.map(v=>_hcum+=v);
@@ -3563,16 +3585,16 @@ function buildM(){
     const byD={};HOURLY.forEach(x=>{byD[String(x.date).slice(0,10)]=x;});
     const hT=PZCYC?(((typeof HOURLY_T!=='undefined'&&HOURLY_T)||[]).filter(x=>x.terminal===PZCYC)):null;
     const byT={};(hT||[]).forEach(x=>{byT[String(x.date).slice(0,10)]=x;});
-    const lab=[],L1=[],DR1=[],RV1=[],FS1=[],CU1=[],TE1=[],TR1=[],DE1=[],L2=[],DR2=[],TE2=[],TR2=[],DE2=[];
+    const lab=[],L1=[],DR1=[],RV1=[],FS1=[],CU1=[],TE1=[],TR1=[],DE1=[],AC1=[],L2=[],DR2=[],TE2=[],TR2=[],DE2=[];
     ISO.forEach(d=>{const hd=byD[d],hb=byT[d];const sp={};if(hb&&hb.h)hb.h.forEach((hh,j)=>{sp[hh]=j;});let cu=0;
       for(let h2=0;h2<24;h2++){lab.push(shortDay(d)+' '+_dp2(h2)+':00');
         const g=k=>(hd&&hd[k]&&hd[k].length===24)?(+hd[k][h2]||0):0;
-        L1.push(g('l'));DR1.push(g('dr'));RV1.push(g('rv'));FS1.push(g('fs'));cu+=g('l');CU1.push(cu);TE1.push(g('te'));TR1.push(g('tr'));DE1.push(g('de'));
+        L1.push(g('l'));DR1.push(g('dr'));RV1.push(g('rv'));FS1.push(g('fs'));cu+=g('l');CU1.push(cu);TE1.push(g('te'));TR1.push(g('tr'));DE1.push(g('de'));AC1.push(g('ac'));
         const j=sp[h2],gb=k=>(hb&&j!=null&&hb[k])?(+hb[k][j]||0):0;
         L2.push(gb('l'));DR2.push(gb('dr'));TE2.push(gb('te'));TR2.push(gb('tr'));DE2.push(gb('de'));}});
     const slots=_dtHourSlots(ISO);const _k=_hrKeep(ISO);
-    [lab,slots,L1,DR1,RV1,FS1,CU1,TE1,TR1,DE1,L2,DR2,TE2,TR2,DE2].forEach(a=>{if(a.length>_k)a.length=_k;});
-    if(L1.some(v=>v>0))HLM={lab,slots,L:L1,DRH:DR1,RV:RV1,FS:FS1,CUM:CU1,multi:true};
+    [lab,slots,L1,DR1,RV1,FS1,CU1,TE1,TR1,DE1,AC1,L2,DR2,TE2,TR2,DE2].forEach(a=>{if(a.length>_k)a.length=_k;});
+    if(L1.some(v=>v>0))HLM={lab,slots,L:L1,DRH:DR1,RV:RV1,FS:FS1,CUM:CU1,AC:AC1,multi:true};
     const useT=!!PZCYC;
     if(!useT||Object.keys(byT).length){
       HRM={lab,slots,L:useT?L2:L1,DRH:useT?DR2:DR1,TEh:useT?TE2:TE1,TRh:useT?TR2:TR1,DEh:useT?DE2:DE1,multi:true,term:PZCYC||''};
@@ -3888,7 +3910,7 @@ function bDaily(){
       ${kchip('NPT Impact',m.nptTot+'h',m.DTE.length+' events · '+m.nptLog+'h logistics',m.nptTot>0?'kr':'kg')}
     </div>
     <div class="grid g2 mb">
-      <div class="card"><div class="ch-hd"><div class="card-t">${H1?'Loads &amp; Active Drivers by Hour — '+(H1.multi?m.D[0]+' – '+m.D[m.n-1]:m.D[0]):'Loads/Day &amp; Drivers vs Target ('+m.dTgt+' / '+m.dDrv+')'}</div><div class="ch-ctl">${dtChip('chDailyL',m.DTW.length>0)}${hvSeg('dly',m.n>1&&!!m.HLM)}</div></div><div class="ch ch-l"><canvas id="chDailyL"></canvas></div></div>
+      <div class="card"><div class="ch-hd"><div class="card-t">${H1?'Loads &amp; Drivers by Hour — '+(H1.multi?m.D[0]+' – '+m.D[m.n-1]:m.D[0])+((typeof GAS_REAL_CLK==='function'&&GAS_REAL_CLK())?' <span class="hr-rc" title="Offline deliveries (stamp synced late) sit in the hour they really happened — In Transit / At Staging + the typical leg of their terminal. Day totals unchanged.">real clock</span>':''):'Loads/Day &amp; Drivers vs Target ('+m.dTgt+' / '+m.dDrv+')'}</div><div class="ch-ctl">${dtChip('chDailyL',m.DTW.length>0)}${hvSeg('dly',m.n>1&&!!m.HLM)}</div></div><div class="ch ch-l"><canvas id="chDailyL"></canvas></div></div>
       <div class="card"><div class="ch-hd"><div class="card-t">${m.HR?'Day Running Total by Hour vs Target Pace ('+m.dTgt+')':'Turn Rate by Day vs Design '+m.DTR}</div>${dtChip('chDailyTR',m.DTW.length>0)}</div><div class="ch ch-l"><canvas id="chDailyTR"></canvas></div></div>
     </div>
     ${(m.PART.has&&!m.HR)?`<div class="card mb"><div class="card-t">Daily participation on the pad${m.PART.tgt!=null?' vs Target ('+m.PART.tgt+'%)':''} — Load # global</div><div class="ch"><canvas id="chPart"></canvas></div></div>`:''}
@@ -3910,12 +3932,14 @@ function bDaily(){
   if(H1){const h=H1;
     mkChart('chDailyL',{dt:dtHours(m,h),scroll:h.multi?{n:h.lab.length,px:14}:null,type:'bar',data:{labels:h.lab,datasets:[
       {label:'Loads/hour',data:h.L,backgroundColor:h.L.map(v=>v>0?'rgba(106,184,154,.85)':'rgba(203,213,225,.25)'),borderRadius:4,borderSkipped:false,order:2,yAxisID:'y'},
-      {label:'Active drivers',data:h.DRH.map(v=>v>0?v:null),type:'line',borderColor:PZ.A,pointRadius:3,pointBackgroundColor:PZ.A,tension:.35,order:1,yAxisID:'y1',borderWidth:2.5,pointBorderColor:'#fff',pointBorderWidth:1.5,spanGaps:true}]},
+      {label:'Drivers delivering',data:h.DRH.map(v=>v>0?v:null),type:'line',borderColor:PZ.A,pointRadius:3,pointBackgroundColor:PZ.A,tension:.35,order:1,yAxisID:'y1',borderWidth:2.5,pointBorderColor:'#fff',pointBorderWidth:1.5,spanGaps:true}]
+      .concat((h.AC&&h.AC.some(v=>v>0))?[{label:'On shift',data:h.AC.map(v=>v>0?+(+v).toFixed(1):null),type:'line',borderColor:'rgba(96,136,168,.9)',backgroundColor:'rgba(120,156,186,.10)',fill:'origin',borderDash:[5,3],pointRadius:0,pointHoverRadius:4,tension:.35,order:0,yAxisID:'y1',borderWidth:1.8,spanGaps:true}]:[])},
       options:{interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9}}},crosshair:{},
         tooltip:{callbacks:{title:c=>h.multi?h.lab[c[0].dataIndex]:`${h.lab[c[0].dataIndex]} — ${m.D[0]}`,label:c=>tipL(c),
-          afterBody:it=>{const i=it[0].dataIndex;if(!h.L[i]&&!h.DRH[i])return['No deliveries this hour'];
+          afterBody:it=>{const i=it[0].dataIndex;const ac=h.AC?+h.AC[i]||0:0;if(!h.L[i]&&!h.DRH[i])return ac>0?['No deliveries this hour',`On shift: ${ac.toFixed(1)} drivers (between first At Terminal and last delivery)`]:['No deliveries this hour'];
             const out=[sep,`Hour revenue: ${fK(h.RV[i])}`+(h.FS[i]>0?` (rate ${fK(h.RV[i]-h.FS[i])} + FSC ${fK(h.FS[i])})`:'')];
             if(h.DRH[i]>0)out.push(`Loads/driver: ${(h.L[i]/h.DRH[i]).toFixed(2)}`);
+            if(ac>0)out.push(`On shift: ${ac.toFixed(1)} drivers · ${(h.L[i]/ac).toFixed(2)} loads per on-shift driver`);
             out.push(`Day running total: ${h.CUM[i]} loads`+(m.dTgt?` (${Math.round(h.CUM[i]/m.dTgt*100)}% of target ${m.dTgt})`:''));
             return out;}}}},
         scales:{x:h.multi?_hrX(h.lab):{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:24}},y:{...gO,beginAtZero:true,position:'left',title:{display:true,text:'Loads',font:{size:8}}},
@@ -4755,12 +4779,17 @@ function dBd(tr){const m=M;return tr>=m.DTR?'star':tr>=m.DTR*0.85?'good':'review
 function cCls(v){return v>=7?'c7':v>=5?'c56':v>=3?'c34':v>=1?'c12':'c0';}
 function fR(v){return '$'+Math.round(v).toLocaleString('en-US');}
 function topCarriers(){return M.CD.slice(0,6).map(c=>c[0]);}
-window.rView=function(v){gV=v;setSegAct(['vLoads','vRev','vHrs'],v==='loads'?'vLoads':v==='rev'?'vRev':'vHrs');buildGrid();};
+window.rView=function(v){gV=v;setSegAct(['vLoads','vRev','vHrs','vSum'],v==='loads'?'vLoads':v==='rev'?'vRev':v==='sum'?'vSum':'vHrs');buildGrid();};
+window.rSum=function(k){gS=(gS===k)?'all':k;buildGrid();}; /* .141: chips del resumen = filtro (otro click lo quita) */
+let _gSK0=null;const _rViewS=window.rView;window.rView=function(v){ /* .141: Summary abre por estatus (peor primero); al salir vuelve el orden previo */
+  if(v==='sum'&&gV!=='sum'){_gSK0=[gSK,gSD];if(gSK==='score'){gSK='st';gSD=-1;}}
+  else if(v!=='sum'&&gV==='sum'&&_gSK0){if(['st','al','hrs','max','rest'].indexOf(gSK)>=0){gSK=_gSK0[0];gSD=_gSK0[1];}_gSK0=null;}
+  const el=$('gridSort');if(el)el.value=gSK;_rViewS(v);};
 window.rFilter=function(f2){gF=f2;setSegAct(['fAll','fTop','fGood','fReview'],{all:'fAll',top:'fTop',good:'fGood',review:'fReview'}[f2]);buildGrid();};
 window.rCarrier=function(ca){gC=ca;const ids=['cAll'].concat(topCarriers().map(c=>'c_'+c),['cOther']);setSegAct(ids,ca==='all'?'cAll':ca==='other'?'cOther':'c_'+ca);buildGrid();};
 // Repinta los botones de filtro per el estado persistido (tras un rebuild del pane)
 function gSyncSegs(){try{
-  setSegAct(['vLoads','vRev','vHrs'],gV==='loads'?'vLoads':gV==='rev'?'vRev':'vHrs');
+  setSegAct(['vLoads','vRev','vHrs','vSum'],gV==='loads'?'vLoads':gV==='rev'?'vRev':gV==='sum'?'vSum':'vHrs');
   setSegAct(['fAll','fTop','fGood','fReview'],{all:'fAll',top:'fTop',good:'fGood',review:'fReview'}[gF]||'fAll');
   const ids=['cAll'].concat(topCarriers().map(c=>'c_'+c),['cOther']);
   setSegAct(ids,gC==='all'?'cAll':gC==='other'?'cOther':'c_'+gC);
@@ -4772,7 +4801,7 @@ function bRost(){
   const avgDay=Math.round(m.runIdx.reduce((s,i)=>s+m.TD[i],0)/Math.max(m.runIdx.length,1));
   // Los filtros PERSISTEN entre refrescos automáticos y cambios de pestaña.
   // Solo se limpian cuando cambias de POZO (otro pad = otro roster).
-  if(_gWell!==CURRENT_ID){_gWell=CURRENT_ID;gC='all';gF='all';gV='loads';gSK='score';gSD=-1;gQ='';}
+  if(_gWell!==CURRENT_ID){_gWell=CURRENT_ID;gC='all';gF='all';gV='loads';gSK='score';gSD=-1;gQ='';gS='all';}
   $('pz-cl-rost').innerHTML=`
     <div class="st">${ICO.users} Driver Performance Grid — ${m.DR.length} Drivers · ${m.CD.length} Carriers · ${m.D[0]}–${m.D[m.n-1]}</div>
     <div class="grid g4 mb">
@@ -4783,7 +4812,7 @@ function bRost(){
     </div>
     <div class="ctrlbar">
       <div style="display:flex;align-items:center;gap:8px"><span class="ctrl-label">View</span>
-        <div class="seg-ctrl"><button id="vLoads" class="seg-btn seg-on" onclick="rView('loads')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.4"/></svg> Loads</button><button id="vRev" class="seg-btn" onclick="rView('rev')">$ Revenue</button><button id="vHrs" class="seg-btn" onclick="rView('hrs')" title="Hours worked per day — real clock: first At Terminal → last delivery"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg> Hours</button></div></div>
+        <div class="seg-ctrl"><button id="vLoads" class="seg-btn seg-on" onclick="rView('loads')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.4"/></svg> Loads</button><button id="vRev" class="seg-btn" onclick="rView('rev')">$ Revenue</button><button id="vHrs" class="seg-btn" onclick="rView('hrs')" title="Hours worked per day — real clock: first At Terminal → last delivery"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg> Hours</button><button id="vSum" class="seg-btn" onclick="rView('sum')" title="One line per driver — who runs well, who is out of hours and what to review"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18.5" cy="16.5" r="2.5"/></svg> Summary</button></div></div>
       <div class="ctrl-sep"></div>
       <div style="display:flex;align-items:center;gap:8px"><span class="ctrl-label">Status</span>
         <div class="seg-ctrl"><button id="fAll" class="seg-btn seg-on" onclick="rFilter('all')">All</button><button id="fTop" class="seg-btn" onclick="rFilter('top')">★ Stars</button><button id="fGood" class="seg-btn" onclick="rFilter('good')">✓ Good</button><button id="fReview" class="seg-btn" onclick="rFilter('review')">Review</button></div></div>
@@ -4792,7 +4821,7 @@ function bRost(){
         <div class="seg-ctrl" style="flex-wrap:wrap"><button class="seg-btn seg-on" id="cAll" onclick="rCarrier('all')">All</button>${topCarriers().map(c=>`<button class="seg-btn" id="c_${c}" onclick="rCarrier('${c}')">${c}</button>`).join('')}<button class="seg-btn" id="cOther" onclick="rCarrier('other')">Other</button></div></div>
       <div class="ctrl-sep"></div>
       <div style="display:flex;align-items:center;gap:8px"><span class="ctrl-label">Sort</span>
-        <select id="gridSort" onchange="sortGrid(this.value)" class="ctrl-sel"><option value="score">Score</option><option value="loads">Loads</option><option value="tr">TR</option><option value="rev">Revenue</option><option value="days">Days</option><option value="name">Name A–Z</option></select></div>
+        <select id="gridSort" onchange="sortGrid(this.value)" class="ctrl-sel"><option value="score">Score</option><option value="loads">Loads</option><option value="tr">TR</option><option value="rev">Revenue</option><option value="days">Days</option><option value="st">Status (worst first)</option><option value="al">Alerts</option><option value="hrs">Avg shift</option><option value="max">Longest shift</option><option value="rest">Shortest rest</option><option value="name">Name A–Z</option></select></div>
       <div class="ctrl-sep"></div>
       <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:140px"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="m20.5 20.5-4.8-4.8"/></svg><input id="gridSearch" placeholder="Driver or carrier..." value="${(gQ||'').replace(/"/g,'&quot;')}" oninput="gQ=this.value;clearTimeout(window._gQT);window._gQT=setTimeout(buildGrid,140)" class="ctrl-inp" style="flex:1"></div>
       <div id="gridSummary" style="margin-left:auto;font-size:10px;color:#475569;font-weight:600;white-space:nowrap"></div></div>
@@ -4824,7 +4853,16 @@ window.buildGrid=function(){
     return bandOk&&carrOk&&srOk;});
   const ARVL=m.totL?m.totR/m.totL:m.rpl;
   const ARVF=(m.totL&&m.totFsc)?m.totFsc/m.totL:0; // $/load de FSC promedio del range (para desglose estimado)
-  const sF={score:(a,b)=>gSD*(dSc(b)-dSc(a)),loads:(a,b)=>gSD*(gV==='hrs'?(_hAvg(b)-_hAvg(a)):(b[2]-a[2])),tr:(a,b)=>gSD*(b[4]-a[4]),rev:(a,b)=>gSD*(b[2]-a[2]),days:(a,b)=>gSD*(b[3]-a[3]),name:(a,b)=>gSD*a[0].localeCompare(b[0])};
+  /* .141: gSD −1 = la flecha ↓ (mayor primero; nombre A–Z; descanso más corto primero) — antes el signo iba al revés
+     y el grid abría con el PEOR score arriba y las medallas 1-2-3 en él */
+  const _d=(va,vb)=>gSD<0?((+vb||0)-(+va||0)):((+va||0)-(+vb||0)),SM=d=>drvSum(m,d),_sr={hours:3,review:2,watch:1,well:0};
+  const sF={score:(a,b)=>_d(dSc(a),dSc(b)),loads:(a,b)=>gV==='hrs'?_d(_hAvg(a),_hAvg(b)):_d(a[2],b[2]),tr:(a,b)=>_d(a[4],b[4]),rev:(a,b)=>_d(a[2],b[2]),days:(a,b)=>_d(a[3],b[3]),
+    name:(a,b)=>gSD<0?a[0].localeCompare(b[0]):b[0].localeCompare(a[0]),
+    st:(a,b)=>_d(_sr[SM(a).st]*1e3+SM(a).nBad*10+SM(a).nWarn,_sr[SM(b).st]*1e3+SM(b).nBad*10+SM(b).nWarn)||_d(a[2],b[2]),
+    al:(a,b)=>_d(SM(a).nBad*10+SM(a).nWarn,SM(b).nBad*10+SM(b).nWarn)||_d(a[2],b[2]),
+    hrs:(a,b)=>_d(SM(a).avgH,SM(b).avgH),max:(a,b)=>_d(SM(a).mx,SM(b).mx),
+    rest:(a,b)=>{const ra=SM(a).minR,rb=SM(b).minR;const x=ra==null?99:ra,y=rb==null?99:rb;return gSD<0?(x-y):(y-x);}};
+  if(gV==='sum'){rostSumGrid(m,rows,sF,search);return;}
   rows.sort(sF[gSK]||sF.score);
   const si=c=>gSK===c?(gSD<0?' ↓':' ↑'):'<span style="color:#e2e8f0"> ⇵</span>';
   const totF=rows.reduce((a,d)=>a+d[2],0);
@@ -4848,7 +4886,7 @@ window.buildGrid=function(){
     const pct=totF>0?(tot/totF*100).toFixed(0):0;
     const trBg=tr>=m.DTR?'#dcfce7':tr>=m.DTR*0.85?'#dbeafe':'#fee2e2';
     const trCl=tr>=m.DTR?'#166534':tr>=m.DTR*0.85?'#1e40af':'#991b1b';
-    const medal=i<3&&gF==='all'&&gC==='all'&&!search?medals[i]:'';
+    const medal=i<3&&gF==='all'&&gC==='all'&&!search&&gSK==='score'&&gSD<0?medals[i]:''; /* .141: medallas = top por score */
     const dayCells=daily.map((v,idx)=>{
       if(gV==='hrs'){ /* .140: horas de su(s) jornada(s) de ese día operativo */
         const hv=d._h?d._h[idx]:0,L=(d._hx&&d._hx[m.ISO[idx]])||[];
@@ -4888,6 +4926,102 @@ window.buildGrid=function(){
     :'<span><span class="leg-sq" style="background:#86EFAC"></span>≥7</span><span><span class="leg-sq" style="background:#BBF7D0"></span>5–6</span><span><span class="leg-sq" style="background:#FDE68A"></span>3–4</span><span><span class="leg-sq" style="background:#FECACA"></span>1–2</span>';}
   try{rostHrsCard(m,rows);}catch(e){if(typeof blog==='function')blog('rostHrsCard '+e.message,true);}
 };
+/* ═══ .141 · RESUMEN POR DRIVER — una línea por driver con lo que importa para operar: quién corre bien, quién
+   está FUERA DE HORAS (jornada >14 h, descanso <10 h, media fuera de 8–16 h, en turno pasado de 14 h) y qué
+   revisar (TR <85% de la meta, peso >80k). Se cruza con los filtros de carrier/estatus/búsqueda y con el rango. ═══ */
+let gS='all';
+const RS_ST={well:{t:'Running well',c:'rs-well'},watch:{t:'Watch',c:'rs-watch'},hours:{t:'Out of hours',c:'rs-hours'},review:{t:'Review',c:'rs-review'}};
+function _rsRos(){const R=RES_DATA[CURRENT_ID];const w=R&&R.ok&&R.w;const o={};((w&&w.roster)||[]).forEach(r=>{o[String(r.d).toUpperCase()]=r;});
+  const da=String((((w&&w.diag)||{}).roster_clock||{}).data_at||'');return {o,w,dA:_fcTSm(da)};}
+function drvSum(m,d){if(d.$smM===m&&d.$sm)return d.$sm;
+  const key=String(d[0]).replace(/\s*↔\s*$/,'').trim().toUpperCase();
+  const RR=m._rsR||(m._rsR=_rsRos());const r=RR.o[key]||null,w=RR.w;
+  const bm=m._bdM||(m._bdM=(function(){const o={};(((w)||{}).byDriver||[]).forEach(x=>{o[String(x.driver).toUpperCase()]=x;});return o;})());
+  const bd=bm[key]||null;const hx=d._hx||null;const S=[];let open=null;
+  if(hx)m.ISO.forEach(iso=>{(hx[iso]||[]).forEach(e=>{if(e.tm)return; /* 24/7 (dos personas en un login): sus días no cuentan como jornada de una persona */
+    const e2=Object.assign({d:iso},e);if(e.k==='open')open=e2;else S.push(e2);});});
+  const nS=S.length,H=S.map(e=>e.h),avgH=nS?H.reduce((a,b)=>a+b,0)/nS:null;
+  const mx=nS?S.reduce((a,e)=>e.h>a.h?e:a,S[0]):null,ls=nS?S[nS-1]:null;
+  const n14=S.filter(e=>e.h>14&&!e.tm).length,n8=S.filter(e=>e.h<8&&e.k!=='f'&&!e.tm).length;
+  const RB=S.concat(open?[open]:[]).filter(e=>e.rb!=null),minR=RB.length?Math.min(...RB.map(e=>e.rb)):null,nR10=RB.filter(e=>e.rb<10).length;
+  const isoS=new Set(m.ISO);const ovN=(((w&&w.wt&&w.wt.ovL)||[]).filter(x=>isoS.has(String(x[0]).slice(0,10))&&String(x[2]||'').toUpperCase()===key)).length;
+  const gw=(bd&&+bd.avg_gross)||0;
+  const lastT=r?_fcTSm(r.lm||r.last):null,ref=RR.dA||Date.now(),offH=lastT!=null?(ref-lastT)/36e5:null,off=offH!=null&&offH>=24;
+  const isNew=!!(r&&(r.nw||(+r.days||0)<=1)),onNow=!!(r&&+r.op===1&&!off);
+  const _wS=x=>{x=String(x||'');return x.length>=16?_wms(x.slice(0,10),x.slice(11,16)):null;};
+  const csW=r?_wS(r.cs):null,nW2=_wOf(Date.now()),dW=_wS(((((w&&w.diag)||{}).roster_clock)||{}).data_at);
+  const onH=(onNow&&csW!=null)?Math.max(0,(Math.min(nW2,dW!=null?dW+36e5:nW2)-csW)/36e5):null; /* desde su 1er At Terminal, al reloj del dato */
+  const tr=+d[4]||0,DT=+m.DTR||0;const al=[];
+  if(n14)al.push({k:'bad',g:'hours',t:'Shift over 14 h ×'+n14+' (max '+mx.h.toFixed(1)+' h)'});
+  if(nR10)al.push({k:'bad',g:'hours',t:'Rest under 10 h ×'+nR10+' (min '+minR.toFixed(1)+' h)'});
+  if(onH!=null&&onH>=13)al.push({k:'bad',g:'hours',t:'On duty '+onH.toFixed(1)+' h since 1st At Terminal — 14 h window reached (with pre-trip)'});
+  if(avgH!=null&&nS>=2&&(avgH>16||avgH<8))al.push({k:'bad',g:'hours',t:'Avg shift '+avgH.toFixed(1)+' h (healthy 11–14)'});
+  else if(avgH!=null&&nS>=2&&!(avgH>=11&&avgH<=14))al.push({k:'warn',g:'watch',t:'Avg shift '+avgH.toFixed(1)+' h'});
+  if(n8&&!(avgH!=null&&nS>=2&&avgH<8))al.push({k:'info',g:'info',t:'Short shift under 8 h ×'+n8}); /* nota: no cambia su estatus */
+  if(DT>0&&tr>0&&tr<DT*0.85)al.push({k:'bad',g:'review',t:'TR '+tr.toFixed(1)+' — '+Math.round((1-tr/DT)*100)+'% under target '+DT});
+  if(gw>80000)al.push({k:'bad',g:'review',t:'Avg gross over 80k ('+fmt(gw)+')'});
+  else if(ovN>=2)al.push({k:'bad',g:'review',t:'Over 80k gross ×'+ovN});
+  else if(gw>0&&gw<70000)al.push({k:'warn',g:'watch',t:'Under-loaded — avg gross '+fmt(gw)});
+  else if(gw>0&&gw<78000)al.push({k:'warn',g:'watch',t:'Gross below the 78k floor'});
+  if(ovN===1&&gw<=80000)al.push({k:'info',g:'info',t:'1 load over 80k'}); /* nota: no cambia su estatus */
+  if(r&&+r.tm)al.push({k:'warn',g:'watch',t:'24/7 login — likely two drivers'});
+  if(onNow)al.push({k:'info',g:'info',t:'On shift'+(onH!=null?' · '+onH.toFixed(1)+' h in · ~'+Math.max(0,13-onH).toFixed(1)+' h HOS left':'')});
+  if(isNew)al.push({k:'info',g:'info',t:'New on this pad'});
+  if(off)al.push({k:'info',g:'info',t:'Off pad '+(offH>=48?Math.floor(offH/24)+' d':Math.round(offH)+' h')});
+  const st=al.some(a=>a.g==='hours')?'hours':al.some(a=>a.g==='review')?'review':al.some(a=>a.k==='warn')?'watch':'well';
+  const o={st,al,nS,avgH,mx:mx?mx.h:null,mxD:mx?mx.d:'',ls:ls?ls.h:null,lsD:ls?ls.d:'',open,minR,nR10,n14,n8,gw,ovN,isNew,off,offH,onNow,onH,
+    last:r?(r.lm||r.last||''):'',nBad:al.filter(a=>a.k==='bad').length,nWarn:al.filter(a=>a.k==='warn').length,
+    hrsOk:!!hx,hoursIn:al.some(a=>a.g==='hours'),reviewIn:al.some(a=>a.g==='review')};
+  try{d.$smM=m;d.$sm=o;}catch(_){}return o;}
+const RS_F={all:()=>true,well:o=>o.st==='well',watch:o=>o.st==='watch',hours:o=>o.hoursIn,review:o=>o.reviewIn,'new':o=>o.isNew,on:o=>o.onNow,off:o=>o.off};
+function rostSumGrid(m,rows0,sF,search){
+  const all=rows0.map(d=>({d,o:drvSum(m,d)}));
+  const cnt={};Object.keys(RS_F).forEach(k=>{cnt[k]=all.filter(x=>RS_F[k](x.o)).length;});
+  if(!RS_F[gS])gS='all';
+  const rows=all.filter(x=>RS_F[gS](x.o)).map(x=>x.d);rows.sort(sF[gSK]||sF.st);
+  const chip=(k,t,cls,tip)=>'<span class="rs-f '+cls+(gS===k?' on':'')+'" onclick="rSum(\''+k+'\')" title="'+tip+'"><b>'+cnt[k]+'</b> '+t+'</span>';
+  const host=$('rostHrs');if(host)host.innerHTML='<div class="card rs-card"><div class="card-t" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Driver summary — '+m.D[0]+(m.n>1?' – '+m.D[m.n-1]:'')
+    +'<span class="sb" style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:600">click a chip to filter · combines with carrier, status and search</span></div>'
+    +'<div class="rs-fs">'+chip('all','All','rs-fa','Every driver in the selection')+chip('well','Running well','rs-well','TR at 85%+ of target, healthy hours, weight in range')
+    +chip('watch','Watch','rs-watch','Yellow flags: average shift 8–11 or 14–16 h, light loads, 24/7 login')+chip('hours','Out of hours','rs-hours','Shift over 14 h, rest under 10 h, average shift outside 8–16 h or past 14 h on duty now')
+    +chip('review','Review','rs-review','TR under 85% of target or gross over 80k')+chip('new','New','rs-info','First day(s) on this pad')
+    +chip('on','On shift','rs-info','Working right now (last delivery under 3 h ago)')+chip('off','Off pad','rs-info','No load for 24 h+')+'</div>'
+    +(all.some(x=>x.o.hrsOk)?'':'<div class="note rh-card" style="margin:6px 0 0">Shift hours arrive with <b>GAS v11.0+</b> — hours checks are off until then.</div>')+'</div>';
+  const si=c=>gSK===c?(gSD<0?' ↓':' ↑'):'<span style="color:#e2e8f0"> ⇵</span>';
+  const th=(t,k,al,mw,tip)=>'<th'+(k?' onclick="sortGrid(\''+k+'\')"':'')+' style="text-align:'+(al||'right')+';min-width:'+(mw||52)+'px"'+(tip?' title="'+tip+'"':'')+'>'+t+(k?si(k):'')+'</th>';
+  $('perfHead').innerHTML='<tr><th style="text-align:center;min-width:28px">#</th>'+th('Driver','name','left',160)+th('Status','st','left',96)
+    +th('Loads','loads')+th('TR','tr','right',64,'Turn rate on pump days vs well target')+th('Days','days','right',40)
+    +th('Avg shift','hrs','right',70,'Average closed shift in the selected days — first At Terminal to last delivery')+th('Longest','max','right',62)
+    +th('Last shift','','right',70)+th('Min rest','rest','right',62,'Shortest rest before a shift (HOS needs 10 h)')+th('Gross avg','','right',70,'Average gross weight on this pad (78–80k window)')
+    +th('Score','score','right',50)+th('Alerts','al','left',220)+th('Last load','','left',96)+'</tr>';
+  const dtr=+m.DTR||0;
+  const _rh=rows.map((d,i)=>{const o=drvSum(m,d),S=RS_ST[o.st];
+    const tr=+d[4]||0,trC=dtr?(tr>=dtr?'tr-g':tr>=dtr*0.85?'tr-b':'tr-r'):'tr-b',dlt=dtr?Math.round((tr/dtr-1)*100):null;
+    const h=v=>v==null?'<span class="rs-na">—</span>':v.toFixed(1)+' h';
+    const gwB=gwBand(o.gw);
+    const chips=o.al.length?o.al.map(a=>'<span class="rs-c '+a.k+'">'+a.t+'</span>').join(''):'<span class="rs-c ok">All clear</span>';
+    const nm=String(d[0]).replace(/'/g,"\\'");
+    return '<tr class="rs-row '+S.c+'">'
+      +'<td style="text-align:center;color:#94a3b8;font-size:9px;font-weight:600">'+(i+1)+'</td>'
+      +'<td><span class="rs-nm" onclick="drvProfile(\''+nm+'\')" title="Open profile">'+_eh(d[0])+'</span><div class="rs-co">'+_eh(d[1])+'</div></td>'
+      +'<td><span class="rs-st '+S.c+'">'+S.t+'</span></td>'
+      +'<td class="rs-n"><b>'+d[2]+'</b></td>'
+      +'<td class="rs-n"><span class="rs-tr '+trC+'">'+tr+'</span>'+(dlt!=null?'<div class="rs-sub">'+(dlt>=0?'+':'')+dlt+'% vs '+dtr+'</div>':'')+'</td>'
+      +'<td class="rs-n">'+d[3]+'</td>'
+      +'<td class="rs-n">'+(o.avgH!=null?'<span class="rs-h '+hCls(o.avgH)+'">'+h(o.avgH)+'</span><div class="rs-sub">'+o.nS+' shift'+(o.nS===1?'':'s')+'</div>':(o.open?'<span class="rs-sub">in progress</span>':h(null)))+'</td>'
+      +'<td class="rs-n">'+(o.mx!=null?'<span class="'+(o.mx>14?'rs-bad':'')+'">'+h(o.mx)+'</span><div class="rs-sub">'+String(o.mxD).slice(5)+'</div>':h(null))+'</td>'
+      +'<td class="rs-n">'+(o.ls!=null?h(o.ls)+'<div class="rs-sub">'+String(o.lsD).slice(5)+'</div>':h(null))+'</td>'
+      +'<td class="rs-n">'+(o.minR!=null?'<span class="'+(o.minR<10?'rs-bad':'')+'">'+h(o.minR)+'</span>':h(null))+'</td>'
+      +'<td class="rs-n" style="color:'+gwB.col+'">'+(o.gw?fmt(o.gw):'—')+(o.ovN?'<div class="rs-sub">'+o.ovN+' over 80k</div>':'')+'</td>'
+      +'<td class="rs-n"><b>'+dSc(d)+'</b></td>'
+      +'<td class="rs-al">'+chips+'</td>'
+      +'<td class="rs-last">'+(o.last?String(o.last).slice(5).replace(' ',' · '):'—')+'</td></tr>';});
+  if(!_rh.length){const pb=$('perfBody');if(pb)pb.innerHTML='<tr><td colspan="14" style="text-align:center;color:#94a3b8;padding:16px">No drivers match these filters.</td></tr>';}
+  else _pgRows('perfBody',_rh,{first:_pgMob()?120:400,step:200,cols:14,noun:'drivers'});
+  const sumEl=$('gridSummary');if(sumEl){const tl=rows.reduce((a,d)=>a+d[2],0);
+    sumEl.innerHTML=rows.length+' drivers &nbsp;·&nbsp; <strong>'+fmt(tl)+'</strong> loads &nbsp;·&nbsp; <span style="color:#16a34a;font-weight:700">'+cnt.well+' running well</span> &nbsp;·&nbsp; <span style="color:#b45309;font-weight:700">'+cnt.hours+' out of hours</span> &nbsp;·&nbsp; <span style="color:#7c3aed;font-weight:700">'+cnt.review+' review</span>';}
+  {const lg=$('rostCellLeg');if(lg)lg.innerHTML='<span><span class="leg-sq" style="background:#d5f0e1"></span>Running well</span><span><span class="leg-sq" style="background:#fbecc4"></span>Watch</span><span><span class="leg-sq" style="background:#fbd5d0"></span>Out of hours</span><span><span class="leg-sq" style="background:#e6dcf7"></span>Review</span>';}
+  syncRosterCharts(rows);}
 /* .140 · HORAS DE TRABAJO — un día elegido: horas de cada driver ese día, su media en el pad y la media
    del día · varios días (vista Hours): promedio por jornada de cada driver en el rango */
 function rostHrsCard(m,rows){const host=$('rostHrs');if(!host)return;
@@ -5678,7 +5812,7 @@ function _fcPkHrs(hwA){if(!hwA)return '';const out=[];let a0=null;
     if(on&&a0==null)a0=h3;
     if(!on&&a0!=null){out.push(('0'+a0).slice(-2)+'–'+('0'+(h3%24)).slice(-2));a0=null;}}
   return out.join(' · ');}
-function fcRosterProj(w,now,H){
+function fcRosterProj(w,now,H,opt){opt=opt||{};
   const R=(w&&w.roster)||[];const exc=FC.exc[FC.id]||{};
   const curve=new Array(H+1).fill(0);const curveF=new Array(H+1).fill(0);
   const rows=[];const RECENT=36*36e5;
@@ -5697,7 +5831,9 @@ function fcRosterProj(w,now,H){
        después de su último load si ya las rebasó) y descansa 10 h (HOS) antes de volver a su patrón.
        Turno cerrado → 10 h de descanso desde su último load. 24/7 (tm) y GAS < v10.9 → sin ancla. */
     const csT=_fcTSm(r.cs),lmT=_fcTSm(r.lm);let curEnd=null,restEnd=null;
-    if(!r.tm&&csT!=null&&lmT!=null){curEnd=(+r.op===1)?Math.max(csT+sp*36e5,lmT+36e5):lmT;restEnd=curEnd+10*36e5;}
+    if(!r.tm&&csT!=null&&lmT!=null){curEnd=(+r.op===1)?Math.max(csT+sp*36e5,lmT+36e5):lmT;
+      if(opt.hos&&+r.op===1)curEnd=Math.max(curEnd,csT+opt.hos*36e5); /* .141: palanca — sigue hasta su ventana HOS */
+      restEnd=curEnd+10*36e5;}
     const pat=t=>{const d4=new Date(now+t*36e5);const hh=d4.getHours()+d4.getMinutes()/60;
       if(!hwA){let x=hh-aS;if(x<0)x+=24;return x<sp?1:0;}
       return hwA[d4.getHours()]||0;};
@@ -5729,8 +5865,9 @@ function fcHistHour(w,now){
   const p2=n=>('0'+n).slice(-2);const dN=new Date(now);
   const today=dN.getFullYear()+'-'+p2(dN.getMonth()+1)+'-'+p2(dN.getDate());
   const byH=Array.from({length:24},()=>[]);let any=false;
+  const _ac=((w&&w.hourly)||[]).some(d=>d&&Array.isArray(d.ac)&&d.ac.some(v=>+v>0)); /* .141: drivers EN TURNO (GAS v11.1) — misma unidad que la curva */
   ((w&&w.hourly)||[]).forEach(d=>{if(!d||!startOp||d.date<startOp||d.date===today)return;
-    for(let h2=0;h2<24;h2++){const v=(d.dr&&+d.dr[h2])||0;byH[h2].push(v);if(v>0)any=true;}});
+    for(let h2=0;h2<24;h2++){const v=_ac?Math.round((d.ac&&+d.ac[h2])||0):((d.dr&&+d.dr[h2])||0);byH[h2].push(v);if(v>0)any=true;}});
   if(!any)return null;
   return byH.map(a=>{if(!a.length)return 0;const q=a.slice().sort((x,y)=>x-y);return q[Math.floor(q.length/2)];});}
 /* ── .124 · SCORE v2 — compuesto renormalizado: solo puntúa lo que tiene dato real.
@@ -5840,11 +5977,12 @@ function _fcClk(){const L=(typeof STATUS!=='undefined'&&STATUS&&STATUS.latest)?S
   return (W>_wOf(n)+18e5&&W<=wl+18e5)?'loc':'ct';}
 function _fcW(ms,c){if(c==='loc'){const d=new Date(ms);return Date.UTC(d.getFullYear(),d.getMonth(),d.getDate(),d.getHours(),d.getMinutes(),d.getSeconds());}return _wOf(ms);}
 function _fcMs(W,c){if(c==='loc'){const d=new Date(W);return new Date(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate(),d.getUTCHours(),d.getUTCMinutes(),d.getUTCSeconds()).getTime();}return _wToMs(W);}
+const fK2=v=>{v=+v||0;return v>=1e6?(v/1e6).toFixed(2)+'M':Math.round(v/1e3)+'K';}; /* .141 */
 const _fcHbTxt=()=>FC.hb==='all'?'whole well':(FC.hb===48?'48 h':FC.hb===24?'24 h':'12 h');
 /* misma reconstrucción que fcHistBuild (supply real − burn de etapas, hacia atrás desde la pila de
    ahora) pero en reloj Central y devolviendo el flujo de cada hora (para tooltips y downtimes) */
 function fcHistBuildW(w,now,hrs,inv0,liveM,c){
-  const map={};((w&&w.hourly)||[]).forEach(d=>{for(let h=0;h<24;h++)map[d.date+'|'+h]={tn:(d.tn&&+d.tn[h])||0,dr:(d.dr&&+d.dr[h])||0};});
+  const map={};((w&&w.hourly)||[]).forEach(d=>{const ac=Array.isArray(d.ac)&&d.ac.some(v=>+v>0);for(let h=0;h<24;h++)map[d.date+'|'+h]={tn:(d.tn&&+d.tn[h])||0,dr:ac?Math.round(+d.ac[h]||0):((d.dr&&+d.dr[h])||0)};}); /* .141: crew pasado = en turno (ac) */
   const sw=[];const SWf=stgWins((w&&w.stages)||[]);((w&&w.stages)||[]).forEach((s,i)=>{if(!(+s.used_tons>0)||!s.day)return;
     const x=SWf[i];let t0,t1;if(x){t0=x.a;t1=x.b!=null?x.b:t0+2*36e5;}else{t0=_wms(s.day,'00:00');if(t0==null)return;t1=t0+864e5;}
     sw.push([t0,t1,(+s.used_tons)*2000]);});
@@ -5877,21 +6015,29 @@ function fcCaps(w,c,belly,lbBox){const out=[];const st=(w&&w.stages)||[];const S
 window.fcHB=function(v){FC.hb=(v==='all')?'all':((+v===24||+v===48)?+v:12);
   setSegAct(['fcb12','fcb24','fcb48','fcball'],'fcb'+FC.hb);_vt(()=>fcCalc());};
 /* ── MOTOR v3: curva de crew + un burn → serie de inventario ── */
+/* .141 · SUPPLY REGULADO: el despacho sostiene la pila en su META (Bayswater 3.0M · cajas: GOAL o el nivel en que el
+   pad opera las últimas 48 h, el mayor) hasta el TECHO de capacidad del roster (drivers en turno × tasa en turno):
+   supply = min(capacidad, burn + (meta − pila) / 12 h). Bajo la meta todos jalan a tope; sobre la meta el fleet espera.
+   La pila solo se vacía si la CAPACIDAD no alcanza el burn — el NPT sale cuando de verdad va a pasar.
+   Backtest real Oasis/Nile 30-oct → 2-nov (39 cortes, error vs las capturas de Stages): MAE 0-6 h 161k · 6-12 h 169k ·
+   12-24 h 142k · 24-48 h 168k lbs, sesgo ≈ 0 y 0 NPT falsos (el modelo anterior: 237k/424k/821k/1,685k y NPT en 37/39). */
 function fcSim(p,burn){
   const H=Math.max(6,Math.round(p.H||48));
   const bumpSpan=Math.max(1,Math.round(p.cycH||2));
-  const solid=[],red=[],sup=[];let inv=Math.max(0,p.inv0),runS=null;
+  const rg=(p.reg&&+p.reg.tg>0)?p.reg:null,tau=rg?Math.max(2,+rg.tau||12):0;
+  const solid=[],red=[],sup=[],cap=[];let inv=Math.max(0,p.inv0),runS=null;
   for(let t=0;t<=H;t++){
     solid.push(Math.round(inv));
     const drv=p.curve[Math.min(t,p.curve.length-1)]||0;
-    const s=drv*p.perDrvH+((t<bumpSpan)?(Math.max(0,p.bumpLoads)*p.avgLoad)/bumpSpan:0);
-    sup.push(Math.round(s));
+    const c=drv*p.perDrvH+((t<bumpSpan)?(Math.max(0,p.bumpLoads)*p.avgLoad)/bumpSpan:0);
+    const s=rg?Math.min(c,Math.max(0,burn+(rg.tg-inv)/tau)):c;
+    sup.push(Math.round(s));cap.push(Math.round(c));
     const next=inv+s-burn;
     if(runS==null&&next<=0&&burn>s)runS=t+Math.min(1,inv/Math.max(burn-s,1));
     red.push(next<=0&&s<burn);
     inv=Math.max(0,next);
   }
-  return {H,solid,red,sup,runS:(runS!=null&&runS<=H)?runS:null,
+  return {H,solid,red,sup,cap,runS:(runS!=null&&runS<=H)?runS:null,reg:rg,
     inv24:solid[Math.min(24,H)],inv48:solid[Math.min(48,H)],
     covH:burn>0?p.inv0/burn:null,reqDrv:p.perDrvH>0?burn/p.perDrvH:0};}
 function _fcPad(reg){const S=STATUS;if(!(S&&Array.isArray(S.pads)))return null;
@@ -5916,7 +6062,12 @@ function fcPrefill(id){
   }
   const dl=(w&&w.daily)||[];
   const run=dl.filter(d=>(+d.stages_day||0)>0);
-  const spd=run.length?run.slice(-2).reduce((s,d)=>s+(+d.stages_day||0),0)/Math.min(2,run.length):(+T.stages_day||((+T.total_stages&&+T.duration_days)?T.total_stages/T.duration_days:8));
+  /* .141 · RITMO DE FRAC = ventana REAL de las últimas 48 h de etapas (inicio–fin de Stages, prorrateo por solape; un
+     pozo con menos de 48 h bombeando usa lo que lleva). Antes: promedio de los 2 últimos días CON el de hoy parcial —
+     a las 02:00 hoy lleva 1 etapa y el burn salía a la mitad. Sin ventanas de etapa → días COMPLETOS (hoy fuera). */
+  const _sp48=w?fcStgPace(w,Date.now()):null;
+  const _tdy=(typeof todayISO==='function')?todayISO():'';const _runF=run.filter(d=>!_tdy||String(d.date).slice(0,10)<_tdy);const _rS=_runF.length?_runF:run;
+  const spd=_sp48!=null?_sp48:(_rS.length?_rS.slice(-2).reduce((s,d)=>s+(+d.stages_day||0),0)/Math.min(2,_rS.length):(+T.stages_day||((+T.total_stages&&+T.duration_days)?T.total_stages/T.duration_days:8)));
   const stg=(w&&w.stages)||[];
   const ut=stg.filter(s=>+s.used_tons>0).slice(-8);
   const tps=ut.length?ut.reduce((s,x)=>s+(+x.used_tons||0),0)/ut.length:((+T.total_tons&&+T.total_stages)?T.total_tons/T.total_stages:170);
@@ -5924,6 +6075,12 @@ function fcPrefill(id){
   /* .91: TR medio SOLO de días pumping; pozo aún en prefill → todos sus días */
   let Lp=0,Dp=0;dl.forEach(d=>{if(+d.drivers>0&&(+d.stages_day||0)>0){Lp+=(+d.loads||0);Dp+=(+d.drivers||0);}});
   const tr=Dp?(Lp/Dp):(D2?(L2/D2):(+T.turn_rate_target||4));
+  /* .141 · TASA EN TURNO — la curva de crew cuenta drivers EN TURNO a cada hora, así que cada uno entrega
+     TR ÷ horas de su jornada por hora (≈0.45 loads/h), no TR ÷ 24: eso partía el supply a la mitad y el
+     forecast siempre caía a NPT. Se aprende de las jornadas CERRADAS de las últimas 48 h (roster dh). */
+  const _sr=fcShiftRate(w);
+  const _spR=(((w&&w.roster)||[]).map(r=>+r.sp||0).filter(v=>v>=4&&v<=20).sort((a,b)=>a-b));
+  const _shF=_spR.length?Math.min(16,Math.max(8,_spR[Math.floor(_spR.length/2)])):12;
   let tons=0,lds=0;dl.forEach(d=>{tons+=(+d.tons||0);lds+=(+d.loads||0);});
   const avgLoad=lds?Math.round(tons*2000/lds):lbsBox;
   const cd=(w&&w.cycleDaily)||[];const lastC=cd.slice(-3);
@@ -5936,15 +6093,58 @@ function fcPrefill(id){
   const dtr=+T.turn_rate_target||4;
   const opD=dl.filter(d=>(+d.stages_day||0)>0).length; /* días operativos del pozo */
   const padDays=opD||dl.filter(d=>(+d.loads||0)>0).length||1;
-  return {inv:Math.round(inv),spd:+spd.toFixed(1),tps:+tps.toFixed(1),tr:+tr.toFixed(2),
+  return {inv:Math.round(inv),spd:+spd.toFixed(1),tps:+tps.toFixed(1),tr:_sr?_sr.tr:+tr.toFixed(2),trPump:+tr.toFixed(2),
+    shift:_sr?_sr.sh:+_shF.toFixed(1),srN:_sr?_sr.n:0,srW:_sr?_sr.W:0,spdSrc:_sp48!=null?'48h':'days',
     avgLoad,bump:brdOn,cycH:+cycH.toFixed(1),belly:belly||invType==='pila',
     hasInv:!!(w&&w.inventory),hasW:!!w,slim:!!(w&&w.slim),invType,boxes,empty:emptyB,invStg,invStale,
     pilaT:+pilaT.toFixed(1),pilaIsLbs,lbsBox,padOk,brdOn,brdAt,dtr,padDays,w};}
+/* .141 · etapas por día en la ventana REAL de las últimas 48 h (reloj Central del workbook) · null sin ventanas */
+function fcStgPace(w,now){const st=(w&&w.stages)||[];if(!st.length)return null;const SW=stgWins(st);const c=_fcClk();const nW=_fcW(now,c);
+  let first=null;const win=[];
+  st.forEach((s,i)=>{const x=SW[i];if(!x||!(+s.used_tons>0))return;const a=x.a,b=x.b!=null?x.b:x.a+2*36e5;if(a>nW)return;win.push([a,b]);if(first==null||a<first)first=a;});
+  if(first==null)return null;const lastB=Math.max(...win.map(x=>x[1]));const nE=(nW-lastB>3*36e5)?Math.min(nW,lastB):nW; /* Stages atrasado → hasta la última etapa */
+  const W=Math.min(48,(nE-first)/36e5);if(!(W>=6))return null;const a0=nE-W*36e5;
+  let n=0;win.forEach(([a,b])=>{if(b>a)n+=Math.max(0,Math.min(b,nE)-Math.max(a,a0))/(b-a);else if(a>=a0&&a<=nE)n+=1;});
+  return +(n/(W/24)).toFixed(1);}
+/* .141 · jornadas CERRADAS (roster dh, GAS v11.0+) de las últimas 48 h del dato → loads por jornada y horas por
+   jornada; su cociente = loads por hora EN TURNO. Ventana 48 h → 96 h → todo el pozo si hay pocas. 24/7 fuera. */
+function fcShiftRate(w){const R=(w&&w.roster)||[];if(!R.length)return null;const P=[];let last=null;
+  R.forEach(r=>(r.dh||[]).forEach(x=>{if(!x||x[5]==='open'||+x[7]||!(+x[3]>0))return;const d0=_wms(String(x[0]).slice(0,10),'00:00');if(d0==null)return;
+    const e=d0+(+x[2])*36e5;P.push({e,h:+x[3],n:+x[4]||0});if(last==null||e>last)last=e;}));
+  if(!P.length)return null;
+  const da=String((((w.diag||{}).roster_clock)||{}).data_at||'');const dA=da.length>=13?_wms(da.slice(0,10),da.length>=16?da.slice(11,16):da.slice(11,13)+':00'):null;
+  const ref=dA!=null?dA:last;
+  for(const W of [48,96,24*45]){const Q=P.filter(p=>p.e>ref-W*36e5&&p.e<=ref+36e5);const H=Q.reduce((a,p)=>a+p.h,0),N=Q.reduce((a,p)=>a+p.n,0);
+    if(Q.length>=4&&H>=24&&N>0)return {tr:+(N/Q.length).toFixed(2),sh:+(H/Q.length).toFixed(1),n:Q.length,W:W>96?Math.round((ref-Math.min(...Q.map(p=>p.e)))/36e5):W};}
+  return null;}
+/* .141 · PILA AHORA (nowcast) = última captura de Stages + lo entregado desde entonces (hourly, reloj real GAS v11.1)
+   − lo quemado (etapas que cerraron después + la etapa en curso al ritmo medio, tope 1 etapa) + el hueco del Loads
+   Report si va atrasado (crew ahora × tasa en turno, tope 3 h). Captura de más de 24 h → no se estima nada. */
+function fcNowcast(pf,crew0,now){const w=pf&&pf.w;if(!w||!(pf.inv>0)||!pf.hasInv)return null;
+  if(!(w.diag&&w.diag.hourly_clock&&w.diag.hourly_clock.mode==='real'))return null; /* GAS < v11.1: offline con sello tardío se contaría dos veces */
+  const c=_fcClk();const nW=_fcW(now,c);const st=w.stages||[];const SW=stgWins(st);
+  const caps=fcCaps(w,c,pf.belly,pf.lbsBox);if(!caps.length)return null;
+  const cap=caps.reduce((a,x)=>(!a||x.W>a.W)?x:a,null); /* la captura MÁS RECIENTE (inventory.stage es el Stage # del pozo; fcCaps trae Total Stage) */
+  const W0=cap.W;if(!(W0<=nW+6e4))return null;const hrs=(nW-W0)/36e5;if(hrs>24)return null;
+  let dl=0;((w.hourly)||[]).forEach(d=>{const d0=_wms(d.date,'00:00');if(d0==null)return;
+    for(let h=0;h<24;h++){const v=(d.tn&&+d.tn[h])||0;if(!(v>0))continue;const a=d0+h*36e5,b=a+36e5;if(b<=W0||a>=nW)continue;
+      dl+=v*2000*Math.max(0,Math.min(1,(Math.min(b,nW)-Math.max(a,W0))/36e5));}});
+  let bn=0,lastE=W0;st.forEach((s,i)=>{const x=SW[i];if(!x||!(+s.used_tons>0)||x.b==null)return;const a=x.a,b=x.b;if(b<=W0+6e4||a>=nW)return;
+    bn+=(+s.used_tons)*2000*(b>a?Math.max(0,Math.min(b,nW)-Math.max(a,W0))/(b-a):1);if(b>lastE)lastE=Math.min(b,nW);});
+  const tpsL=(+pf.tps||0)*2000,rate=(+pf.spd||0)*tpsL/24;
+  let stopW=nW;try{fcDtEv(w,nW).filter(e=>e&&e.open&&e.a!=null&&e.a<nW).forEach(e=>{stopW=Math.min(stopW,Math.max(lastE,e.a));});}catch(_){}
+  const gapS0=Math.max(0,(stopW-lastE)/36e5),inProg=rate*gapS0; /* todo el hueco al ritmo de frac (sin tope) — un paro abierto lo corta */
+  const stgLag=(nW-lastE)/36e5>Math.max(3,1.5*24/Math.max(1,+pf.spd||12))?+((nW-lastE)/36e5).toFixed(1):0;
+  const da=String((((w.diag||{}).roster_clock)||{}).data_at||'');const dA=da.length>=16?_wms(da.slice(0,10),da.slice(11,16)):null;
+  const gapH=dA!=null?Math.max(0,Math.min(3,(nW-Math.max(dA,W0))/36e5-0.25)):0;
+  const gapS=gapH>0.5?gapH*(+crew0||0)*((+pf.tr||0)/Math.max(4,+pf.shift||12))*(+pf.avgLoad||0):0;
+  const v=Math.max(0,Math.round(cap.lbs+dl+gapS-bn-inProg));
+  return {inv:v,cap:cap.lbs,capW:W0,capMs:cap.ms,dl:Math.round(dl),bn:Math.round(bn+inProg),gap:Math.round(gapS),gapH:+gapH.toFixed(1),hrs:+hrs.toFixed(1),stg:cap.stg,stgLag,down:stopW<nW};}
 /* overrides SOLO de sesión + exclusiones del roster */
 function _fcStore(id){return (FC.mem||{})[id]||null;}
 function _fcTyped(id){const sv=(FC.mem||{})[id];if(!sv)return false;
-  return ['inv','spd','tps','tr','load','bump','emp'].some(function(k){return sv[k]!=null;});}
-function _fcDirty(){const pf=FC.pf||{};const map={inv:'inv',spd:'spd',tps:'tps',tr:'tr',load:'avgLoad',bump:'bump',emp:'empty'};
+  return ['inv','spd','tps','tr','load','emp'].some(function(k){return sv[k]!=null;});}
+function _fcDirty(){const pf=FC.pf||{};const map={inv:'inv',spd:'spd',tps:'tps',tr:'tr',load:'avgLoad',emp:'empty'};
   if(Object.keys(FC.exc[FC.id]||{}).length)return true;
   for(const k in map){const el=$('fc-'+k);if(!el)continue;const cur=parseFloat(el.value),base=+pf[map[k]];
     if(isFinite(cur)&&isFinite(base)){if(Math.abs(cur-base)>1e-9)return true;}
@@ -5957,7 +6157,7 @@ function _fcRstBtn(){const b=$('fc-reset');if(!b)return;const d=_fcDirty();
   b.title=d?'Discard edits & roster exclusions — back to the learned averages':'Already at the live averages';}
 window.fcReset=function(){if(FC.mem)delete FC.mem[FC.id];FC.exc[FC.id]={};renderFc();};
 function _fcSave(){if(!FC.id)return;const o={};const pfB=FC.pf||{};
-  const mapS={inv:'inv',spd:'spd',tps:'tps',tr:'tr',load:'avgLoad',bump:'bump',emp:'empty'};
+  const mapS={inv:'inv',spd:'spd',tps:'tps',tr:'tr',load:'avgLoad',emp:'empty'};
   /* solo congela un input si el usuario lo APARTÓ del prefill — así un click en capas/KPIs
      con el pozo aún cargando no deja los ceros pegados (bug del 0 hasta Live sync) */
   Object.keys(mapS).forEach(function(k){const el=$('fc-'+k);if(!el)return;
@@ -6270,15 +6470,26 @@ function renderFcProj(){ /* recalcula curva + burns con el estado actual */
     FC._proj.curve[0]=+pf.brdOn;FC._proj.liveNow=true;}
   const bm=null; /* media editable se lee en fcCalc de los inputs */
   FC._burn={b6:fcBurnWin(pf.w,6,now),b12:fcBurnWin(pf.w,12,now),b24:fcBurnWin(pf.w,24,now)};
+  try{const cp=pf.w?fcCaps(pf.w,_fcClk(),pf.belly,pf.lbsBox).filter(c=>c.ms<=now&&c.ms>now-48*36e5).map(c=>c.lbs).sort((a,b)=>a-b):[];
+    FC._opLvl=cp.length>=3?cp[Math.floor(cp.length/2)]:0;}catch(_){FC._opLvl=0;} /* .141 */
 }
 function fcParams(){
   const g=k=>_fcN(($('fc-'+k)||{}).value,0);
+  const sh=Math.max(4,g('sh')||((FC.pf&&+FC.pf.shift)||12)); /* .141: horas EN TURNO por jornada */
   return {H:FC.hz,inv0:g('inv'),
-    perDrvH:(Math.max(0,g('tr'))/24)*Math.max(0,g('load')),avgLoad:g('load'),
-    bumpLoads:g('bump'),cycH:FC.cycH||2,curve:(FC._proj&&FC._proj.curve)||[],
+    perDrvH:(Math.max(0,g('tr'))/sh)*Math.max(0,g('load')),avgLoad:g('load'),shift:sh, /* .141: TR ÷ jornada (antes TR ÷ 24) */
+    bumpLoads:0,cycH:FC.cycH||2,curve:(FC._proj&&FC._proj.curve)||[],
     tps:g('tps'),spd:g('spd'), /* .134: la meta GOAL de pozos de cajas (GOAL stg × arena/etapa) leía p.tps sin existir */
+    reg:fcRegTarget(g('tps')), /* .141: meta del despacho */
     burnMean:g('spd')*g('tps')*2000/24};}
 const FC_BELLY_TARGET=3000000, FC_MIN_STG=4, FC_GOAL_STG=6;
+const FC_BAND_K={belly:1.15,box:3.0}; /* .141: σ de la pila en múltiplos del burn/h, plena desde las 6 h (con el despacho regulado el error NO crece con el horizonte) — backtest real: Oasis/Nile ≈1.1 · Casselman ≈2 (conteo de cajas con ±6 de ruido) */
+const FC_REG_TAU=12; /* .141: horas en que el despacho cierra la brecha a la meta (backtest: 8–16 h equivalentes, 12 h el mejor) */
+/* .141 · meta del despacho: belly 3.0M (regla Bayswater) · cajas = la MAYOR entre GOAL etapas × arena/etapa y el nivel
+   en que el pad operó sus últimas 48 h (mediana de las capturas de Stages) */
+function fcRegTarget(tps){if(FC.belly)return {tg:FC_BELLY_TARGET,tau:FC_REG_TAU,src:'3.0M rule'};
+  const g=((FC.tg&&FC.tg.goal)||FC_GOAL_STG)*Math.max(1,+tps||0)*2000,op=+FC._opLvl||0;
+  return {tg:Math.max(g,op),tau:FC_REG_TAU,src:op>g?'48 h operating level':'GOAL stages'};}
 /* Targets de etapas por cliente — regla Alan: Fasken MIN 6 · GOAL 8; resto cajas 4/6; belly MIN 4 + 3.0M */
 function fcStgT(reg){const s=(String(reg&&reg.customer||'')+' '+String(reg&&reg.name||'')).toUpperCase();
   if(/FASKEN/.test(s))return{min:6,goal:8};
@@ -6544,7 +6755,7 @@ function fcCalc(){
   const wn=FC_ESC.find(e=>e.k===worstK);
   /* meta de inventario: belly → 3.0M lbs · cajas → GOAL stages × sand/stage */
   const goalLbs=FC.belly?FC_BELLY_TARGET:(((FC.tg&&FC.tg.goal)||FC_GOAL_STG)*p.tps*2000);
-  const goalJ=fcGoalCross(SIM[K].solid,goalLbs);
+  const goalJ=fcGoalCross(SIM[K].solid,goalLbs*((p.reg&&p.reg.tg>0&&p.reg.tg<=goalLbs*1.001)?0.985:1)); /* .141: regulado → se acerca a la meta */
   const goalTxt=goalJ!=null?((FC.belly?'GOAL 3.0M':'GOAL '+((FC.tg&&FC.tg.goal)||FC_GOAL_STG)+' STG')+' · '+fmtT(goalJ)):'';
   const set=(id,v,cls)=>{const el=$(id);if(!el)return;el.querySelector('.v').innerHTML=v;
     el.classList.remove('bad','okk');if(cls)el.classList.add(cls);};
@@ -6565,13 +6776,13 @@ function fcCalc(){
      y cita el estado ESTABLE al recuperar la META (avg pace de diseño). */
   const holdN=rK.reqDrv?Math.ceil(rK.reqDrv-1e-9):0;
   const _incR=((FC._proj&&FC._proj.rows)||[]).filter(r2=>r2.inc).map(r2=>+r2.sp||0).filter(v2=>v2>0).sort((x2,y2)=>x2-y2);
-  const medSp=Math.min(16,Math.max(6,_incR.length?_incR[Math.floor(_incR.length/2)]:12));
+  const medSp=Math.min(16,Math.max(6,p.shift||(_incR.length?_incR[Math.floor(_incR.length/2)]:12))); /* .141: la MISMA jornada de la tasa en turno → únicos/día = loads del día ÷ TR */
   const uniq=h2=>Math.ceil(h2*24/medSp-1e-9);
   const holdU=holdN?uniq(holdN):0;
   const stShift=SIM.m.reqDrv?Math.ceil(SIM.m.reqDrv-1e-9):0;
   const stUniq=stShift?uniq(stShift):0;
   const dDrv2=+((FC.pf&&FC.pf.w&&FC.pf.w.targets&&FC.pf.w.targets.drivers_day))||0;
-  const dsgNet=dDrv2?Math.round(dDrv2*p.perDrvH-B[K]):null;
+  const dsgNet=dDrv2?Math.round(dDrv2*medSp/24*p.perDrvH-B[K]):null; /* .141: perDrvH es por hora EN TURNO */
   const dayView=FC.holdV==='day';
   set('fck-req',holdN?String(dayView?holdU:holdN):'—',(crew0>=holdN)?'okk':'bad');
   const kr=$('fck-req');if(kr)kr.querySelector('.sb').innerHTML=(dayView
@@ -6589,13 +6800,33 @@ function fcCalc(){
     return '<span class="fc-ec'+(e.k===K?' sel':'')+'" onclick="fcKpi(\''+e.k+'\')" title="Anchor all KPIs to this pace"><span class="dt" style="background:'+e.col+'"></span>'+e.name
       +' <b>'+fmt(Math.round(B[e.k]))+'</b> lbs/h · need <b>'+rq+'</b> drv '
       +(crew0>=rq?'<b class="ok2">✓ covered</b>':'<b class="bad2">short '+(rq-crew0)+'</b>')+'</span>';}).join('');
-  /* alert banner */
+  /* .141 · BANDA PROBABLE (P10–P90) alrededor del pace anclado: σ(h) = K · burn · min(1, √(h/6)) — K del backtest real
+     (Oasis/Nile 30-oct → 2-nov, 39 cortes): con el despacho regulado el error se estabiliza en ~1 hora de burn */
+  const bandLo=[],bandHi=[];{const bk=B[K]||0,kp=FC.belly?FC_BAND_K.belly:FC_BAND_K.box;for(let t=0;t<rK.solid.length;t++){const sg=kp*bk*Math.min(1,Math.sqrt(t/6));
+    bandLo.push(Math.max(0,Math.round(rK.solid[t]-1.2816*sg)));bandHi.push(Math.round(rK.solid[t]+1.2816*sg));}}
+  let loRun=null;for(let t=1;t<bandLo.length;t++){if(bandLo[t]<=0){loRun=t;break;}}
+  /* .141 · PALANCA HOS: los que están EN TURNO siguen hasta su ventana de 14 h (desde su arranque real) */
+  let ext=null;try{if(rK.runS!=null||loRun!=null||(worst!=null&&worst<12)){const pj2=fcRosterProj((FC.pf&&FC.pf.w)||null,now,Math.max(72,FC.hz),{hos:13});
+    if(pj2&&pj2.has){const c2=pj2.curve.slice();if(FC._proj&&FC._proj.liveNow)c2[0]=Math.max(c2[0],p.curve[0]||0);
+      const sx=fcSim(Object.assign({},p,{curve:c2}),B[K]);let dH=0;for(let t=0;t<=Math.min(24,FC.hz);t++)dH+=Math.max(0,(c2[t]||0)-(p.curve[t]||0));
+      const nOn=((FC._proj&&FC._proj.rows)||[]).filter(r2=>r2.inc&&+r2.op===1&&r2.curEnd!=null).length;
+      const ld=Math.round(dH*p.perDrvH/Math.max(1,p.avgLoad));if(ld>=1)ext={runS:sx.runS,dH:Math.round(dH),loads:ld,n:nOn};}}}catch(_){ext=null;}
+  const extTxt=ext?(' Lever: keeping the '+ext.n+' driver'+(ext.n===1?'':'s')+' on shift up to 13 h after their first At Terminal (14 h HOS window less pre-trip) adds ~'+ext.dH+' driver-hour'+(ext.dH===1?'':'s')+' (≈'+ext.loads+' load'+(ext.loads===1?'':'s')+') — '
+    +(ext.runS==null?'<b>holds the pile</b>.':(rK.runS!=null&&ext.runS-rK.runS<0.5?'not enough on its own — add drivers.':'runout moves to '+fmtT(ext.runS)+'.'))):'';
   const al=$('fc-alert');if(al){
-    const allShort=FC_ESC.every(e=>crew0<SIM[e.k].reqDrv);
-    if(worst!=null&&worst<12){al.className='red on';
-      al.innerHTML='✗ <b>NPT RISK</b> — runout in ~'+worst.toFixed(1)+' h at '+wn.name.toLowerCase()+' ('+fmtT(worst)+'). Need '+Math.max(0,Math.ceil(SIM[worstK].reqDrv-1e-9)-crew0)+' more drivers or slow-down coordination NOW.';}
-    else if(worst!=null&&worst<24){al.className='amb on';
-      al.innerHTML='▲ Watch — runout in ~'+Math.round(worst)+' h at '+wn.name.toLowerCase()+' ('+fmtT(worst)+'). Line up next-shift coverage.';}
+    const allShort=FC_ESC.every(e=>crew0<SIM[e.k].reqDrv);const rs=rK.runS;
+    const need=Math.max(0,Math.ceil(rK.reqDrv-1e-9)-crew0);
+    if(rs!=null&&rs<12){al.className='red on';
+      al.innerHTML='✗ <b>NPT RISK</b> — runout in ~'+rs.toFixed(1)+' h at '+eK.name.toLowerCase()+' ('+fmtT(rs)+'). Need '+need+' more driver'+(need===1?'':'s')+' on shift or slow-down coordination NOW.'+extTxt;}
+    else if(worst!=null&&worst<6){al.className='red on'; /* el ritmo ACTUAL vacía la pila en < 6 h: no se espera al promedio de 48 h */
+      const nw2=Math.max(0,Math.ceil(SIM[worstK].reqDrv-1e-9)-crew0);
+      al.innerHTML='✗ <b>NPT RISK</b> — at the '+wn.name.toLowerCase()+' ('+fmt(Math.round(B[worstK]))+' lbs/h) the pile runs out in ~'+worst.toFixed(1)+' h ('+fmtT(worst)+'). Need '+nw2+' more driver'+(nw2===1?'':'s')+' on shift or slow-down coordination NOW.'+extTxt;}
+    else if(rs!=null&&rs<24){al.className='amb on';
+      al.innerHTML='▲ Watch — runout in ~'+Math.round(rs)+' h at '+eK.name.toLowerCase()+' ('+fmtT(rs)+'). Line up next-shift coverage.'+extTxt;}
+    else if(worst!=null&&worst<12){al.className='amb on';
+      al.innerHTML='▲ Only if the frac keeps its '+wn.name.toLowerCase()+' ('+fmt(Math.round(B[worstK]))+' lbs/h): runout ~'+worst.toFixed(1)+' h ('+fmtT(worst)+') · at '+eK.name.toLowerCase()+' the pile holds.';}
+    else if(loRun!=null&&loRun<12){al.className='amb on';
+      al.innerHTML='▲ Tight — the low edge of the likely range reaches empty at '+fmtT(loRun)+' (avg line holds).'+extTxt;}
     else if(allShort){al.className='amb on';
       al.innerHTML='▲ Roster short vs every pace — supply never catches burn; inventory only drains.';}
     else{al.className='';al.innerHTML='';}}
@@ -6656,8 +6887,8 @@ function fcCalc(){
   const FD={flow,caps:capInfo,belly:!!FC.belly,H:SIM.m.solid.length-1,iNow,red:SIM.b6.red,runWorst:worst,runWorstK:worst!=null?wn.name.toUpperCase():'',goalJ:goalJ,goalTxt:goalTxt,cdDir:cdDir,
     solid:SIM.m.solid,curve:p.curve,crewFull,labs,pin:null,histN:iNow,
     SIM:{m:SIM.m.solid,b6:SIM.b6.solid,b12:SIM.b12.solid,b24:SIM.b24.solid},kpiK:K,
-    B,sup:SIM.m.sup,reqs:{m:SIM.m.reqDrv,b6:SIM.b6.reqDrv,b12:SIM.b12.reqDrv,b24:SIM.b24.reqDrv},
-    lay:Object.assign({},FC.lay)};
+    B,sup:SIM[K].sup,cap:SIM[K].cap,reqs:{m:SIM.m.reqDrv,b6:SIM.b6.reqDrv,b12:SIM.b12.reqDrv,b24:SIM.b24.reqDrv},
+    lay:Object.assign({},FC.lay),band:{lo:bandLo,hi:bandHi}};
   const TT={callbacks:{
     title:c=>{const F=c[0].chart.$fc||FD;const i=c[0].dataIndex;
       return F.labs[i]+(i<F.iNow?' — actual (rebuilt)':i===F.iNow?' — current':'');},
@@ -6668,13 +6899,16 @@ function fcCalc(){
         const from=d2>0?c.raw[0]:c.raw[1],to=d2>0?c.raw[1]:c.raw[0];
         return ' Crew shift: '+from+' → '+to+' drv ('+(d2>0?'▲ +':'▼ −')+Math.abs(to-from)+')';}
       if(c.dataset.yAxisID==='y2')return c.raw!=null?(' Crew on: '+c.raw+' drivers'):null;
+      if(c.dataset&&c.dataset.$band)return null; /* .141: la banda va en el detalle */
       return c.raw!=null?tipL(c,x=>fmt(x)+' lbs'):null;},
     afterBody:it=>{const F=it[0].chart.$fc||FD;const i=it[0].dataIndex;
       if(i<F.iNow){const fl=(F.flow||[])[i];return [sep,fl?('Actual, rebuilt · prior hour +'+fmt(fl.s)+' in · −'+fmt(fl.b)+' burned'):'Actual, rebuilt from hourly deliveries','Crew (board): '+(F.crewFull[i]!=null?F.crewFull[i]:'—')+' drv'];}
       const j=i-F.iNow;const crew=F.curve[j]||0;
       const kk=F.kpiK||'m';const ee=FC_ESC.find(e2=>e2.k===kk)||FC_ESC[0];const req=F.reqs[kk];
       const rq2=Math.ceil(req-1e-9);
-      const out=[sep,'Crew '+crew+' · supply '+fmt(F.sup[j])+' /h',
+      const _bd=(F.band&&F.band.lo[j]!=null&&j>0)?(' · likely '+fK2(F.band.lo[j])+'–'+fK2(F.band.hi[j])):''; /* .141: banda P10–P90 en la misma línea (tooltip ≤5) */
+      const _cp=(F.cap&&F.cap[j]>F.sup[j]+500)?(' of '+fK2(F.cap[j])+' cap'):'';
+      const out=[sep,'Crew '+crew+' · supply '+fmt(F.sup[j])+' /h'+_cp+_bd,
         (crew>=rq2?'✓ ':'✗ ')+ee.name+': need '+rq2+' drv'+(crew>=rq2?'':' · short '+(rq2-crew))];
       if(F.red[j])out.push('✗ Runout risk at 6 h pace');
       out.push('Click → full hour panel');
@@ -6687,7 +6921,8 @@ function fcCalc(){
     if(chart.$fc.pin!=null)fcPinShow(chart.$fc.pin,chart.$fc);else fcPinHide();}catch(_){}};
   const dsHidden=k=>({m:false,b6:false,b12:false,b24:false}[k]);
   let ch=(typeof Chart!=='undefined'&&Chart.getChart)?Chart.getChart('fcChart'):null;
-  const sameShape=ch&&ch.$fcOwn&&ch.data.datasets.length===8&&ch.$fc&&ch.$fc.iNow===iNow&&ch.data.labels.length===labs.length;
+  const bandP=a=>pad0.concat(a);
+  const sameShape=ch&&ch.$fcOwn&&ch.data.datasets.length===10&&ch.$fc&&ch.$fc.iNow===iNow&&ch.data.labels.length===labs.length;
   if(sameShape){
     const keepPin=(ch.$fc&&ch.$fc.pin!=null&&ch.$fc.pin<=iNow+FD.H)?ch.$fc.pin:null;
     FD.pin=keepPin;ch.$fc=FD;
@@ -6698,6 +6933,7 @@ function fcCalc(){
     ch.data.datasets[5].data=crewFull;ch.data.datasets[5].hidden=!FC.lay.crew;
     ch.data.datasets[6].data=cdData;ch.data.datasets[6].hidden=!FC.lay.cd;
     ch.data.datasets[7].data=capData;ch.data.datasets[7].$has=capHas;ch.data.datasets[7].hidden=!FC.lay.hist;
+    ch.data.datasets[8].data=bandP(bandHi);ch.data.datasets[9].data=bandP(bandLo);ch.data.datasets[8].hidden=ch.data.datasets[9].hidden=!FC.lay.bands;
     if(evR.length)DTR.fcChart=Object.assign(DTR.fcChart||{id:'fcChart',alpha:dtOn('fcChart')?1:0},{ev:evR,lin:{t0:t0r,ms:36e5,clk:clk},popMax:iNow-1});else delete DTR.fcChart;
     if(ch.options.scales.y2)ch.options.scales.y2.max=maxC;
     try{ch.update();}catch(_){}
@@ -6718,10 +6954,12 @@ function fcCalc(){
       hidden:!FC.lay.cd,animation:{delay:c=>((c&&c.dataIndex)||0)*5}},
     {label:FC.belly?'Pile captured (Stages)':'Boxes captured (Stages)',$cap:true,$has:capHas,data:capData,showLine:false,
       pointStyle:'rectRot',pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#fff7e6',pointBorderColor:'#b7791f',pointBorderWidth:2,
-      borderColor:'#b7791f',backgroundColor:'#fff7e6',hidden:!FC.lay.hist}]},
+      borderColor:'#b7791f',backgroundColor:'#fff7e6',hidden:!FC.lay.hist},
+    {label:'Likely range (P10–P90)',$band:1,data:bandP(bandHi),borderColor:'rgba(31,111,111,.0)',backgroundColor:'rgba(31,111,111,.08)',fill:'+1',pointRadius:0,pointHoverRadius:0,borderWidth:0,tension:.3,hidden:!FC.lay.bands},
+    {label:'Likely range low',$band:2,data:bandP(bandLo),borderColor:'rgba(31,111,111,.28)',borderDash:[2,3],borderWidth:1,fill:false,pointRadius:0,pointHoverRadius:0,tension:.3,hidden:!FC.lay.bands}]},
     options:{interaction:{mode:'index',intersect:false},layout:{padding:{top:30}},
       onClick:CLICK,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9},filter:(it,dd)=>{const ds=dd&&dd.datasets&&dd.datasets[it.datasetIndex];return !(ds&&ds.$cap&&!ds.$has);}}},crosshair:{},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:8,font:{size:9},filter:(it,dd)=>{const ds=dd&&dd.datasets&&dd.datasets[it.datasetIndex];return !(ds&&((ds.$cap&&!ds.$has)||ds.$band===2));}}},crosshair:{},
         tooltip:Object.assign({position:'nearest',backgroundColor:'rgba(18,38,58,.82)',titleFont:{size:11,weight:'800'},bodyFont:{size:9.5},padding:9,cornerRadius:10,caretSize:5,boxPadding:3,borderColor:'rgba(188,211,226,.4)',borderWidth:1},TT)},
       scales:{x:{...gO,ticks:{font:{size:8.5},maxRotation:0,autoSkip:true,maxTicksLimit:N>90?Math.round(N/7):14}},
         y:{...gO,min:0,ticks:{callback:v=>fmt(v/1000)+'K'}},
@@ -6896,10 +7134,21 @@ function _whAudit(){try{
   if(cpN){const bl=(cp.blocks||[]).map(b=>b[0]===b[1]?('row '+b[0]):('rows '+b[0]+'–'+b[1])).join(', ');
     L2.push('<b>'+cpN+' load'+(cpN===1?'':'s')+' from another pad excluded</b>'+(bl?' — '+bl:'')+' match <b>'+(cp.peers||[]).map(p=>p.name||p.id).join(', ')+'</b> (same Load IDs, its terminals) · delete them from this Loads Report');}
   if(cp&&+cp.incomplete&&(cp.failed||[]).length)L2.push('Cross-pad check could not open <b>'+cp.failed.join(', ')+'</b> — re-checked automatically');
+  /* .141: GAS v11.1 — mismo Load ID en otro pozo. Si el otro pozo ya excluye SU copia (terminal ajena allá, propia
+     aquí) las cargas son de este pad: solo se avisa que limpien aquella hoja. Si no, es un conflicto real → se cuenta. */
+  const du=dg.dup_ids,duP=(du&&du.peers)||[];let duN=0;
+  if(du&&+du.loads){const bl=(du.blocks||[]).map(b=>b[0]===b[1]?('row '+b[0]):('rows '+b[0]+'–'+b[1])).join(', ');
+    duP.forEach(p=>{const n=+p.loads||0,ex=Math.min(n,+p.excl_there||0),amb=n-ex;const nm=_eh(p.name||p.id);
+      if(ex)L2.push('<b>'+ex+'</b> loads of this pad'+(bl&&!amb?' ('+bl+')':'')+' were also pasted into the Loads Report of <b>'+nm+'</b> — their terminal is foreign there, so its cross-pad check excludes that copy · clean that sheet ✓');
+      if(amb){duN+=amb;L2.push('<b>'+amb+' Load ID'+(amb===1?'':'s')+' also in '+nm+'</b>'+(bl?' — '+bl:'')+(p.sample&&p.sample.length?' (e.g. '+p.sample.slice(0,3).join(', ')+')':'')+' — double paste or open transfer? Still counted here');}});}
+  else if(du&&(du.checked||[]).length)L2.push('Load IDs checked against '+du.checked.length+' other pad'+(du.checked.length===1?'':'s')+' — no duplicates'+((du.failed||[]).length?' in those ('+du.failed.length+' could not be read)':' ✓'));
+  if(du&&+du.loads&&(du.failed||[]).length)L2.push('Duplicate check could not read '+du.failed.length+' pad'+(du.failed.length===1?'':'s')+' — re-checked on the next refresh');
+  const hcl=dg.hourly_clock; /* .141: GAS v11.1 */
+  if(hcl&&hcl.mode==='real')L2.push('Hourly charts on the <b>real clock</b> — '+(+hcl.moved?('<b>'+hcl.moved+'</b> offline deliver'+(+hcl.moved===1?'y':'ies')+' moved to the hour they happened'):'no offline delivery needed a move')+' · day totals unchanged');
   const rc=dg.roster_clock;
   if(rc&&rc.v)L2.push('Roster hours: real clock (first At Terminal → last delivery)'+(+rc.off_fixed?' · <b>'+rc.off_fixed+'</b> offline delivery stamp'+(+rc.off_fixed===1?'':'s')+' corrected':'')+(rc.leg?' · typical At Terminal → delivered '+rc.leg+' h':'')+(+rc.team?' · '+rc.team+' login'+(+rc.team===1?'':'s')+' running 24/7':''));
   if(age)L2.push('Snapshot age: '+age+(ACTIVE_META&&ACTIVE_META.api_ver?' · computed by GAS <b>'+ACTIVE_META.api_ver+'</b>':''));
-  const issueN=futN+skip+unp+(dg.terminals_strict?fN:0)+cpN+(!v104?(+dg.dates_normalized||0):0);
+  const issueN=futN+skip+unp+(dg.terminals_strict?fN:0)+cpN+duN+(!v104?(+dg.dates_normalized||0):0);
   if(!issueN&&v104)L2.push('Nothing dropped — every delivered row is counted ✓');
   const cls=futN?'aud-bad':(issueN?'aud-warn':'aud-ok');
   return '<span class="pill wh-aud '+cls+'" data-tip="'+encodeURIComponent(L2.join('\n'))+'">DATA AUDIT'+(issueN?' · '+issueN:' ✓')+'</span>';
@@ -7143,6 +7392,10 @@ function _fcHxTxt(r){const x=r.hx||{};const L=[];
   if(x.sk&&x.sk.length)L.push('Not used: '+x.sk.map(k=>k[0]+' '+(SK[k[1]]||k[1])).join(' · '));
   if(r.tm)L.push('<b>24/7 unit</b> — hauled 24+ h without a 4 h break: one login is likely two drivers (slip seat) · projected around the clock');
   return L.join('\n');}
+/* .141 · texto de la pila AHORA (captura → ahora) */
+function _fcNcTxt(pf){const n=pf&&pf.nc;if(!n)return '';
+  return ' · <b>now ≈ '+fmt(n.inv)+' lbs</b> (captured '+fmt(n.cap)+' at '+_wHM(n.capW)+' · +'+fmt(n.dl)+' delivered · −'+fmt(n.bn)+' burned'+(n.gap?' · +'+fmt(n.gap)+' est. for a '+n.gapH+' h data gap':'')+')'
+    +(n.stgLag?' · <b>no stage logged for '+n.stgLag+' h</b> — burn estimated at the frac pace'+(n.down?' until the open downtime':''):'');}
 function fcRosterTable(){
   const host=$('fcr-body');if(!host)return;
   const rows=((FC._proj&&FC._proj.rows)||[]).slice().sort((a,b)=>b.n-a.n);
@@ -7180,7 +7433,10 @@ function fcRosterTable(){
     const tip=encodeURIComponent('<b>'+r.d+'</b>'+(r.c?' — '+r.c:'')
       +'\nWork window <b>'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+'</b> · avg <b>'+r.sp.toFixed(1)+' h</b> ('+wb2.t+')'
       +(vr2?'\nhis start MOVES day to day — the average window is weak; the lane heat shows how often he covers each hour':'')
-      +((r.op&&r.curEnd)?'\n<b>On shift now</b> — since '+String(r.cs).slice(11,16)+' · projected off ~'+_fcClkTxt(r.curEnd)+' · then 10 h rest':'')
+      +((r.op&&r.curEnd)?'\n<b>On shift now</b> — since '+String(r.cs).slice(11,16)+' · projected off ~'+_fcClkTxt(r.curEnd)+' · then 10 h rest'
+        +(function(){const cs=String(r.cs||'');if(cs.length<16)return '';const cW=_wms(cs.slice(0,10),cs.slice(11,16));if(cW==null)return '';
+          const heW=cW+13*36e5,left=(heW-_wOf(Date.now()))/36e5,ceW=_fcW(r.curEnd,'loc'); /* reloj de pared Central, sin depender del navegador */
+          return '\n14 h HOS window (13 h after his first At Terminal, less pre-trip) ends <b>~'+_wHM(heW)+' CT</b>'+(left<=0?' — <b>already reached</b>':(ceW<heW-18e5?' · can extend up to '+((heW-ceW)/36e5).toFixed(1)+' h if the pile needs it':''));})():'')
       +(r.hx?'':(r.nw?'\nNEW (first 2 days) — 12 h from his real start'+(r.nwS?' at '+String(r.nwS).slice(11,13)+':00':''):''))
       +(r.hx||r.pw?'':(r.src==='xwell'?('\nInherited from '+r.xw+' (his latest pad · last load there '+String(r.xwL||'').slice(5)+':00)'):(r.src==='prefill'?'\nprefill fallback — windows inherited from the previous job':'\nall-days fallback — no closed pump shifts yet')))
       +(r.hwA&&_fcPkHrs(r.hwA)?'\nMost active: <b>'+_fcPkHrs(r.hwA)+'</b>':'')
@@ -7258,6 +7514,7 @@ function renderFc(){
   const V=(k,d)=>sv[k]!=null?sv[k]:d;
   renderFcProj();
   const crew0=(FC._proj&&FC._proj.curve[0])||0;
+  {pf.nc=null;try{const nc=fcNowcast(pf,crew0,Date.now());if(nc&&Math.abs(nc.inv-pf.inv)>=1){pf.invCap=pf.inv;pf.inv=nc.inv;pf.nc=nc;}}catch(_){}} /* .141 */
   const inp=(id,lb,unit,val,step)=>`<div class="fc-cell"><div class="fc-lb"><span>${lb}</span><span class="u">${unit}</span></div><input id="fc-${id}" class="fc-in" type="number" inputmode="decimal" step="${step||'any'}" value="${val}" oninput="fcInput()"></div>`;
   const kpi=(id,t)=>`<div class="card kpi fck" id="${id}"><div class="card-t">${t}</div><div class="v">—</div><div class="sb">—</div></div>`;
   pane.innerHTML=`
@@ -7273,7 +7530,7 @@ function renderFc(){
       <button class="rbtn ghost" id="fc-reset" onclick="fcReset()" disabled title="Already at the live averages"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg><span class="btxt"> Reset to averages</span></button>
       <button class="rbtn ghost" id="fc-share" onclick="fcShare()" title="Open link to share"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 10.7l6.8-4.4M8.6 13.3l6.8 4.4"/></svg></button>
       </div>
-      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')):pf.invType==='pila'?(pf.pilaT>0?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')+' · bellydump'):'sandpile cell EMPTY at last pull (shift change) — re-pulling live · enter lbs if it persists'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
+      <span class="sb" style="margin-left:auto">${pf.hasW?(pf.invType==='boxes'?('inventory: '+fmt(pf.boxes)+' full boxes × '+fmt(pf.lbsBox)+' lbs'+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')+_fcNcTxt(pf)):pf.invType==='pila'?(pf.pilaT>0?('sandpile on location: '+fmt(pf.pilaT)+' tons'+(pf.pilaIsLbs?' (captured in lbs)':'')+(pf.invStg?(' · as of stg '+pf.invStg+(pf.invStale?' — CAPTURE BEHIND, update Stages':'')):'')+' · bellydump'+_fcNcTxt(pf)):'sandpile cell EMPTY at last pull (shift change) — re-pulling live · enter lbs if it persists'):(pf.slim?'pulling workbook inventory…':'no inventory row in Stages — enter lbs on location')):'loading workbook…'}${fcIsBelly(reg)?' · Bayswater rule: bellydump':''}</span>
     </div>
     <div class="st">${ICO.chart} Sand Forecast — ${FC.id} <span class="ssub">· learned truck roster drives the crew curve · 6/12/24 h + avg pace projections</span></div>
     <div class="fc-gwrap mb">
@@ -7285,12 +7542,12 @@ function renderFc(){
           ${inp('inv','Sand on location','lbs',V('inv',pf.inv),1000)}
           ${inp('spd','Frac pace (avg line)','stages/day',V('spd',pf.spd),0.1)}
           ${inp('tps','Sand per stage','tons',V('tps',pf.tps),1)}
-          ${inp('bump','Loads in motion','active w/ load',V('bump',pf.bump),1)}
           ${FC.belly?'':inp('emp','Empty boxes','on location',V('emp',pf.empty),1)}
         </div>
-        <div class="fc-grp">Supply per driver</div>
+        <div class="fc-grp">Supply per driver <span class="fc-src ${pf.srN?'live':'fb'}" id="fc-srsrc">${pf.srN?('learned from '+pf.srN+' closed shifts · last '+pf.srW+' h → <b>'+(pf.tr/Math.max(4,pf.shift)).toFixed(2)+'</b> loads per on-shift hour · pump-day TR '+(+pf.trPump||0).toFixed(2)):('no closed shifts yet — pump-day TR over a '+(+pf.shift).toFixed(0)+' h shift')}</span></div>
         <div class="grid g4 mb" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-          ${inp('tr','Turn rate per driver','loads/day',V('tr',pf.tr),0.1)}
+          ${inp('tr','Turn rate per driver','loads/shift',V('tr',pf.tr),0.1)}
+          ${inp('sh','Shift length (learned)','h on duty',pf.shift,0.5).replace('oninput="fcInput()"','readonly tabindex="-1" title="Learned from closed shifts — it calibrates loads per on-shift hour (turn rate ÷ shift). To test more hours, use the roster toggles or the HOS lever."')}
           ${inp('load','Average load','lbs',V('load',pf.avgLoad),500)}
         </div>
       </div>
@@ -7320,7 +7577,7 @@ function renderFc(){
       ${kpi('fck-dt','Downtime · last 12 h')}
     </div>
     <div class="card mb"><div class="card-t">Pounds on location — roster crew curve × four frac paces</div>
-      <div class="sb fc-legend" onclick="this.classList.toggle('open')" style="margin-bottom:4px">Navy = ACTUAL <span id="fc-lgh">last 12 h</span> (rebuilt from hourly deliveries − stage burn · ◆ = pile / boxes captured in Stages) · shaded bands = downtime logged in the Downtimes tab, CT (light green weather · red other · dark red sand / coil tubing) · solid teal = avg pace (editable) · dashed red/amber/green = last 6 / 12 / 24 h pace · grey area = crew (past = live board ACTIVES → projected roster) · Crew Δ = one candle per crew rise/drop (stable hours stay clean) · Δ marks layer adds the ▲▼ +N/−N labels · click a pace chip to anchor the KPIs · legend toggles each line · click any hour for the detail panel</div>
+      <div class="sb fc-legend" onclick="this.classList.toggle('open')" style="margin-bottom:4px">Supply = dispatch holds the pile at its target (bellydump 3.0M · boxes GOAL or the pad's 48 h level) up to the roster's CAPACITY: drivers on shift each hour × loads per on-shift hour (turn rate ÷ shift length, learned from closed shifts) — the pile only drains when capacity can't cover the burn · teal band = likely range (P10–P90) · NPT RISK only when the anchored pace empties the pile · Navy = ACTUAL <span id="fc-lgh">last 12 h</span> (rebuilt from hourly deliveries − stage burn · ◆ = pile / boxes captured in Stages) · shaded bands = downtime logged in the Downtimes tab, CT (light green weather · red other · dark red sand / coil tubing) · solid teal = avg pace (editable) · dashed red/amber/green = last 6 / 12 / 24 h pace · grey area = crew (past = live board ACTIVES → projected roster) · Crew Δ = one candle per crew rise/drop (stable hours stay clean) · Δ marks layer adds the ▲▼ +N/−N labels · click a pace chip to anchor the KPIs · legend toggles each line · click any hour for the detail panel</div>
       <div id="fc-alert"></div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:6px">
         <div class="fc-esc" id="fc-esc" style="margin:0"></div>
@@ -7330,7 +7587,7 @@ function renderFc(){
           <span class="fc-lt${FC.lay.cd?' on':''}" id="fcl-cd" onclick="fcLay('cd')" title="One candle per real crew change — green up, red down, nothing while stable">Crew Δ</span>
           <span class="fc-lt${FC.lay.dm?' on':''}" id="fcl-dm" onclick="fcLay('dm')" title="▲/▼ labels with the exact delta on every crew rise/drop">Δ marks</span>
           <span class="fc-lt${dtOn('fcChart')?' on':''}" id="fcl-dt" data-dtl="fcChart" onclick="dtTog('fcChart')" title="Downtime from the Downtimes tab shaded on the history (CT) — light green weather · red other · dark red sand / coil tubing">Downtime</span>
-          <span class="fc-lt${FC.lay.bands?' on':''}" id="fcl-bands" onclick="fcLay('bands')" title="Red shading where the last-6 h pace empties the pile">Runout risk</span>
+          <span class="fc-lt${FC.lay.bands?' on':''}" id="fcl-bands" onclick="fcLay('bands')" title="Likely range (P10–P90) of the anchored pace + red shading where the last-6 h pace empties the pile">Range &amp; risk</span>
           <span class="fc-lt${FC.lay.t48?' on':''}" id="fcl-t48" onclick="fcLay('t48')">Goal target</span></div></div>
       <div class="fc-hrow"><span class="fc-lb2">History</span>
         <div class="seg-ctrl" title="How far back the ACTUAL line (and its downtime bands) goes — longer windows become a timeline you scroll">
