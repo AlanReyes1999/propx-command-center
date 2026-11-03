@@ -222,7 +222,7 @@ body{font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;backgrou
 .fcr-new{font:800 8px/1 'Plus Jakarta Sans';background:#e8f1fb;color:#2b6a92;border-radius:999px;padding:3px 7px;letter-spacing:.06em}
 .fcr-new.tm{background:#efe8fa;color:#5b3fa0}.fcr-new.hos{background:#fde3df;color:#9f2a1f}.fcr-new.on{background:#e3f4ea;color:#2f7a45}
 .fcr-note{margin:0 0 10px;padding:8px 11px;border-radius:12px;background:#fff7e8;border:1px solid #f0dcae;color:#6f5414;font:500 11px/1.5 'Plus Jakarta Sans'}
-.fcr-note b{color:#5a420c}
+.fcr-note b{color:#5a420c}.fcr-note.hos{background:#fdeeec;border-color:#f3cdc7;color:#7d2a22}.fcr-note.hos b{color:#6b1f18}
 .fcr-sc{font-weight:800;font-variant-numeric:tabular-nums}
 .fcr-win{font-variant-numeric:tabular-nums;color:#2E4057}
 .fcr-tra{font:800 9px/1 'Plus Jakarta Sans';margin-left:4px}
@@ -1792,7 +1792,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-11-03.143';
+const VBUILD='2026-11-03.144';
 /* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
    abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
 const CT_TZ='America/Chicago';
@@ -5132,8 +5132,8 @@ window.rowExpand=function(tr,data){
       <span style="font-size:8.5px;background:#f8fafc;color:#475569;padding:2px 8px;border-radius:6px">$${Math.round(data.revd).toLocaleString('en-US')}/day</span>
       ${(function(){try{const rr=((RES_DATA[CURRENT_ID]||{}).w||{}).roster||[];const nm=String(data.n||'').replace(/\s*↔\s*$/,'').trim().toUpperCase();
         const rx=rr.find(x=>String(x.d||'').toUpperCase()===nm);if(!rx)return '';
-        const wn=_rsWin(rx),wb=fcHrsBand(wn.sp),RN=_cxRuns(rx);
-        return '<span class="fcw '+wb.cls+'" title="'+_eh(wn.tip)+'">Work window '+_fcHM(wn.aS)+'–'+_fcHM(wn.aS+wn.sp)+' · '+(wn.d?'':'avg ')+wn.sp.toFixed(1)+' h'+(wn.d?' (HOS default)':'')+'</span>'
+        const wn=_rsWin(rx,_rsPadH(rr)),wb=fcHrsBand(wn.sp),RN=_cxRuns(rx);
+        return '<span class="fcw '+wb.cls+'" title="'+_eh(wn.tip)+'">Work window '+_fcHM(wn.aS)+'–'+_fcHM(wn.aS+wn.sp)+' · '+(wn.d?'':'avg ')+wn.sp.toFixed(1)+' h'+(wn.d?' (pad typical)':'')+(wn.cxT?' · real hours':'')+'</span>'
           +(RN.length?' <span class="fcw fcw-r" title="'+_eh(_cxTip(RN[RN.length-1]))+'">'+_cxChip(RN[RN.length-1],false)+'</span>':'');}catch(_e){return '';}})()}
       ${(function(){try{const nm2=String(data.n||'').replace(/\s*↔\s*$/,'').trim();
         const bdr=(((RES_DATA[CURRENT_ID]||{}).w||{}).byDriver||[]).find(x=>String(x.driver||'').toUpperCase()===nm2.toUpperCase());
@@ -5861,28 +5861,43 @@ function _fcPkHrs(hwA){if(!hwA)return '';const out=[];let a0=null;
     if(on&&a0==null)a0=h3;
     if(!on&&a0!=null){out.push(('0'+a0).slice(-2)+'–'+('0'+(h3%24)).slice(-2));a0=null;}}
   return out.join(' · ');}
-/* .143 · ventana que proyecta el forecast para un driver: la del GAS; si un GAS ≤ v11.1 lo marcó "24/7" (tm), un driver
-   por camión → 12 h legales desde su último arranque (su ventana 24/7 no es un turno) */
-function _rsWin(r){const cxO=!!+(r&&r.tm),src=String((r&&r.src)||'');
-  if(cxO){let aS=+r.aS||0;const c0=_fcTSm(r.cs);if(c0!=null){const d0=new Date(c0);aS=d0.getHours()+d0.getMinutes()/60;}
-    return {aS,sp:12,d:1,cxO,tip:'continuous run on this pad — not a legal shift to learn from: 12 h from his last start (HOS)'};}
-  return {aS:+r.aS||0,sp:Math.min(20,Math.max(4,+r.sp||12)),d:src==='cx'?1:0,cxO,
-    tip:src==='cx'?'only a continuous run on this pad — not a legal shift to learn from: 12 h default (HOS)':'learned from this pad: mean first→last load per shift'};}
+/* .144 · ventana que proyecta el forecast = la REAL que aprende el GAS: un driver por camión, sus horas de verdad (la
+   corrida continua enseña con sus horas reales · techo 20 h/día por persona) y, sin días que enseñen, el turno típico
+   del pad (GAS v11.3) — nunca un 12 h fijo. GAS ≤ v11.2 que lo marcó "24/7" (tm): sus horas con techo de 20 h. */
+function _rsPh(r){const x=+(((r&&r.hx)||{}).ph)||0;return x>0?x:null;}
+/* turno típico del pad calculado aquí (GAS ≤ v11.2 no lo publica): mediana de las jornadas cerradas que enseñan, sin corridas */
+function _rsPadH(R){const H=[];(R||[]).forEach(r=>((r&&r.dh)||[]).forEach(x=>{if(x&&x[5]==='p'&&!+x[7]&&+x[3]>0)H.push(+x[3]);}));
+  if(H.length<5)return 12;H.sort((a,b)=>a-b);const k=H.length>>1;return Math.min(16,Math.max(8,H.length%2?H[k]:(H[k-1]+H[k])/2));}
+/* GAS v11.2 dejaba en 12 h al driver que solo tenía su corrida (src 'cx'): sus días REALES de corrida cerrados (no su 1er
+   día) mezclados con el turno típico del pad — la misma regla de GAS v11.3 */
+function _rsCxDays(r){const D={},bad={};((r&&r.dh)||[]).forEach(x=>{if(!x||!x[0])return;const d=String(x[0]).slice(0,10);
+    if(x[5]==='open'||x[5]==='f')bad[d]=1;const q=D[d]=D[d]||{h:0,cx:0};q.h+=+x[3]||0;if(+x[7])q.cx=1;});
+  return Object.keys(D).sort().filter(d=>D[d].cx&&!bad[d]).map(d=>Math.min(24,D[d].h));}
+function _rsWin(r,padH){const cxO=!!+(r&&r.tm),src0=String((r&&r.src)||''),ph=_rsPh(r);
+  let src=src0,sp=Math.min(20,Math.max(4,+r.sp||ph||12)),cxT=!!(+(r&&r.cxT)||cxO),v112=false;
+  if(src0==='cx'&&!ph){const ds=_rsCxDays(r);if(ds.length){const n=ds.length,m=ds.reduce((a,b)=>a+b,0)/n,w=n>=3?1:n/(n+1),P=padH||12;
+    sp=Math.min(20,Math.max(4,w*m+(1-w)*P));src='pump';cxT=true;v112=true;}}
+  let tip='learned from this pad: mean first→last load per shift';
+  if(cxT)tip='learned from his real duty days on this pad, continuous run included at real hours (one driver per truck) — HOS check';
+  if(src==='cx')tip='no closed duty day yet (his continuous run is still open or on his first day here) — the pad typical shift'+(ph?' ('+ph.toFixed(1)+' h)':'');
+  if(src==='new')tip='first trip, no history on any pad — the pad typical shift'+(ph?' ('+ph.toFixed(1)+' h)':'');
+  return {aS:+r.aS||0,sp:+sp.toFixed(1),d:(src==='cx'||src==='new')?1:0,cxO,cxT,v112,tip};}
 function fcRosterProj(w,now,H,opt){opt=opt||{};
-  const R=(w&&w.roster)||[];const exc=FC.exc[FC.id]||{};
+  const R=(w&&w.roster)||[];const exc=FC.exc[FC.id]||{};const PADH=_rsPadH(R); /* .144: turno típico del pad (GAS ≤ v11.2) */
   const curve=new Array(H+1).fill(0);const curveF=new Array(H+1).fill(0);
   const rows=[];const RECENT=36*36e5;
   R.forEach(r=>{
     const lastTS=_fcTS((r.last||'').slice(0,10),(r.last||'').slice(11,13)+':00');
     const fresh=lastTS!=null&&(now-lastTS)<=RECENT;
     const inc=fresh&&!exc[r.d];
-    const _wn=_rsWin(r),cxO=_wn.cxO; /* .143: sin proyección 24/7 — un driver por camión */
+    const _wn=_rsWin(r,PADH),cxO=_wn.cxO; /* .144: horas reales (sin 12 h fijo ni 24/7) — un driver por camión */
     let aS=_wn.aS,sp=_wn.sp;
-    if(r.nw){const _a=(r.nwS||r.cs||r.fs||'');const f=_fcTSm(_a); /* .139: arranque real con minutos */
-      if(f!=null){const d0=new Date(f);aS=d0.getHours()+d0.getMinutes()/60;sp=12;}}
+    if(r.nw){const _a=(r.nwS||r.cs||r.fs||'');const f=_fcTSm(_a); /* .139: arranque real con minutos · .144: horas = turno típico del pad */
+      if(f!=null){const d0=new Date(f);aS=d0.getHours()+d0.getMinutes()/60;}}
     /* .96: si el GAS publica su mapa horario (hw), cada hora pesa lo que el driver
        realmente trabaja esa hora; sin hw (o driver NEW) manda la ventana rectangular */
-    const hwA=(!r.nw&&!cxO&&typeof r.hw==='string'&&r.hw.length===24)?r.hw.split('').map(c3=>(+c3||0)/9):null;
+    let hwA=(!r.nw&&typeof r.hw==='string'&&r.hw.length===24)?r.hw.split('').map(c3=>(+c3||0)/9):null;
+    if(hwA){const S=hwA.reduce((a,b)=>a+b,0);if(S>sp+0.2)hwA=hwA.map(v=>v*sp/S);} /* .144: el mapa suma sus horas/día — lo que dice la tabla es lo que cuenta la curva */
     /* .139 · TURNO EN CURSO anclado a su arranque REAL (GAS v10.9: cs = 1er At Terminal de la jornada,
        lm = su último load, op = sigue en turno a la hora del dato): sale en arranque + sus horas (o 1 h
        después de su último load si ya las rebasó) y descansa 10 h (HOS) antes de volver a su patrón.
@@ -5899,8 +5914,8 @@ function fcRosterProj(w,now,H,opt){opt=opt||{};
     const onAt=t=>pres(t)>=0.5;
     if(inc)for(let t=0;t<=H;t++)curveF[t]+=pres(t);
     rows.push({d:r.d,c:r.c||'',n:+r.n||0,aS,sp,tp:+r.tp||0,days:+r.days||0,pd:+r.pd||0,
-      nw:!!r.nw,fs:r.fs||'',nwS:r.nwS||'',last:r.last||'',fresh,inc,onAt,hwA,shd:r.shd||[],pw:r.pw!==false,src:r.src||((r.pw!==false)?'pump':'all'),xw:r.xw||'',xwL:r.xwL||'',nwA:+r.nwA||0,gwA:+r.gwA||0,
-      cx:_cxRuns(r),cxO:cxO?1:0,op:+r.op||0,cs:r.cs||'',lm:r.lm||'',curEnd,restEnd,hx:r.hx||null,ln:+r.ln||0});
+      nw:!!r.nw,fs:r.fs||'',nwS:r.nwS||'',last:r.last||'',fresh,inc,onAt,hwA,shd:r.shd||[],pw:r.pw!==false,src:_wn.v112?'pump':(r.src||((r.pw!==false)?'pump':'all')),v112:_wn.v112?1:0,xw:r.xw||'',xwL:r.xwL||'',nwA:+r.nwA||0,gwA:+r.gwA||0,
+      cx:_cxRuns(r),cxO:cxO?1:0,cxT:_wn.cxT?1:0,op:+r.op||0,cs:r.cs||'',lm:r.lm||'',curEnd,restEnd,hx:r.hx||null,ln:+r.ln||0});
   });
   for(let t=0;t<=H;t++)curve[t]=Math.round(curveF[t]);
   /* piso histórico: las ventanas medias comprimen la cobertura; si el patrón real
@@ -7047,7 +7062,7 @@ function fcPinShow(i,F){
   const drv=on.length?on.map(r=>{const sc=fcScore2(r,rows,dtr,padDays,_wP&&_wP.targets,_bdP[String(r.d).toUpperCase()]||null).s;const wb=fcHrsBand(r.sp);
     return '<div class="fcp-drv"><span class="fcr-nm" onclick="fcGotoDriver(\''+String(r.d).replace(/'/g,"\\'")+'\')">'+r.d+'</span>'
       +'<span style="color:#8a97a6">'+r.c+'</span>'
-      +(r.nw?'<span class="fcr-new">NEW +12H</span>':'')
+      +(r.nw?'<span class="fcr-new">NEW +'+Math.round(r.sp)+'H</span>':'')
       +'<span class="fcw '+wb.cls+'" title="avg shift length">'+_fcHM(r.aS)+'–'+_fcHM(r.aS+r.sp)+' · '+r.sp.toFixed(1)+' h</span>'
       +'<span class="sc">'+sc+' · TR '+r.tp.toFixed(1)+'</span></div>';}).join('')
     :'<div class="fcp-row" style="color:#b45309">No drivers projected this hour — roster gap</div>';
@@ -7099,7 +7114,7 @@ function fcGantt(){
       const vr=_fcVr(r);const f24=(sg[1]-sg[0])>=24;
       const tipG=encodeURIComponent('<b>'+r.d+'</b>'
         +((sg[0]===0&&r.op&&r.curEnd)?'\n<b>On shift now</b> — since '+String(r.cs).slice(11,16)+' (first At Terminal) · projected off ~'+_fcClkTxt(r.curEnd):'')
-        +(((r.cx&&r.cx.length)||r.cxO)?'\n<b>HOS check</b> — '+_cxChip((r.cx||[])[(r.cx||[]).length-1],false)+' · projected as one driver (14 h window · 10 h rest)':'')+(f24
+        +(((r.cx&&r.cx.length)||r.cxO)?'\n<b>HOS check</b> — '+_cxChip((r.cx||[])[(r.cx||[]).length-1],false)+' · projected at his real pace (~'+r.sp.toFixed(1)+' h/day) — see HOS exposure':'')+(f24
         ?'\n<b>On at ANY hour</b> somewhere in his days — his start moves day to day\navg <b>'+r.sp.toFixed(1)+' h/day</b> · lane heat = share of his days covering each hour'
         :'\nUsually on <b>'+hl(sg[0])+' – '+hl(sg[1])+'</b>'+(vr?' — varies day to day':'')+' · avg <b>'+r.sp.toFixed(1)+' h/day</b>')
         +(pkT?'\nMost active: <b>'+pkT+'</b>':''));
@@ -7205,7 +7220,7 @@ function _whAudit(){try{
   const hcl=dg.hourly_clock; /* .141: GAS v11.1 */
   if(hcl&&hcl.mode==='real')L2.push('Hourly charts on the <b>real clock</b> — '+(+hcl.moved?('<b>'+hcl.moved+'</b> offline deliver'+(+hcl.moved===1?'y':'ies')+' moved to the hour they happened'):'no offline delivery needed a move')+' · day totals unchanged');
   const rc=dg.roster_clock;
-  if(rc&&rc.v)L2.push('Roster hours: real clock (first At Terminal → last delivery)'+(+rc.off_fixed?' · <b>'+rc.off_fixed+'</b> offline delivery stamp'+(+rc.off_fixed===1?'':'s')+' corrected':'')+(rc.leg?' · typical At Terminal → delivered '+rc.leg+' h':'')+((+rc.hos||+rc.team)?' · <b>'+(+rc.hos||+rc.team)+'</b> driver'+((+rc.hos||+rc.team)===1?'':'s')+' with a continuous run over 24 h (no 4 h break) — check HOS':''));
+  if(rc&&rc.v)L2.push('Roster hours: real clock (first At Terminal → last delivery)'+(+rc.off_fixed?' · <b>'+rc.off_fixed+'</b> offline delivery stamp'+(+rc.off_fixed===1?'':'s')+' corrected':'')+(rc.leg?' · typical At Terminal → delivered '+rc.leg+' h':'')+(+rc.padh?' · pad typical shift <b>'+rc.padh+' h</b> ('+rc.padn+' shifts) — base for new drivers and short histories':'')+((+rc.hos||+rc.team)?' · <b>'+(+rc.hos||+rc.team)+'</b> driver'+((+rc.hos||+rc.team)===1?'':'s')+' with a continuous run over 24 h (no 4 h break) — check HOS':''));
   if(age)L2.push('Snapshot age: '+age+(ACTIVE_META&&ACTIVE_META.api_ver?' · computed by GAS <b>'+ACTIVE_META.api_ver+'</b>':''));
   const issueN=futN+skip+unp+(dg.terminals_strict?fN:0)+cpN+duN+(!v104?(+dg.dates_normalized||0):0);
   if(!issueN&&v104)L2.push('Nothing dropped — every delivered row is counted ✓');
@@ -7284,7 +7299,8 @@ function drvRender(){
   const trCol=(D.tgt>0&&r.tp>0)?(r.tp>=D.tgt?'#7fd4a8':(r.tp/D.tgt>=.85?'#e8c56f':'#f3a0a0')):'#dce8f2';
   const trMark=(D.tgt>0&&r.tp>0)?(r.tp>=D.tgt?' ▲':' ▼'):'';
   const gB=gwBand(gwA);
-  const srcTxt=(r.cxO||r.src==='cx')?'continuous run only · 12 h HOS default':(r.src==='xwell'?('inherited from '+r.xw):(r.src==='new'?'first trip · 12 h default':(r.src==='prefill'?'prefill window':(r.src==='all'?'all-days window':(r.pw?((r.hx&&r.hx.w<1)?('pump window · blended '+Math.round(r.hx.w*100)+'%'):'pump window'):''))))); /* .139 */
+  const _ph=(_rsPh(r)||12).toFixed(1);
+  const srcTxt=r.src==='cx'?('no closed duty day yet · pad typical '+_ph+' h'):((r.cxT||r.cxO)?'real duty days · continuous run included':(r.src==='xwell'?('inherited from '+r.xw):(r.src==='new'?('first trip · pad typical '+_ph+' h'):(r.src==='prefill'?'prefill window':(r.src==='all'?'all-days window':(r.pw?((r.hx&&r.hx.w<1)?('pump window · blended '+Math.round(r.hx.w*100)+'%'):'pump window'):'')))))); /* .139 · .144 */
   const stale=r.fresh===false;
   const kp=(t,v,s2)=>'<div class="dvp-k"><div class="t">'+t+'</div><div class="v">'+v+'</div>'+(s2?'<div class="s">'+s2+'</div>':'')+'</div>';
   const hasBD=!!D.bd&&dates.length>0;
@@ -7296,7 +7312,7 @@ function drvRender(){
    +'<div class="dvp-sub" style="margin-top:4px">'+((bd.carriers&&bd.carriers[0])||r.c||'—')+(bd.carriers&&bd.carriers.length>1?' · switched carrier':'')+'</div>'
    +'<div style="margin-top:8px">'
    +(stale?'<span class="dvp-chip" style="background:rgba(212,114,114,.25)">OFF PAD · last '+String(r.last||'').slice(5)+'</span>':'<span class="dvp-chip">ON ROSTER</span>')
-   +(r.nw?'<span class="dvp-chip">NEW +12H</span>':'')
+   +(r.nw?'<span class="dvp-chip">NEW +'+Math.round(r.sp)+'H</span>':'')
    +(srcTxt?'<span class="dvp-chip">'+srcTxt+'</span>':'')
    +(r.aS!=null&&r.sp?'<span class="dvp-chip">window '+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+' · '+(+r.sp).toFixed(1)+' h/day</span>':'')
    +(r.hwA&&_fcPkHrs(r.hwA)?'<span class="dvp-chip">most active '+_fcPkHrs(r.hwA)+'</span>':'')
@@ -7432,36 +7448,42 @@ function _fcHM(hF){let hh=Math.floor(((hF%24)+24)%24),mm=Math.round((hF-Math.flo
 function _fcHxTxt(r){const x=r.hx||{};const L=[];
   const SK={f:'his first day here',d1:'pad day-1',pf:'prefill',open:'in progress',cx:'continuous run (HOS check)'};
   const RN=(Array.isArray(r.cx)&&r.cx.length&&r.cx[0]&&r.cx[0].sW!=null)?r.cx:_cxRuns(r);
-  if(r.cxO){L.push('<b>How his hours are estimated</b> — his roster here is a continuous run with no 4 h break (one driver per truck)');
-    L.push('<b>HOS check</b> — '+_cxTip(RN[RN.length-1]));
-    L.push('Projected as one driver: <b>12 h</b> from his last start '+String(r.cs||'').slice(11,16)+', then a 10 h rest · the run does not teach his window');
-    return L.join('\n');}
-  const h1=v=>(v==null?'—':(+v).toFixed(1)+' h');
+  const h1=v=>(v==null?'—':(+v).toFixed(1)+' h'),ph=_rsPh(r);
   L.push('<b>How his hours are estimated</b> — real clock: first At Terminal → last delivery (offline stamps corrected)');
-  if(r.shd&&r.shd.length)L.push(r.shd.map(s2=>'• '+s2[0]+' — start '+_fcHM(s2[1])+' · '+(+s2[2]).toFixed(1)+' h').join('\n'));
+  if(r.cxO)L.push('His continuous run counts at its <b>real hours</b> (one driver per truck) · capped at <b>20 h/day</b>');
+  if(r.shd&&r.shd.length)L.push(r.shd.map(s2=>'• '+s2[0]+' — '+(+s2[1]<0?'continuous run (no start that day)':'start '+_fcHM(s2[1]))+' · '+(+s2[2]).toFixed(1)+' h'+(+s2[3]?' · run day':'')).join('\n'));
   const M={pattern:'Repeats ~'+h1(x.mode)+' most days → ½ that + ¼ last day ('+h1(x.last)+') + ¼ average ('+h1(x.mean)+')',
     'dip-last':'Short day(s) in his log; his last day ('+h1(x.last)+') is above his average ('+h1(x.mean)+') → ½ last day + ½ average',
     'dip-skip':'His last day ('+h1(x.last)+') was short — read as a partial day → ½ median ('+h1(x.med)+') + ½ average of his full days',
     'trend-down':'Two short days in a row — the drop looks real → recent days weigh more',
     trend:'Steady days → ½ recency-weighted average + ½ median ('+h1(x.med)+')',
     xwell:'No learning day on this pad yet (prefill · pad day-1 · his first day) → his hours from his latest pad <b>'+(r.xw||'—')+'</b>',
-    cx:'Only a continuous run on this pad (no 4 h break) — not a legal shift to learn from → <b>12 h</b> default, then a 10 h rest',
-    'new':'First trip, no history on any pad → <b>12 h</b> from his real start '+String(r.nwS||r.cs||'').slice(11,16),
-    prior:'No days to learn from — default'};
-  L.push('Method: '+(M[x.m]||x.m||'—')+' = <b>'+(+r.sp).toFixed(1)+' h</b>');
-  if(x.n>0&&x.w<1){const pv=x.ps==='xwell'?('his latest pad <b>'+(r.xw||'—')+'</b>'):(x.ps==='prefill'?'his prefill days':'the 12 h default');
+    cx:'No closed duty day yet — his continuous run is still open or on his first day here → the pad typical shift <b>'+h1(ph||r.sp)+'</b>',
+    'new':'First trip, no history on any pad → the pad typical shift <b>'+h1(ph||r.sp)+'</b> from his real start '+String(r.nwS||r.cs||'').slice(11,16),
+    prior:'No days to learn from — the pad typical shift'};
+  L.push('Method: '+(r.v112?'his closed run days at real hours blended with the pad typical shift':(M[x.m]||x.m||'—'))+' = <b>'+(+r.sp).toFixed(1)+' h</b>');
+  if(x.n>0&&x.w<1){const pv=x.ps==='xwell'?('his latest pad <b>'+(r.xw||'—')+'</b>'):(x.ps==='prefill'?'his prefill days':(x.ps==='pad'?'the pad typical shift':'the 12 h default'));
     L.push('Only '+x.n+' learning day'+(x.n===1?'':'s')+' here → '+Math.round(x.w*100)+'% this pad + '+(100-Math.round(x.w*100))+'% '+pv+' ('+h1(x.pr)+')');}
   if(r.src==='prefill')L.push('Fallback: prefill days only — no learning day after pad day-1 yet');
   if(r.src==='all')L.push('Fallback: every closed day he has here — no learning day yet');
   if(x.mean!=null&&Math.abs(x.mean-(+r.sp))>=0.5)L.push('Plain average would be '+h1(x.mean));
   if(x.sk&&x.sk.length){const sq=[];x.sk.forEach(k=>{const z=sq[sq.length-1];if(k[1]==='cx'&&z&&z.k==='cx'){z.to=k[0];return;}sq.push({d:k[0],k:k[1],to:''});});
     L.push('Not used: '+sq.map(q=>q.d+(q.to&&q.to!==q.d?'→'+q.to:'')+' '+(SK[q.k]||q.k)).join(' · '));}
-  if(RN.length)L.push('<b>HOS check</b> — '+_cxTip(RN[RN.length-1]));
+  if(+x.cxd>0)L.push('Includes <b>'+x.cxd+'</b> day'+(+x.cxd===1?'':'s')+' of his continuous run at real hours — projected at his real pace, capped at 20 h/day');
+  if(RN.length||r.cxO)L.push('<b>HOS check</b> — '+_cxTip(RN[RN.length-1]));
   return L.join('\n');}
 /* .141 · texto de la pila AHORA (captura → ahora) */
 function _fcNcTxt(pf){const n=pf&&pf.nc;if(!n)return '';
   return ' · <b>now ≈ '+fmt(n.inv)+' lbs</b> (captured '+fmt(n.cap)+' at '+_wHM(n.capW)+' · +'+fmt(n.dl)+' delivered · −'+fmt(n.bn)+' burned'+(n.gap?' · +'+fmt(n.gap)+' est. for a '+n.gapH+' h data gap':'')+')'
     +(n.stgLag?' · <b>no stage logged for '+n.stgLag+' h</b> — burn estimated at the frac pace'+(n.down?' until the open downtime':''):'');}
+/* .144 · EXPOSICIÓN HOS — la proyección es fiel a las horas reales de cada driver; aquí se ve cuánto de ese supply
+   depende de horas por encima de la ventana de 14 h (un driver por camión): si se paran en 14 h, el supply baja eso */
+function _fcHosExp(rows){const pf=FC.pf||{};const rate=(+pf.tr>0&&+pf.shift>0)?pf.tr/pf.shift:0;
+  const L=(rows||[]).filter(r=>r.inc&&+r.sp>14.05).map(r=>({d:r.d,sp:+r.sp,x:+r.sp-14,cx:!!((r.cx&&r.cx.length)||r.cxO)})).sort((a,b)=>b.x-a.x);
+  if(!L.length)return '';const xh=L.reduce((a,q)=>a+q.x,0),xl=rate*xh;
+  return '<div class="fcr-note hos"><b>HOS exposure</b> — '+L.length+' driver'+(L.length===1?'':'s')+' projected over the 14 h window at their real pace ('
+    +L.slice(0,4).map(q=>q.d+' '+q.sp.toFixed(1)+' h'+(q.cx?' · run':'')).join(' · ')+(L.length>4?' · …':'')+'): <b>+'+xh.toFixed(1)+' h/day</b>'
+    +(xl>0.05?' ≈ <b>'+xl.toFixed(1)+' loads/day</b> of the projected supply':'')+' depend on hours past HOS · Summary → Out of hours</div>';}
 function fcRosterTable(){
   const host=$('fcr-body');if(!host)return;
   const rows=((FC._proj&&FC._proj.rows)||[]).slice().sort((a,b)=>b.n-a.n);
@@ -7483,7 +7505,8 @@ function fcRosterTable(){
       nt.innerHTML='<div class="fcr-note"><b>'+fmt(cp.loads)+' loads from '+pe.map(p=>p.name||p.id).join(', ')+'</b> sit in this Loads Report'+(bl?' ('+bl+')':'')
         +' — excluded automatically: same Load IDs as that pad and its terminals.'+(only?' '+only+' driver'+(only===1?' who only appears':'s who only appear')+' there '+(only===1?'is':'are')+' not in this roster.':'')
         +' Delete those rows from the sheet.</div>';}
-    else nt.innerHTML='';}}
+    else nt.innerHTML='';
+    nt.innerHTML+=_fcHosExp(rows);}} /* .144: exposición HOS de la proyección */
   const _mkR=r=>{const sc2=fcScore2(r,rows,dtr,padDays,_wT&&_wT.targets,_bdM2[String(r.d).toUpperCase()]||null);const sc=sc2.s;
     const stale=!r.fresh;
     const wb2=fcHrsBand(r.sp);const vr2=_fcVr(r);
@@ -7493,7 +7516,7 @@ function fcRosterTable(){
       const perDay={};r.shd.forEach(s2=>{perDay[s2[0]]=(perDay[s2[0]]||0)+(+s2[2]||0);});
       const pdK=Object.keys(perDay).sort();
       audit='Learned from '+(r.pw?'pumping-day (day-1 skipped)':(r.src==='xwell'?('his LATEST PAD — '+r.xw):(r.src==='prefill'?'PREVIOUS-JOB (prefill)':'all')))+' closed shifts:\n'
-        +r.shd.map(s2=>'• '+s2[0]+' — start '+_fcHM(s2[1])+' · '+s2[2]+' h').join('\n')
+        +r.shd.map(s2=>'• '+s2[0]+' — '+(+s2[1]<0?'continuous run':'start '+_fcHM(s2[1]))+' · '+s2[2]+' h').join('\n')
         +'\nPer-day total: '+pdK.map(k2=>k2+' → '+perDay[k2].toFixed(1)+' h').join(' · ')
         +(pdK.length<r.shd.length?'  (split shifts summed)':'');}
     const tip=encodeURIComponent('<b>'+r.d+'</b>'+(r.c?' — '+r.c:'')
@@ -7503,7 +7526,7 @@ function fcRosterTable(){
         +(function(){const cs=String(r.cs||'');if(cs.length<16)return '';const cW=_wms(cs.slice(0,10),cs.slice(11,16));if(cW==null)return '';
           const heW=cW+13*36e5,left=(heW-_wOf(Date.now()))/36e5,ceW=_fcW(r.curEnd,'loc'); /* reloj de pared Central, sin depender del navegador */
           return '\n14 h HOS window (13 h after his first At Terminal, less pre-trip) ends <b>~'+_wHM(heW)+' CT</b>'+(left<=0?' — <b>already reached</b>':(ceW<heW-18e5?' · can extend up to '+((heW-ceW)/36e5).toFixed(1)+' h if the pile needs it':''));})():'')
-      +(r.hx?'':(r.nw?'\nNEW (first 2 days) — 12 h from his real start'+(r.nwS?' at '+String(r.nwS).slice(11,13)+':00':''):''))
+      +(r.hx?'':(r.nw?'\nNEW (first 2 days) — '+r.sp.toFixed(1)+' h (pad typical) from his real start'+(r.nwS?' at '+String(r.nwS).slice(11,13)+':00':''):''))
       +(r.hx||r.pw?'':(r.src==='xwell'?('\nInherited from '+r.xw+' (his latest pad · last load there '+String(r.xwL||'').slice(5)+':00)'):(r.src==='prefill'?'\nprefill fallback — windows inherited from the previous job':'\nall-days fallback — no closed pump shifts yet')))
       +(r.hwA&&_fcPkHrs(r.hwA)?'\nMost active: <b>'+_fcPkHrs(r.hwA)+'</b>':'')
       +'\n'+audit);
@@ -7511,11 +7534,11 @@ function fcRosterTable(){
     +'<td><input type="checkbox" '+(r.inc?'checked':'')+(stale?' disabled':'')+' onchange="fcTogDrv(\''+encodeURIComponent(r.d)+'\')"></td>'
     +'<td><span class="fcr-nm" onclick="fcGotoDriver(\''+String(r.d).replace(/'/g,"\\'")+'\')">'+r.d+'</span>'
       +' <span class="fcp-o" title="Open profile" onclick="drvProfile(\''+String(r.d).replace(/'/g,"\\'")+'\')">\u2197</span>'
-      +(r.nw?' <span class="fcr-new">NEW +12H</span>':'')+(((r.cx&&r.cx.length)||r.cxO)?' <span class="fcr-new hos" title="'+_eh(_cxTip((r.cx||[])[(r.cx||[]).length-1]))+'">HOS</span>':'')+'</td>'
+      +(r.nw?' <span class="fcr-new">NEW +'+Math.round(r.sp)+'H</span>':'')+(((r.cx&&r.cx.length)||r.cxO)?' <span class="fcr-new hos" title="'+_eh(_cxTip((r.cx||[])[(r.cx||[]).length-1]))+'">HOS</span>':'')+'</td>'
     +'<td>'+(r.c||'—')+'</td>'
     +'<td class="fcr-win">'+_fcHM(r.aS)+' – '+_fcHM(r.aS+r.sp)+(function(){ /* .139: etiqueta de dónde salen sus horas */
         const bl=r.hx&&r.src==='pump'&&r.hx.w<1&&r.hx.ps==='xwell';
-        const tg=(r.cxO||r.src==='cx')?'HOS 12 h':(r.src==='xwell'?('from '+r.xw):(bl?('blend '+r.xw):(r.src==='prefill'?'prefill':(r.src==='all'?'all-days':''))));
+        const tg=r.src==='cx'?'pad typical':((r.cxT||r.cxO)?'real hours · run':(r.src==='xwell'?('from '+r.xw):(bl?('blend '+r.xw):(r.src==='prefill'?'prefill':(r.src==='all'?'all-days':'')))));
         return tg?' <span style="font-size:8px;color:'+((r.src==='xwell'||bl)?'#1c5d8f':'#b45309')+'">'+tg+'</span>':'';})()+(vr2?' <span style="font-size:8px;color:#9a7b2d">~ varies</span>':'')+'</td>'
     +'<td><span class="fcw '+fcHrsBand(r.sp).cls+'">'+r.sp.toFixed(1)+' h · '+fcHrsBand(r.sp).t+'</span></td>'
     +(function(){if(!(trT>0&&r.tp>0))return '<td>'+r.tp.toFixed(2)+'</td>';

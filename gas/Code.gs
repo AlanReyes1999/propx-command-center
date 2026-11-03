@@ -1,4 +1,12 @@
-/** MEDS · PropX Live API — Code.gs v11.2. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v11.3. PEGAR TAL CUAL → Nueva versión.
+ *  v11.3 HORAS FIELES (un driver por camión): (1) la corrida continua SÍ enseña con sus horas REALES por día
+ *  (cada día que toca se junta con las otras jornadas de ese mismo día) — un driver que corre 40 h ya no sale
+ *  "12 h healthy": se proyecta a su ritmo real y el portal lo marca OVER-WORKED / HOS. (2) Sin base fija de
+ *  12 h: el default y el prior de quien tiene pocos días es el TURNO TÍPICO DEL PAD (mediana de las jornadas
+ *  cerradas que enseñan de todos sus drivers, ≥5; si no hay, 12 h) — roster_clock.padh/padn, hx.ps='pad'.
+ *  (3) Sin topes que escondan horas: un bloque cuenta completo hasta 24 h (antes 17) y la jornada hasta 24 h
+ *  (antes 20); la proyección tiene techo de 20 h/día por persona (antes 18). (4) El arranque solo se aprende de
+ *  arranques reales (la continuación de una corrida a medianoche no es arranque). shd[3] = día de corrida.
  *  v11.2 UN DRIVER POR CAMIÓN (la flota no corre con dos drivers): un bloque de más de 24 h sin una
  *  pausa de 4 h ya NO es "unidad 24/7 / dos drivers" sino una CORRIDA CONTINUA del driver → alerta HOS.
  *  (1) roster[].cx = [inicio, fin, horas, loads, abierta] de sus corridas; sus días siguen en dh con
@@ -261,7 +269,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v11.2';
+const API_VERSION='v11.3';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -1252,7 +1260,7 @@ function getWell(id){
       const ts=new Date(di+'T'+hh+':00').getTime(); if(ts>lastTs){lastTs=ts;lastK=key;}
     }}
   const hours=Object.keys(statusByHour).sort();
-  const _rsS={v:'v11.2'}; /* lo llena el roster (reloj real: tramo típico, entregas offline corregidas) */
+  const _rsS={v:'v11.3'}; /* lo llena el roster (reloj real: tramo típico, entregas offline corregidas) */
   const statusBoard=lastK?Object.entries(statusByHour[lastK]).map(([s,n])=>({status:s,count:n})).sort((a,b)=>b.count-a.count):[];
   /* v11.1: roster ANTES del objeto — sus bloques (1er At Terminal → última entrega) dan ac = drivers EN TURNO por hora */
   const _AC={},_LOC={};let _ROS=[];
@@ -1353,14 +1361,15 @@ function getWell(id){
    para el día siguiente). Dato real: los descansos están en 8–10 h y
    10 h+, casi nada entre 4 y 6 h. v11.2 · UN driver por camión (la flota no corre con dos drivers): un
    bloque corrido de >24 h (sin pausa de 4 h) es una CORRIDA CONTINUA — sus horas reales se reparten por día
-   calendario y se marcan (dh[7]=1 · cx) para revisar HOS (14 h de ventana · 10 h de descanso); NO enseñan su
-   patrón y nunca se proyecta 24/7.
+   calendario y se marcan (dh[7]=1 · cx) para revisar HOS (14 h de ventana · 10 h de descanso). v11.3: esos días
+   SÍ enseñan con sus horas reales (juntos con las otras jornadas del mismo día) — la proyección es fiel a su ritmo
+   real (techo 20 h/día por persona) y el portal lo marca; base de quien tiene pocos días = turno típico del pad.
    ENSEÑAN: jornadas CERRADAS de operación después del día-1 del pozo y después de la PRIMERA
    jornada del driver en el pad (nunca la jornada en curso). PRECEDENCIA: ≥3 jornadas que enseñan
    → este pad · 1–2 → este pad mezclado con su historial (pozo pasado, prefill o 12 h) · 0
    (prefill, día-1, su primer día) → POZOS PASADOS · prefill · todas sus jornadas · NUEVO (primer
    viaje sin historial) = 12 h desde su arranque real. Estimador ponderado _hrsEst, no promedio simple. */
-const _RS={GAPB:4,GAPD:6,LAGMAX:5,CONT:24,ODAY:2,END:0.25,OPEN:3,DAYMAX:20,BLKMAX:17,LEG:1.5,LEGIT:1.2,AGE:0.7,WIN:8,XWD:14};
+const _RS={GAPB:4,GAPD:6,LAGMAX:5,CONT:24,ODAY:2,END:0.25,OPEN:3,DAYMAX:24,BLKMAX:24,CAPH:20,PADN:5,LEG:1.5,LEGIT:1.2,AGE:0.7,WIN:8,XWD:14}; /* v11.3: DAYMAX/BLKMAX 24 (horas reales) · CAPH techo de proyección por persona · PADN jornadas mínimas para el turno típico del pad */
 /* v11.1 · tramo típico del pad (h): Delivered − At Terminal y Delivered − In Transit de entregas EN LÍNEA */
 function _medN(a){if(!a.length)return null;const s=a.slice().sort(function(x,y){return x-y;});const k=s.length>>1;return s.length%2?s[k]:(s[k-1]+s[k])/2;}
 /* tramos de entregas EN LÍNEA: At Terminal→Delivered, In Transit→Delivered, At Staging→Delivered y el tránsito
@@ -1400,7 +1409,7 @@ function _hTo(hA,wm){const mins=Math.round(hA*60);const dd=Math.floor(mins/1440)
   const p=function(n){return ('0'+n).slice(-2);};const r=mins-dd*1440;
   return dt.getUTCFullYear()+'-'+p(dt.getUTCMonth()+1)+'-'+p(dt.getUTCDate())+' '+p(Math.floor(r/60))+(wm?':'+p(r%60):'');}
 function _hD(hA){return _hTo(hA).slice(0,10);}
-/* ESTIMADOR PONDERADO de horas/día (días en orden cronológico; prior = su historial o 12 h):
+/* ESTIMADOR PONDERADO de horas/día (días en orden cronológico; prior = su historial o el turno típico del pad · v11.3):
    · patrón repetido (≥3 días a ±1 h y ≥ la mitad) → 50% el valor repetido + 25% último día + 25% media
    · días bajos (< 65% de la mediana) y el último día SOBRE la media → 50% último día + 50% media
    · el último día es el bajo (día parcial) → 50% mediana + 50% media de los días completos
@@ -1442,6 +1451,9 @@ function _startEst(xs,ws){const n=xs.length;if(!n)return {h:0,R:0};
   if(n>=3){const keep=all.filter(function(i){let d=Math.abs(xs[i]-r.h)%24;if(d>12)d=24-d;return d<=5;});
     if(keep.length>=2&&keep.length<n)r=run(keep);}
   return r;}
+/* v11.3 · arranque típico solo con arranques REALES (st != null) — la continuación de una corrida no arranca nada */
+function _stEst(list,ws){const ix=[];(list||[]).forEach(function(r,i){if(r&&r.st!=null)ix.push(i);});if(!ix.length)return null;
+  return _startEst(ix.map(function(i){return list[i].st;}),ws?ix.map(function(i){return ws[i];}):null);}
 function _cblend(h1,h2,w){const a1=h1/24*2*Math.PI,a2=h2/24*2*Math.PI;
   let h=Math.atan2(w*Math.sin(a1)+(1-w)*Math.sin(a2),w*Math.cos(a1)+(1-w)*Math.cos(a2))/(2*Math.PI)*24;
   if(h<0)h+=24;return h;}
@@ -1526,6 +1538,7 @@ function _rosterBuild(rosterEv,byDriver,pumpSet,opt){
   const nowH=NOWH!=null?NOWH:gMax;
   let startDay=null;pumpSet.forEach(function(dd){if(!startDay||dd<startDay)startDay=dd;});
   const poolF=(typeof opt.pool==='function')?opt.pool:function(){return opt.pool||null;};
+  const PRE=[]; /* v11.3: 1a pasada — jornadas de TODOS los drivers (de ahí sale el turno típico del pad) */
   Object.keys(EV).forEach(function(drv){
     const ev=EV[drv];
     /* BLOQUES: intervalos fusionados; un hueco < GAPB es espera dentro del turno (cuenta) */
@@ -1544,7 +1557,7 @@ function _rosterBuild(rosterEv,byDriver,pumpSet,opt){
     for(let i=1;i<bl.length;i++){const b=bl[i];
       if(b.s-J.bl[J.bl.length-1].e>=_RS.GAPD||(b.e-J.bl[0].s)>24){dps.push(J);J={bl:[b]};}else J.bl.push(b);} /* jornada nunca >24 h */
     dps.push(J);
-    const recs=[],runs=[];
+    const recs=[],runs=[],RS0={};
     dps.forEach(function(J2,ji){const s0=J2.bl[0].s,e0=J2.bl[J2.bl.length-1].e;
       const cl=ji<dps.length-1||(gMax-e0)>=_RS.GAPD||(nowH-e0)>=12;  /* cerrada: hubo otra después, ya pasó un descanso o el dato se detuvo */
       const cont=J2.bl.some(isCont); /* v11.2 · un BLOQUE corrido de >24 h (sin pausa de 4 h) = corrida continua de UN driver */
@@ -1554,7 +1567,7 @@ function _rosterBuild(rosterEv,byDriver,pumpSet,opt){
         recs.push({d:_hD(s0+_RS.ODAY),h:Math.min(_RS.DAYMAX,h),st:_clk(s0),bl:J2.bl,cl:cl,cx:0,s0:s0,e0:e0,n:n});return;}
       /* v11.2 · CORRIDA CONTINUA: sus horas reales por día calendario, marcadas para revisar HOS — no es un turno legal,
          así que no enseña su patrón (ni su arranque ni su largo) */
-      const rid=runs.length+1,nR=J2.bl.reduce(function(a,b){return a+(b.n||0);},0);
+      const rid=runs.length+1,nR=J2.bl.reduce(function(a,b){return a+(b.n||0);},0);RS0[rid]=s0;
       runs.push([_hTo(s0,1),_hTo(e0,1),_r1(e0-s0),nR,cl?0:1]);
       for(let d0=Math.floor(s0/24)*24;d0<e0;d0+=24){const d1=d0+24,parts=[];let h=0;
         J2.bl.forEach(function(b){const a2=Math.max(b.s,d0),z=Math.min(b.e,d1);if(z>a2){parts.push({s:a2,e:z});h+=z-a2;}});
@@ -1563,48 +1576,65 @@ function _rosterBuild(rosterEv,byDriver,pumpSet,opt){
         recs.push({d:_hD(d0),h:Math.min(24,h),st:_clk(parts[0].s),bl:parts,cl:cl||d1<=e0,cx:rid,s0:parts[0].s,e0:parts[parts.length-1].e,n:pn});}});
     const firstDay=recs[0].d;
     recs.forEach(function(r){r.k=!r.cl?'open':(r.d===firstDay?'f':(startDay&&r.d===startDay?'d1':((!startDay||r.d<startDay)?'pf':'p')));});
-    const P=recs.filter(function(r){return r.k==='p'&&!r.cx;}).slice(-_RS.WIN); /* v11.2: la corrida continua no enseña */
-    const PF=recs.filter(function(r){return r.k==='pf'&&!r.cx;}).slice(-_RS.WIN);
-    const A=recs.filter(function(r){return r.cl&&!r.cx;}).slice(-_RS.WIN);
+    PRE.push({drv:drv,ev:ev,dps:dps,recs:recs,runs:runs,RS0:RS0});});
+  /* v11.3 · TURNO TÍPICO DEL PAD = mediana de las jornadas cerradas que enseñan (sin corridas) de todos sus drivers ·
+     reemplaza la base fija de 12 h (nuevo, pocos días, sin jornada que enseñe) — con menos de PADN jornadas: 12 h */
+  const PH=[];PRE.forEach(function(q){q.recs.forEach(function(r){if(r.k==='p'&&r.cl&&!r.cx&&r.h>0)PH.push(r.h);});});
+  const PADH=PH.length>=_RS.PADN?_r1(Math.min(16,Math.max(8,_medN(PH)))):12, PADS=PH.length>=_RS.PADN?'pad':'12h';
+  PRE.forEach(function(q){const drv=q.drv,ev=q.ev,dps=q.dps,recs=q.recs,runs=q.runs,RS0=q.RS0;
+    /* v11.3 · DÍAS QUE ENSEÑAN — un driver por camión: la corrida continua SÍ enseña con sus horas REALES por día;
+       cada día que toca una corrida se junta con las otras jornadas de ese mismo día (horas reales de ese día) y su
+       arranque solo cuenta si ese día arrancó algo de verdad (jornada normal o inicio de la corrida) */
+    const cxD={};recs.forEach(function(r){if(r.cx)cxD[r.d]=1;});
+    const TR=[],MD={};
+    recs.forEach(function(r){if(!cxD[r.d]){TR.push(r);return;}
+      let m=MD[r.d];if(!m){m=MD[r.d]={d:r.d,h:0,n:0,bl:[],cl:true,cx:1,st:null,stA:null,s0:r.s0,e0:r.e0,op:0,kc:null};TR.push(m);}
+      m.h=Math.min(24,m.h+r.h);m.n+=r.n||0;m.bl=m.bl.concat(r.bl);m.cl=m.cl&&r.cl;if(r.k==='open')m.op=1;else m.kc=r.k;
+      m.s0=Math.min(m.s0,r.s0);m.e0=Math.max(m.e0,r.e0);
+      const real=!r.cx||Math.abs(r.s0-RS0[r.cx])<1e-6;if(real&&(m.stA==null||r.s0<m.stA)){m.st=r.st;m.stA=r.s0;}});
+    TR.forEach(function(m){if(m.cx)m.k=m.op?'open':(m.kc||'p');});
+    const P=TR.filter(function(r){return r.k==='p';}).slice(-_RS.WIN);
+    const PF=TR.filter(function(r){return r.k==='pf';}).slice(-_RS.WIN);
+    const A=TR.filter(function(r){return r.cl;}).slice(-_RS.WIN);
     const D=byDriver[drv]||{name:drv,dates:{},loads:ev.length,carriers:{}};
     const nm=D.name||drv;
     const cars=Object.keys(D.carriers||{}).sort(function(a,b){return D.carriers[b]-D.carriers[a];});
     const H=function(a){return a.map(function(r){return r.h;});};
     const lastJ=dps[dps.length-1],ls={s:lastJ.bl[0].s,e:lastJ.bl[lastJ.bl.length-1].e};
-    const CX=runs.length>0; /* v11.2: tuvo una corrida continua (alerta HOS) — su proyección sigue siendo la de UN driver */
+    const CX=runs.length>0; /* v11.2: tuvo una corrida continua (alerta HOS) */
     if(CX)hvN++;
-    const CAP=18, P12=12;
+    const CAP=_RS.CAPH, P12=PADH; /* v11.3: techo 20 h/día por persona · base = turno típico del pad (no 12 h fijo) */
     let xw=null;if(P.length<3){const pool=poolF(gMax);xw=pool?_xwFind(pool,nm,cars[0]):null;}
     let src,base,est,prior=null,ps='';
     if(P.length>=3){src='pump';base=P;est=_hrsEst(H(P),null,CAP);}
     else{
       if(xw){prior=xw.sp;ps='xwell';}
       else if(PF.length>=2){prior=_hrsEst(H(PF),P12,CAP).v;ps='prefill';}
-      else{prior=P12;ps='12h';}
+      else{prior=P12;ps=PADS;}
       if(P.length){src='pump';base=P;est=_hrsEst(H(P),prior,CAP);}
-      else if(xw){src='xwell';base=[];est={v:_r1(Math.min(18,Math.max(4,xw.sp))),m:'xwell',n:0,pr:_r1(xw.sp),w:0};}
-      else if(PF.length>=2){src='prefill';base=PF;est=_hrsEst(H(PF),P12,CAP);ps='12h';}
-      else if(A.length){src='all';base=A;est=_hrsEst(H(A),P12,CAP);ps='12h';}
-      else if(CX){src='cx';base=[];est={v:P12,m:'cx',n:0,pr:P12,w:0};ps='12h';} /* v11.2: solo tiene la corrida continua → 12 h legales (no es "nuevo") */
-      else{src='new';base=[];est={v:P12,m:'new',n:0,pr:P12,w:0};ps='12h';}}
+      else if(xw){src='xwell';base=[];est={v:_r1(Math.min(CAP,Math.max(4,xw.sp))),m:'xwell',n:0,pr:_r1(xw.sp),w:0};}
+      else if(PF.length>=2){src='prefill';base=PF;est=_hrsEst(H(PF),P12,CAP);ps=PADS;}
+      else if(A.length){src='all';base=A;est=_hrsEst(H(A),P12,CAP);ps=PADS;}
+      else if(CX){src='cx';base=[];est={v:P12,m:'cx',n:0,pr:P12,w:0};ps=PADS;} /* v11.3: corrida aún abierta o en su 1er día → turno típico del pad */
+      else{src='new';base=[];est={v:P12,m:'new',n:0,pr:P12,w:0};ps=PADS;}}
     const ws=base.map(function(_,i){return Math.pow(_RS.AGE,base.length-1-i);});
     let aS=_clk(ls.s),R=0,p=null;
-    if(base.length){const se=_startEst(base.map(function(r){return r.st;}),ws);aS=se.h;R=se.R;p=_hwOf(base,ws);}
+    if(base.length){const se=_stEst(base,ws);if(se){aS=se.h;R=se.R;}p=_hwOf(base,ws);} /* v11.3: solo arranques reales */
     if(src==='pump'&&P.length<3&&ps==='xwell'){const wL=est.w!=null?est.w:1;aS=_cblend(aS,xw.aS,wL);
       if(xw.hw){const q=_hwDec(xw.hw);p=p.map(function(v,i){return wL*v+(1-wL)*q[i];});}}
     if(src==='xwell'){aS=xw.aS;p=xw.hw?_hwDec(xw.hw):null;}
     const sp=est.v;
     const hw=(p&&src!=='new')?_hwEnc(_hwCal(p,sp)):'';
-    /* roster LOCAL puro para los demás pozos (sin herencia: no hay cadenas) · v11.2: sin la corrida continua (P y A ya la excluyen) */
+    /* roster LOCAL puro para los demás pozos (sin herencia: no hay cadenas) · v11.3: con sus días reales (corrida incluida) */
     if(opt.loc){let lb=null,lq=0;if(P.length>=2){lb=P;lq=2;}else if(A.length>=2){lb=A;lq=1;}
-      if(lb){const le=_hrsEst(H(lb),lb.length>=3?null:12),lw=lb.map(function(_,i){return Math.pow(_RS.AGE,lb.length-1-i);});
-        opt.loc[_nrm(nm)]={d:nm,c:cars[0]||'',aS:_r1(_startEst(lb.map(function(r){return r.st;}),lw).h),sp:le.v,sh:lb.length,
+      if(lb){const le=_hrsEst(H(lb),lb.length>=3?null:PADH,CAP),lw=lb.map(function(_,i){return Math.pow(_RS.AGE,lb.length-1-i);});
+        opt.loc[_nrm(nm)]={d:nm,c:cars[0]||'',aS:_r1((_stEst(lb,lw)||{h:_clk(ls.s)}).h),sp:le.v,sh:lb.length,
           hw:_hwEnc(_hwCal(_hwOf(lb,lw),le.v)),last:_hTo(ls.e),src:lq===2?'pump':'all',q:lq};}}
     let pl=0,pdd=0,ol=0,odd=0;const dates=Object.keys(D.dates||{});
     dates.forEach(function(dd){if(pumpSet.has(dd)){pl+=D.dates[dd];pdd++;}
       if(!startDay||dd>=startDay){ol+=(+D.dates[dd]||0);odd++;}});
     if(!dates.length){ol=ev.length;odd=0;}
-    const sk=recs.filter(function(r){return base.indexOf(r)<0&&(r.k!=='p'||r.cx);}).slice(-5).map(function(r){return [r.d.slice(5),r.cx?'cx':r.k];}); /* v11.2: la corrida continua se anota 'cx' */
+    const sk=TR.filter(function(r){return base.indexOf(r)<0&&r.k!=='p';}).slice(-5).map(function(r){return [r.d.slice(5),r.k];}); /* v11.3: la corrida ya enseña */
     const lastE=ev.reduce(function(m,x){return x.e>m?x.e:m;},-1e15);
     out.push({d:nm,c:cars[0]||'',n:ol,sh:base.length,
       aS:_r1(aS),sp:sp,
@@ -1612,20 +1642,21 @@ function _rosterBuild(rosterEv,byDriver,pumpSet,opt){
       fs:_hTo(ev[0].s),last:_hTo(lastE),
       nwA:(D.nn?Math.round(D.nw/D.nn):0),gwA:(D.gn?Math.round(D.gw/D.gn):0),
       nw:src==='new',nwS:_hTo(ls.s,1),src:src,
-      shd:base.slice(-6).map(function(r){return [r.d.slice(5),_r1(r.st),_r1(r.h)];}),
+      shd:base.slice(-6).map(function(r){return [r.d.slice(5),r.st==null?-1:_r1(r.st),_r1(r.h),r.cx?1:0];}), /* v11.3: st −1 = día de corrida sin arranque · [3] día de corrida */
       /* v11.0 · TODAS sus jornadas en este pad: [día, arranque, fin (h desde las 00:00 de ese día),
          horas, loads, clase (p enseña · f su 1er día · d1 día-1 · pf prefill · open en curso),
          descanso previo (h), corrida continua] — el portal las muestra por día y saca la media ·
          v11.2: el descanso se mide también antes y después de una corrida (dentro de ella no hay descanso) */
       dh:recs.slice(-60).map(function(r,ri,A2){const D0=_absH(r.d),pv=ri>0?A2[ri-1]:null;
         return [r.d,Math.round((r.s0-D0)*100)/100,Math.round((r.e0-D0)*100)/100,_r1(r.h),r.n||0,r.k,(pv&&!(r.cx&&pv.cx===r.cx))?_r1(r.s0-pv.e0):null,r.cx?1:0];}),
-      hw:hw,pw:src==='pump',
+      hw:hw,pw:src==='pump',cxT:base.some(function(r){return r.cx;})?1:0, /* v11.3: aprendió con días de corrida (horas reales) */
       cx:runs.slice(-3), /* v11.2 · corridas continuas [inicio, fin, horas, loads, abierta] → alerta HOS en el portal */
       xw:(src==='xwell'||ps==='xwell')?xw.id:'',xwL:(src==='xwell'||ps==='xwell')?xw.last:'',
       cs:_hTo(ls.s,1),lm:_hTo(lastE,1),op:((gMax-lastE)<_RS.OPEN&&(nowH-lastE)<12)?1:0,ch:_r1(Math.min(24,(lastE-ls.s)+_RS.END)),ln:P.length,
       hx:{m:est.m,n:est.n,mean:est.mean!=null?est.mean:null,med:est.med!=null?est.med:null,last:est.last!=null?est.last:null,
-        mode:est.mode!=null?est.mode:null,low:est.low||0,w:est.w!=null?est.w:1,pr:est.pr!=null?est.pr:null,ps:ps,R:Math.round(R*100)/100,sk:sk}});});
-  if(opt.stats){opt.stats.leg=_r1(LEG);opt.stats.legIT=_r1(LEGI);opt.stats.legST=_LG.LEGS!=null?_r1(_LG.LEGS):null;opt.stats.off_fixed=offFix;opt.stats.hos=hvN;opt.stats.future=fut;
+        mode:est.mode!=null?est.mode:null,low:est.low||0,w:est.w!=null?est.w:1,pr:est.pr!=null?est.pr:null,ps:ps,R:Math.round(R*100)/100,sk:sk,
+        cxd:base.filter(function(r){return r.cx;}).length,ph:PADH}});});
+  if(opt.stats){opt.stats.leg=_r1(LEG);opt.stats.legIT=_r1(LEGI);opt.stats.legST=_LG.LEGS!=null?_r1(_LG.LEGS):null;opt.stats.off_fixed=offFix;opt.stats.hos=hvN;opt.stats.future=fut;opt.stats.padh=PADH;opt.stats.padn=PH.length;
     opt.stats.data_at=gMax>-1e15?_hTo(gMax,1):'';opt.stats.gapB=_RS.GAPB;opt.stats.gapD=_RS.GAPD;opt.stats.oday=_RS.ODAY;}
   return out.sort(function(a,b){return b.n-a.n;});}
 
