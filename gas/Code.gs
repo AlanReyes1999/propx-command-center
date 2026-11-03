@@ -1,4 +1,10 @@
-/** MEDS · PropX Live API — Code.gs v10.9. PEGAR TAL CUAL → Nueva versión.
+/** MEDS · PropX Live API — Code.gs v11.0. PEGAR TAL CUAL → Nueva versión.
+ *  v11.0 HORAS POR DÍA + TARIFAS EN LA FIRMA: (1) cada driver del roster publica dh = TODAS sus
+ *  jornadas en el pad (día operativo, arranque, fin, horas, loads, clase, descanso previo, 24/7) →
+ *  el portal muestra en Roster las horas de cada driver en el día elegido y su media. Día operativo:
+ *  la jornada que arranca de 22:00 en adelante cuenta para el día siguiente. (2) La firma de los
+ *  snapshots incluye las tarifas del Hub (Rates) del cliente del pozo: un cambio de rate o FSC con
+ *  vigencia hacia atrás ya refresca los cierres (antes se quedaban con la tarifa vieja).
  *  v10.9 CERO DRIVERS DE OTRO POZO + HORAS REALES: (1) CROSS-PAD: una fila cuya terminal es AJENA al
  *  pad y cuyo Load ID existe en el Loads Report de un pozo vecino (Live o cerrado ≤7 días) que SÍ
  *  declara esa terminal ya no se cuenta aquí — sale antes de sumar loads, tons, revenue, drivers y
@@ -239,7 +245,7 @@ const CFG = {
   assetMarkers: ['ASSET','EQUIP','GENERATOR']      // respaldo — la regla principal: Load # que empieza con 'A' (A1, A2…) = asset
 };
 
-const API_VERSION='v10.9';
+const API_VERSION='v11.0';
 
 /* ═══ CONGELADOR DE CIERRES — automático, sin tocar Netlify ═══
  * Pozo Closed → su JSON se congela en Drive (carpeta MEDS_Snapshots) la primera vez que se pide
@@ -267,7 +273,11 @@ function _sigTabs(reg){ return [reg.sheet_name||CFG.tabs.loads,CFG.tabs.stages,C
 function _sigTap(name,v){ if(_SIG&&_SIG.want[name]&&!(name in _SIG.p))_SIG.p[name]=v?_md5(JSON.stringify(v)):'-'; }
 function _sigJoin(P,reg){
   return _md5(_sigTabs(reg).map(function(n){return n+'='+(P[n]||'-');}).join('|')
-    +'|reg='+JSON.stringify(_SIG_REG.map(function(k){return reg[k]==null?'':reg[k];}))); }
+    +'|reg='+JSON.stringify(_SIG_REG.map(function(k){return reg[k]==null?'':reg[k];}))
+    +'|rates='+_ratesSig(reg)); } /* v11.0: un cambio de rate/FSC con vigencia hacia atrás refresca el cierre */
+var _RATES_MEMO=null;
+function _ratesSig(reg){try{const R=_RATES_MEMO||(_RATES_MEMO=getRates());const k=_rateAlias(R,(reg&&reg.customer)||'FASKEN');
+  return _md5(JSON.stringify([k,R[k]||R.FASKEN||[],R.ASSETS||[]]));}catch(_){return '-';}}
 function _wbSigNow(reg){
   const ss=SpreadsheetApp.openById(reg.spreadsheet_id), P={};
   _sigTabs(reg).forEach(function(n){const sh=ss.getSheetByName(n); P[n]=sh?_md5(JSON.stringify(sh.getDataRange().getValues())):'-';});
@@ -737,7 +747,8 @@ function _effISO(v){ if(v==null||v==='')return '';
     return y+'-'+('0'+mo).slice(-2)+'-'+('0'+da).slice(-2);}
   return ''; } // '2025' u otro texto = tarifa base sin vigencia (aplica desde siempre)
 var RATE_MISS={}; // clientes sin tarifa detectados en el ultimo calculo (visibles en diag.rate_fallback)
-function rateFor(rates,client,miles,dateISO){
+/* v11.0: alias de cliente → llave de Rates (misma regla que siempre usó rateFor; la firma la reusa) */
+function _rateAlias(rates,client){
   let key=(client||'').toUpperCase().trim();
   if(!rates[key]){
     if(key.indexOf('FASKEN')>=0)key='FASKEN';
@@ -747,6 +758,9 @@ function rateFor(rates,client,miles,dateISO){
     else if(key.indexOf('BAYSWATER')>=0||/(^|[^A-Z])BW([^A-Z]|$)/.test(key))key='BW';
     else if(key.indexOf('ASSET')>=0)key='ASSETS';
   }
+  return key;}
+function rateFor(rates,client,miles,dateISO){
+  const key=_rateAlias(rates,client);
   if(!rates[key]){RATE_MISS[key||'(vacio)']=(RATE_MISS[key||'(vacio)']||0)+1;} // fallback = GRITAR, no callar
   const t=rates[key]||rates.FASKEN||[];
   if(!t.length)return {bill:0,pay:0,unit:'ton'};
@@ -1180,7 +1194,7 @@ function getWell(id){
       const ts=new Date(di+'T'+hh+':00').getTime(); if(ts>lastTs){lastTs=ts;lastK=key;}
     }}
   const hours=Object.keys(statusByHour).sort();
-  const _rsS={v:'v10.9'}; /* lo llena el roster (reloj real: tramo típico, entregas offline corregidas) */
+  const _rsS={v:'v11.0'}; /* lo llena el roster (reloj real: tramo típico, entregas offline corregidas) */
   const statusBoard=lastK?Object.entries(statusByHour[lastK]).map(([s,n])=>({status:s,count:n})).sort((a,b)=>b.count-a.count):[];
 
   return {
@@ -1272,7 +1286,8 @@ function getWell(id){
    OFFLINE ("Delivered Offline" = Yes) el sello llega cuando el teléfono sincroniza (hasta 6 h tarde)
    → fin = In Transit + tránsito típico del pad. BLOQUE = cargas encadenadas (espera <4 h cuenta);
    JORNADA = bloques con descanso <6 h (split shift: se suman, la pausa no) fechada por su ARRANQUE
-   (el nocturno que cruza medianoche es UNA jornada). Dato real: los descansos están en 8–10 h y
+   (el nocturno que cruza medianoche es UNA jornada; v11.0: si arranca de 22:00 en adelante cuenta
+   para el día siguiente). Dato real: los descansos están en 8–10 h y
    10 h+, casi nada entre 4 y 6 h. Un bloque corrido de >24 h (sin pausa de 4 h) = unidad 24/7
    (dos drivers en una cuenta / slip seat).
    ENSEÑAN: jornadas CERRADAS de operación después del día-1 del pozo y después de la PRIMERA
@@ -1280,7 +1295,7 @@ function getWell(id){
    → este pad · 1–2 → este pad mezclado con su historial (pozo pasado, prefill o 12 h) · 0
    (prefill, día-1, su primer día) → POZOS PASADOS · prefill · todas sus jornadas · NUEVO (primer
    viaje sin historial) = 12 h desde su arranque real. Estimador ponderado _hrsEst, no promedio simple. */
-const _RS={GAPB:4,GAPD:6,LAGMAX:5,TEAM:24,END:0.25,OPEN:3,DAYMAX:20,BLKMAX:17,LEG:1.5,LEGIT:1.2,AGE:0.7,WIN:8,XWD:14};
+const _RS={GAPB:4,GAPD:6,LAGMAX:5,TEAM:24,ODAY:2,END:0.25,OPEN:3,DAYMAX:20,BLKMAX:17,LEG:1.5,LEGIT:1.2,AGE:0.7,WIN:8,XWD:14};
 function _absH(d){const m=String(d||'').match(/(\d{4})-(\d{2})-(\d{2})/);
   return m?Date.UTC(+m[1],+m[2]-1,+m[3])/3600000:0;}
 function _nrm(n){return String(n||'').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Z ]/g,' ').replace(/\s+/g,' ').trim();}
@@ -1444,13 +1459,16 @@ function _rosterBuild(rosterEv,byDriver,pumpSet,opt){
     dps.forEach(function(J2,ji){const s0=J2.bl[0].s,e0=J2.bl[J2.bl.length-1].e;
       const cl=ji<dps.length-1||(gMax-e0)>=_RS.GAPD||(nowH-e0)>=12;  /* cerrada: hubo otra después, ya pasó un descanso o el dato se detuvo */
       const team=J2.bl.some(isTeam); /* un BLOQUE corrido de >24 h (sin pausa de 4 h) cargando = dos personas */
-      if(!team){let h=0;J2.bl.forEach(function(b){h+=Math.min(_RS.BLKMAX,(b.e-b.s)+_RS.END);});
-        recs.push({d:_hD(s0),h:Math.min(_RS.DAYMAX,h),st:_clk(s0),bl:J2.bl,cl:cl,tm:0});return;}
+      if(!team){let h=0,n=0;J2.bl.forEach(function(b){h+=Math.min(_RS.BLKMAX,(b.e-b.s)+_RS.END);n+=b.n||0;});
+        /* v11.0 · día OPERATIVO: la jornada que arranca de 22:00 en adelante cuenta para el día siguiente
+           (quien entra 23:54 trabaja ESE día) — el resto se fecha por su arranque */
+        recs.push({d:_hD(s0+_RS.ODAY),h:Math.min(_RS.DAYMAX,h),st:_clk(s0),bl:J2.bl,cl:cl,tm:0,s0:s0,e0:e0,n:n});return;}
       /* unidad 24/7 (dos drivers en una cuenta / slip seat): la jornada se reparte por día calendario */
       for(let d0=Math.floor(s0/24)*24;d0<e0;d0+=24){const d1=d0+24,parts=[];let h=0;
         J2.bl.forEach(function(b){const a2=Math.max(b.s,d0),z=Math.min(b.e,d1);if(z>a2){parts.push({s:a2,e:z});h+=z-a2;}});
         if(!parts.length)continue;
-        recs.push({d:_hD(d0),h:Math.min(24,h),st:_clk(parts[0].s),bl:parts,cl:cl||d1<=e0,tm:1});}});
+        const pn=ev.filter(function(x){return x.e>=d0&&x.e<d1;}).length;
+        recs.push({d:_hD(d0),h:Math.min(24,h),st:_clk(parts[0].s),bl:parts,cl:cl||d1<=e0,tm:1,s0:parts[0].s,e0:parts[parts.length-1].e,n:pn});}});
     const firstDay=recs[0].d;
     recs.forEach(function(r){r.k=!r.cl?'open':(r.d===firstDay?'f':(startDay&&r.d===startDay?'d1':((!startDay||r.d<startDay)?'pf':'p')));});
     const P=recs.filter(function(r){return r.k==='p';}).slice(-_RS.WIN);
@@ -1503,13 +1521,18 @@ function _rosterBuild(rosterEv,byDriver,pumpSet,opt){
       nwA:(D.nn?Math.round(D.nw/D.nn):0),gwA:(D.gn?Math.round(D.gw/D.gn):0),
       nw:src==='new'&&!TM,nwS:_hTo(ls.s,1),src:src,
       shd:base.slice(-6).map(function(r){return [r.d.slice(5),_r1(r.st),_r1(r.h)];}),
+      /* v11.0 · TODAS sus jornadas en este pad: [día, arranque, fin (h desde las 00:00 de ese día),
+         horas, loads, clase (p enseña · f su 1er día · d1 día-1 · pf prefill · open en curso),
+         descanso previo (h), 24/7] — el portal las muestra por día y saca la media */
+      dh:recs.slice(-60).map(function(r,ri,A2){const D0=_absH(r.d),pv=ri>0?A2[ri-1]:null;
+        return [r.d,Math.round((r.s0-D0)*100)/100,Math.round((r.e0-D0)*100)/100,_r1(r.h),r.n||0,r.k,(pv&&!r.tm&&!pv.tm)?_r1(r.s0-pv.e0):null,r.tm?1:0];}),
       hw:hw,pw:src==='pump',tm:TM?1:0,
       xw:(src==='xwell'||ps==='xwell')?xw.id:'',xwL:(src==='xwell'||ps==='xwell')?xw.last:'',
       cs:_hTo(ls.s,1),lm:_hTo(lastE,1),op:((gMax-lastE)<_RS.OPEN&&(nowH-lastE)<12)?1:0,ch:_r1(Math.min(24,(lastE-ls.s)+_RS.END)),ln:P.length,
       hx:{m:est.m,n:est.n,mean:est.mean!=null?est.mean:null,med:est.med!=null?est.med:null,last:est.last!=null?est.last:null,
         mode:est.mode!=null?est.mode:null,low:est.low||0,w:est.w!=null?est.w:1,pr:est.pr!=null?est.pr:null,ps:ps,R:Math.round(R*100)/100,sk:sk}});});
   if(opt.stats){opt.stats.leg=_r1(LEG);opt.stats.legIT=_r1(LEGI);opt.stats.off_fixed=offFix;opt.stats.team=teamN;opt.stats.future=fut;
-    opt.stats.data_at=gMax>-1e15?_hTo(gMax,1):'';opt.stats.gapB=_RS.GAPB;opt.stats.gapD=_RS.GAPD;}
+    opt.stats.data_at=gMax>-1e15?_hTo(gMax,1):'';opt.stats.gapB=_RS.GAPB;opt.stats.gapD=_RS.GAPD;opt.stats.oday=_RS.ODAY;}
   return out.sort(function(a,b){return b.n-a.n;});}
 
 // ---------- Status Live (?action=status · todos los pads del Hub) ----------

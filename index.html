@@ -1024,6 +1024,13 @@ tr.pg-more button b{margin-left:10px;color:#1c3d54}
 .dcell{text-align:center;font-size:10.5px;font-weight:700;border-radius:4px;padding:3px 4px!important;min-width:30px;cursor:default;transition:transform .12s}
 .dcell:hover{transform:scale(1.2);z-index:3;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .ph-pre{background:rgba(203,213,225,.22)!important}.ph-run{background:rgba(58,124,165,.09)!important}.ph-eoj{background:rgba(100,116,139,.14)!important}
+.hc-g{background:#c9ecd8;color:#14532d}.hc-y{background:#fbe7b5;color:#7a5a12}.hc-r{background:#f8cccc;color:#8f1d1d}
+.dcell.hc-open{outline:1.5px dashed rgba(58,124,165,.6);outline-offset:-2px}.dcell .hsup{font-size:7px;vertical-align:super;margin-left:1px;color:#475569;font-weight:800}
+.rh-card{margin:0 0 14px}.rh-k{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}
+.rh-k .k{background:#f4f8fb;border:1px solid #e3ecf3;border-radius:12px;padding:7px 11px;min-width:108px}
+.rh-k .k .t{font:800 8px/1.2 'Plus Jakarta Sans';letter-spacing:.08em;text-transform:uppercase;color:#7b8a99}
+.rh-k .k .v{font:800 16px/1.25 'Plus Jakarta Sans';color:#17293a;margin-top:2px}.rh-k .k .s{font:600 9px/1.3 'Plus Jakarta Sans';color:#8a97a6}
+.rh-note{font:500 10px/1.5 'Plus Jakarta Sans';color:#64748b;margin-top:6px}
 .c7{background:#86EFAC;color:#14532d}.c56{background:#BBF7D0;color:#166534}.c34{background:#FDE68A;color:#854d0e}.c12{background:#FECACA;color:#991b1b}.c0{color:transparent}
 .sbar{width:72px;height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-right:5px}
 .sfill{height:100%;border-radius:3px}
@@ -1699,6 +1706,7 @@ const DEMO_ASSETS={moves:6,revenue:2656,cost:2257,events:[
  {date:'2026-06-05',load_no:'A3',driver:'Alberto Carmona',miles:28,revenue:328},
  {date:'2026-06-03',load_no:'A2',driver:'Luis Solis',miles:66,revenue:447},
  {date:'2026-05-28',load_no:'A1',driver:'Ramiro Ortiz',miles:44,revenue:407}]};
+let DRIVER_HRS=null; /* .140: horas de trabajo por driver y día (GAS v11.0 · roster[].dh) */
 let CYCLE_DAILY=null, CYC_BYTERM=null, DRIVER_DAYS=null, DOWNTIME_EVENTS=null, ASSETS_DATA=null, PART_D=null, PART_SPAN_D=null, GAS_VER='';
 let PZCYC='';
 window.pzCycT=function(t){PZCYC=t||'';M=buildM();_pzDirty['cl-cycle']=true;pzShow('cl-cycle');};
@@ -1764,7 +1772,7 @@ async function fetchJSON(u,_xsig){
         await new Promise(function(r){setTimeout(r,600+900*_i);});}
     }}
   throw _last;}
-const VBUILD='2026-11-02.139';
+const VBUILD='2026-11-02.140';
 /* .130 · RELOJ CENTRAL — un día = 12:00 AM–11:59 PM hora Central (America/Chicago) para quien
    abra el portal, esté donde esté. Declaraciones de función → disponibles en todo el script. */
 const CT_TZ='America/Chicago';
@@ -1934,6 +1942,7 @@ function applyWell(w){
   CYCLE_DAILY=w.cycleDaily||null;
   CYC_BYTERM=w.cycleDailyByTerm||null;
   DRIVER_DAYS=(w.byDriver&&w.byDriver.length&&w.byDriver[0].dates)?w.byDriver:null;
+  DRIVER_HRS=_drvHrsIdx(w.roster); /* .140 */
   DOWNTIME_EVENTS=w.downtimeEvents||null;
   ASSETS_DATA=w.assets||null;
   PART_D=w.daily.map(d=>d.participation==null?null:+d.participation);
@@ -3240,6 +3249,18 @@ let _stgMetric='tons',_stgSel='all',_durView='stage',_tblFilter='all';
 let _cycView='all',_cycComp='total';
 
 /* ═══════ ADAPTADOR — construye M desde los globals del portal ═══════ */
+/* .140 · roster[].dh (GAS v11.0) → {NOMBRE:{'YYYY-MM-DD':[{st,en,h,n,k,rb,tm}], _mean, _sp, _tm, _n}}
+   st/en = horas desde las 00:00 del día operativo (st<0 = arrancó la noche anterior · en≥24 = terminó al día siguiente) */
+function _drvHrsIdx(R){if(!Array.isArray(R)||!R.some(r=>r&&Array.isArray(r.dh)))return null;const o={};
+  R.forEach(r=>{if(!r||!Array.isArray(r.dh))return;const D=o[String(r.d).toUpperCase()]={_sp:+r.sp||0,_tm:+r.tm||0,_src:r.src||''};const cl=[];
+    r.dh.forEach(x=>{if(!x||!x[0])return;const e={st:+x[1],en:+x[2],h:+x[3]||0,n:+x[4]||0,k:String(x[5]||''),rb:x[6]==null?null:+x[6],tm:+x[7]||0};
+      (D[x[0]]=D[x[0]]||[]).push(e);if(e.k!=='open')cl.push(e.h);});
+    D._n=cl.length;D._mean=cl.length?cl.reduce((a,b)=>a+b,0)/cl.length:null;});
+  return o;}
+function _hTxt(e){return _fcHM(e.st)+(e.st<0?' (night before)':'')+' → '+_fcHM(e.en)+(e.en>=24?' (+1d)':'')+' · '+(+e.h).toFixed(1)+' h · '+e.n+' load'+(e.n===1?'':'s')
+  +(e.rb!=null?' · rest before '+e.rb.toFixed(1)+' h':'')+(e.k==='open'?' · in progress':'')+(e.tm?' · 24/7 unit':'');}
+function _hAvg(d){const H=(d&&d._h)||[];let s2=0,n2=0;H.forEach(v=>{if(v>0){s2+=v;n2++;}});return n2?s2/n2:0;}
+function hCls(h){const b=fcHrsBand(h).cls;return b==='fcw-g'?'hc-g':b==='fcw-y'?'hc-y':'hc-r';}
 function buildM(){
   rangeIdx();
   const T=(ACTIVE_META&&ACTIVE_META.targets)||{}, X=(ACTIVE_META&&ACTIVE_META.totals)||{};
@@ -3330,6 +3351,8 @@ function buildM(){
       const _tr=_pdd?+(_pl/_pdd).toFixed(1):(days?+(tot/days).toFixed(1):0);
       const row=[d.driver,(d.carrier||'—').toUpperCase(),tot,days,_tr].concat(daily);
       row._rev=+d.revenue||0;row._fsc=+d.fsc||0; // GAS v9.1: facturado exacto por driver (pozo completo)
+      {const HX=DRIVER_HRS&&DRIVER_HRS[String(d.driver).toUpperCase()]; /* .140: horas por día del rango */
+       row._hx=HX||null;row._h=HX?ISO.map(x=>{const L2=HX[x];return L2?+L2.reduce((a,e)=>a+e.h,0).toFixed(1):0;}):null;}
       return row;}).filter(d=>d[2]>0);
   }else{
     DR=DRV.map((d,di)=>{const[name,ca,tot,tr]=d;const days=d[4]||Math.max(2,Math.round(tot/Math.max(tr,1)));
@@ -4732,12 +4755,12 @@ function dBd(tr){const m=M;return tr>=m.DTR?'star':tr>=m.DTR*0.85?'good':'review
 function cCls(v){return v>=7?'c7':v>=5?'c56':v>=3?'c34':v>=1?'c12':'c0';}
 function fR(v){return '$'+Math.round(v).toLocaleString('en-US');}
 function topCarriers(){return M.CD.slice(0,6).map(c=>c[0]);}
-window.rView=function(v){gV=v;setSegAct(['vLoads','vRev'],v==='loads'?'vLoads':'vRev');buildGrid();};
+window.rView=function(v){gV=v;setSegAct(['vLoads','vRev','vHrs'],v==='loads'?'vLoads':v==='rev'?'vRev':'vHrs');buildGrid();};
 window.rFilter=function(f2){gF=f2;setSegAct(['fAll','fTop','fGood','fReview'],{all:'fAll',top:'fTop',good:'fGood',review:'fReview'}[f2]);buildGrid();};
 window.rCarrier=function(ca){gC=ca;const ids=['cAll'].concat(topCarriers().map(c=>'c_'+c),['cOther']);setSegAct(ids,ca==='all'?'cAll':ca==='other'?'cOther':'c_'+ca);buildGrid();};
 // Repinta los botones de filtro per el estado persistido (tras un rebuild del pane)
 function gSyncSegs(){try{
-  setSegAct(['vLoads','vRev'],gV==='loads'?'vLoads':'vRev');
+  setSegAct(['vLoads','vRev','vHrs'],gV==='loads'?'vLoads':gV==='rev'?'vRev':'vHrs');
   setSegAct(['fAll','fTop','fGood','fReview'],{all:'fAll',top:'fTop',good:'fGood',review:'fReview'}[gF]||'fAll');
   const ids=['cAll'].concat(topCarriers().map(c=>'c_'+c),['cOther']);
   setSegAct(ids,gC==='all'?'cAll':gC==='other'?'cOther':'c_'+gC);
@@ -4760,7 +4783,7 @@ function bRost(){
     </div>
     <div class="ctrlbar">
       <div style="display:flex;align-items:center;gap:8px"><span class="ctrl-label">View</span>
-        <div class="seg-ctrl"><button id="vLoads" class="seg-btn seg-on" onclick="rView('loads')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.4"/></svg> Loads</button><button id="vRev" class="seg-btn" onclick="rView('rev')">$ Revenue</button></div></div>
+        <div class="seg-ctrl"><button id="vLoads" class="seg-btn seg-on" onclick="rView('loads')"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.4"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.4"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.4"/></svg> Loads</button><button id="vRev" class="seg-btn" onclick="rView('rev')">$ Revenue</button><button id="vHrs" class="seg-btn" onclick="rView('hrs')" title="Hours worked per day — real clock: first At Terminal → last delivery"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg> Hours</button></div></div>
       <div class="ctrl-sep"></div>
       <div style="display:flex;align-items:center;gap:8px"><span class="ctrl-label">Status</span>
         <div class="seg-ctrl"><button id="fAll" class="seg-btn seg-on" onclick="rFilter('all')">All</button><button id="fTop" class="seg-btn" onclick="rFilter('top')">★ Stars</button><button id="fGood" class="seg-btn" onclick="rFilter('good')">✓ Good</button><button id="fReview" class="seg-btn" onclick="rFilter('review')">Review</button></div></div>
@@ -4777,8 +4800,9 @@ function bRost(){
       <span style="font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Phase:</span>
       <span><span class="leg-sq" style="background:#e2e8f0"></span>Prefill</span><span><span class="leg-sq" style="background:rgba(58,124,165,.1)"></span>Running</span><span><span class="leg-sq" style="background:rgba(148,163,184,.12)"></span>EOJ</span>
       <span style="margin-left:6px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px">Cell:</span>
-      <span><span class="leg-sq" style="background:#86EFAC"></span>≥7</span><span><span class="leg-sq" style="background:#BBF7D0"></span>5–6</span><span><span class="leg-sq" style="background:#FDE68A"></span>3–4</span><span><span class="leg-sq" style="background:#FECACA"></span>1–2</span>
+      <span id="rostCellLeg"><span><span class="leg-sq" style="background:#86EFAC"></span>≥7</span><span><span class="leg-sq" style="background:#BBF7D0"></span>5–6</span><span><span class="leg-sq" style="background:#FDE68A"></span>3–4</span><span><span class="leg-sq" style="background:#FECACA"></span>1–2</span></span>
       <span style="margin-left:6px;color:#94a3b8;font-style:italic">Score v2 = TR 25 · Volume 20 · Consistency 10 · Revenue vs design 20 · Weight 15 · Window 10 (weights renormalize to available data) · Target TR ${m.DTR} · Avg TR ${m.trAll}</span></div>
+    <div id="rostHrs"></div>
     <div style="overflow-x:auto;border-radius:12px;border:1px solid var(--border);box-shadow:var(--sh-card)">
       <table id="perfGrid"><thead id="perfHead"></thead><tbody id="perfBody"></tbody></table></div>
     <div class="grid g2 mb" style="margin-top:14px">
@@ -4800,18 +4824,18 @@ window.buildGrid=function(){
     return bandOk&&carrOk&&srOk;});
   const ARVL=m.totL?m.totR/m.totL:m.rpl;
   const ARVF=(m.totL&&m.totFsc)?m.totFsc/m.totL:0; // $/load de FSC promedio del range (para desglose estimado)
-  const sF={score:(a,b)=>gSD*(dSc(b)-dSc(a)),loads:(a,b)=>gSD*(b[2]-a[2]),tr:(a,b)=>gSD*(b[4]-a[4]),rev:(a,b)=>gSD*(b[2]-a[2]),days:(a,b)=>gSD*(b[3]-a[3]),name:(a,b)=>gSD*a[0].localeCompare(b[0])};
+  const sF={score:(a,b)=>gSD*(dSc(b)-dSc(a)),loads:(a,b)=>gSD*(gV==='hrs'?(_hAvg(b)-_hAvg(a)):(b[2]-a[2])),tr:(a,b)=>gSD*(b[4]-a[4]),rev:(a,b)=>gSD*(b[2]-a[2]),days:(a,b)=>gSD*(b[3]-a[3]),name:(a,b)=>gSD*a[0].localeCompare(b[0])};
   rows.sort(sF[gSK]||sF.score);
   const si=c=>gSK===c?(gSD<0?' ↓':' ↑'):'<span style="color:#e2e8f0"> ⇵</span>';
   const totF=rows.reduce((a,d)=>a+d[2],0);
   $('perfHead').innerHTML=`<tr><th style="text-align:center;min-width:28px">#</th>
     <th onclick="sortGrid('name')" style="min-width:150px;text-align:left">Driver${si('name')}</th>
     <th style="min-width:42px">Co.</th>
-    <th onclick="sortGrid('loads')" style="text-align:right;min-width:52px">${gV==='rev'?'Revenue':'Total'}${si('loads')}</th>
+    <th onclick="sortGrid('loads')" style="text-align:right;min-width:52px"${gV==='hrs'?' title="Average hours per shift in the selected days"':''}>${gV==='rev'?'Revenue':gV==='hrs'?'Avg h':'Total'}${si('loads')}</th>
     <th onclick="sortGrid('days')" style="text-align:right;min-width:40px">Days${si('days')}</th>
     <th onclick="sortGrid('tr')" style="text-align:right;min-width:40px">TR${si('tr')}</th>
     ${m.D.map((d,i)=>`<th class="dth ph-${m.PH[i]}" style="min-width:34px${i===m.f?';border-left:2.5px solid rgba(58,124,165,.35)':''}">${d}</th>`).join('')}
-    <th onclick="sortGrid('score')" style="text-align:right;min-width:120px">${gV==='rev'?'Rev/Day':'Score'}${si('score')}</th>
+    <th onclick="sortGrid('score')" style="text-align:right;min-width:120px">${gV==='rev'?'Rev/Day':gV==='hrs'?'His average':'Score'}${si('score')}</th>
     <th style="text-align:center;min-width:80px">Status</th></tr>`;
   const medals=['<span class="rankb r1">1</span> ','<span class="rankb r2">2</span> ','<span class="rankb r3">3</span> '];
   const _rh=rows.map((d,i)=>{
@@ -4825,11 +4849,21 @@ window.buildGrid=function(){
     const trBg=tr>=m.DTR?'#dcfce7':tr>=m.DTR*0.85?'#dbeafe':'#fee2e2';
     const trCl=tr>=m.DTR?'#166534':tr>=m.DTR*0.85?'#1e40af':'#991b1b';
     const medal=i<3&&gF==='all'&&gC==='all'&&!search?medals[i]:'';
-    const dayCells=daily.map((v,idx)=>{const tip=`${m.D[idx]}: ${v} loads · ${fR(v*ARVL)}`+(ARVF>0?` (rate ${fR(v*(ARVL-ARVF))} + FSC ${fR(v*ARVF)})`:'');
+    const dayCells=daily.map((v,idx)=>{
+      if(gV==='hrs'){ /* .140: horas de su(s) jornada(s) de ese día operativo */
+        const hv=d._h?d._h[idx]:0,L=(d._hx&&d._hx[m.ISO[idx]])||[];
+        const bd=`ph-${m.PH[idx]}" style="${idx===m.f?'border-left:2px solid rgba(58,124,165,.3)':''}`;
+        if(!(hv>0))return `<td class="dcell c0 ${bd}">${(v>0&&!d._h)?'·':''}</td>`;
+        const op=L.some(e=>e.k==='open'),tip2=`${m.D[idx]} — ${L.map(_hTxt).join(' | ')}`+(d._hx&&d._hx._mean!=null?` · his average ${d._hx._mean.toFixed(1)} h`:'');
+        return `<td class="dcell ${hCls(hv)}${op?' hc-open':''} ${bd}" title="${tip2.replace(/"/g,'&quot;')}">${hv.toFixed(1)}${op?'…':''}${L.length>1?'<span class="hsup">'+L.length+'</span>':''}</td>`;}
+      const tip=`${m.D[idx]}: ${v} loads · ${fR(v*ARVL)}`+(ARVF>0?` (rate ${fR(v*(ARVL-ARVF))} + FSC ${fR(v*ARVF)})`:'');
       return `<td class="dcell ${v>0?cCls(v):'c0'} ph-${m.PH[idx]}" style="${idx===m.f?'border-left:2px solid rgba(58,124,165,.3)':''}" title="${tip}">${v>0?(gV==='loads'?v:'$'+(v*ARVL/1000).toFixed(1)+'K'):''}</td>`;}).join('');
     const vsDes=((tr-m.DTR)/m.DTR*100).toFixed(0);
     const bW=Math.min(sc,120),bC=sc>=90?'#6ab89a':sc>=70?'#6a9ec8':sc>=50?'#d4a05a':'#d47272';
-    const rightCol=gV==='rev'
+    const _ha=_hAvg(d),_hm=d._hx&&d._hx._mean;
+    const rightCol=gV==='hrs'
+      ?`<td style="text-align:right;padding-right:12px">${_hm!=null?`<div style="font-weight:700;color:#1c3d54">${_hm.toFixed(1)} h</div><div style="font-size:8.5px;color:#94a3b8">${d._hx._n} shift${d._hx._n===1?'':'s'} on this pad · estimate ${(+d._hx._sp||0).toFixed(1)} h</div>`:'<span style="font-size:9px;color:#94a3b8">no closed shift yet</span>'}</td>`
+      :gV==='rev'
       ?`<td style="text-align:right;padding-right:12px" title="rate $${fmt(rvB)} + FSC $${fmt(rvF)} = $${fmt(rv)}${exact?'':' (range estimate)'}"><div style="font-weight:700;color:#1c3d54">${fR(rv)}</div><div style="font-size:8.5px;color:#94a3b8">${fR(revd)}/day · ${pct}%${rvF>0?'<br>rate '+fR(rvB)+' + FSC '+fR(rvF)+(exact?'':' ≈'):''}</div></td>`
       :`<td style="text-align:right;padding-right:12px"><div style="display:flex;align-items:center;justify-content:flex-end;gap:5px"><div class="sbar"><div class="sfill" style="width:${bW}%;background:${bC}"></div></div><span style="font-weight:700;font-size:12px;color:#1c3d54;min-width:26px;text-align:right">${sc}</span></div><div style="font-size:8px;color:${tr>=m.DTR?'#16a34a':'#dc2626'};text-align:right;margin-top:1px">TR ${(+vsDes>=0?'+':'')+vsDes}% design</div></td>`;
     const status=band==='star'?'<span class="bs-star">★ Star</span>':band==='good'?'<span class="bs-good">✓ Good</span>':'<span class="bs-rev">Review</span>';
@@ -4838,7 +4872,7 @@ window.buildGrid=function(){
       <td style="text-align:center;color:#94a3b8;font-size:9px;font-weight:600">${i+1}</td>
       <td style="font-weight:700;color:#1e293b;white-space:nowrap">${medal}${name}</td>
       <td style="color:#64748b;font-size:10px;font-weight:600">${carrier}</td>
-      <td style="text-align:right;font-weight:700;font-size:12px;color:#1c3d54"${rvF>0?' title="rate $'+fmt(rvB)+' + FSC $'+fmt(rvF)+(exact?'':' (range estimate)')+'"':''}>${gV==='rev'?fR(rv):tot}</td>
+      <td style="text-align:right;font-weight:700;font-size:12px;color:#1c3d54"${rvF>0&&gV!=='hrs'?' title="rate $'+fmt(rvB)+' + FSC $'+fmt(rvF)+(exact?'':' (range estimate)')+'"':''}>${gV==='rev'?fR(rv):gV==='hrs'?(_ha?_ha.toFixed(1):'—'):tot}</td>
       <td style="text-align:right;color:#64748b">${days}</td>
       <td style="text-align:right"><span style="background:${trBg};color:${trCl};padding:2px 7px;border-radius:6px;font-size:10px;font-weight:700">${tr}</span></td>
       ${dayCells}${rightCol}<td style="text-align:center">${status}</td></tr>`;});
@@ -4849,7 +4883,58 @@ window.buildGrid=function(){
     const nS=rows.filter(d=>dBd(d[4])==='star').length,nR=rows.filter(d=>dBd(d[4])==='review').length;
     sumEl.innerHTML=`${rows.length} drivers &nbsp;·&nbsp; Avg TR: <strong>${avgTR}</strong> &nbsp;·&nbsp; <strong>${fmt(totF)}</strong> loads &nbsp;·&nbsp; <span style="color:#16a34a;font-weight:700">${nS} on-design</span> &nbsp;·&nbsp; <span style="color:#dc2626;font-weight:700">${nR} review</span>`;}
   syncRosterCharts(rows);
+  {const lg=$('rostCellLeg');if(lg)lg.innerHTML=gV==='hrs' /* .140: leyenda de horas (semáforo 11–14 h) */
+    ?'<span><span class="leg-sq" style="background:#c9ecd8"></span>11–14 h</span><span><span class="leg-sq" style="background:#fbe7b5"></span>8–11 · 14–16 h</span><span><span class="leg-sq" style="background:#f8cccc"></span>&lt;8 · &gt;16 h</span><span>… in progress · ² two shifts</span>'
+    :'<span><span class="leg-sq" style="background:#86EFAC"></span>≥7</span><span><span class="leg-sq" style="background:#BBF7D0"></span>5–6</span><span><span class="leg-sq" style="background:#FDE68A"></span>3–4</span><span><span class="leg-sq" style="background:#FECACA"></span>1–2</span>';}
+  try{rostHrsCard(m,rows);}catch(e){if(typeof blog==='function')blog('rostHrsCard '+e.message,true);}
 };
+/* .140 · HORAS DE TRABAJO — un día elegido: horas de cada driver ese día, su media en el pad y la media
+   del día · varios días (vista Hours): promedio por jornada de cada driver en el rango */
+function rostHrsCard(m,rows){const host=$('rostHrs');if(!host)return;
+  const single=!!(m.ISO&&m.ISO.length===1);
+  if(!(single||gV==='hrs')){if(host.innerHTML)host.innerHTML='';return;}
+  if(!DRIVER_HRS){host.innerHTML='<div class="note rh-card">Work hours per day arrive with <b>GAS v11.0</b> — paste the new Code.gs and refresh this well.</div>';return;}
+  const it=[];rows.forEach(d=>{if(!d._h)return;const hs=d._h.filter(x=>x>0);if(!hs.length)return;const hx=d._hx||{};
+    const L=single?(hx[m.ISO[0]]||[]):[];
+    it.push({n:d[0],c:d[1],h:single?d._h[0]:hs.reduce((a,b)=>a+b,0)/hs.length,days:hs.length,mean:hx._mean,sp:+hx._sp||0,tm:hx._tm,L,
+      op:L.some(e=>e.k==='open'),rb:L.reduce((mn,e)=>(e.rb!=null&&(mn==null||e.rb<mn))?e.rb:mn,null),ld:L.reduce((a,e)=>a+e.n,0)});});
+  const ttl=single?('Work hours — '+m.D[0]):('Work hours — average per shift · '+m.D[0]+' – '+m.D[m.D.length-1]);
+  if(!it.length){host.innerHTML='<div class="card rh-card"><div class="card-t">'+ttl+'</div><div class="sb">No shift clock for these drivers in the selected days.</div></div>';return;}
+  it.sort((a,b)=>b.h-a.h);
+  const H=it.map(x=>x.h),avg=H.reduce((a,b)=>a+b,0)/H.length,sr=H.slice().sort((a,b)=>a-b),q=sr.length;
+  const med=q%2?sr[(q-1)/2]:(sr[q/2-1]+sr[q/2])/2;
+  const op=it.filter(x=>x.op).length,over=it.filter(x=>x.h>14).length,short=it.filter(x=>x.h<8&&!x.op).length;
+  const rest=single?it.filter(x=>x.rb!=null&&x.rb<10).length:null;
+  const hi=it[0],lo=it.filter(x=>!x.op).slice(-1)[0]||it[it.length-1];
+  const k=(t,v,s2)=>'<div class="k"><div class="t">'+t+'</div><div class="v">'+v+'</div>'+(s2?'<div class="s">'+s2+'</div>':'')+'</div>';
+  host.innerHTML='<div class="card rh-card"><div class="card-t" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'+ttl
+    +'<span class="sb" style="margin-left:auto;text-transform:none;letter-spacing:0;font-weight:600" title="Hours = first At Terminal → last delivery of each shift (offline delivery stamps corrected). A shift is dated by the day it starts; shifts starting 22:00 or later count for the next day.">first At Terminal → last delivery · 22:00+ starts count next day</span></div>'
+    +'<div class="rh-k">'+k('Drivers',it.length,single?(op?op+' still on shift':'all shifts closed'):'with shifts in range')
+    +k(single?'Average that day':'Average per shift',avg.toFixed(1)+' h','median '+med.toFixed(1)+' h')
+    +k('Longest',hi.h.toFixed(1)+' h',hi.n)+k('Shortest',lo.h.toFixed(1)+' h',lo.n+(lo.op?' · in progress':''))
+    +k('Over 14 h',over,over?'check HOS':'none')+k('Under 8 h',short,short?'short days (closed)':'none')
+    +(single?k('Rest < 10 h',rest,rest?'before this shift':'none'):'')+'</div>'
+    +'<div class="ch" style="height:'+Math.max(170,Math.min(24*it.length+60,640))+'px"><canvas id="chHrs"></canvas></div>'
+    +'<div class="rh-note">Bar = '+(single?'his hours that day':'his average per shift in the selected days')+' · ◆ = his average on this pad · dashed line = average of the drivers shown · click a bar to filter the grid to that driver</div></div>';
+  const bandCol=h=>{const b=fcHrsBand(h).cls;return b==='fcw-g'?'rgba(106,184,154,.78)':b==='fcw-y'?'rgba(226,182,92,.78)':'rgba(212,114,114,.78)';};
+  const meanLine={id:'rhMean',afterDatasetsDraw(ch){const x=ch.scales.x,a=ch.chartArea;if(!x||!a)return;const px=x.getPixelForValue(avg);const c=ch.ctx;
+    c.save();c.strokeStyle='rgba(28,61,84,.6)';c.setLineDash([5,4]);c.lineWidth=1.3;c.beginPath();c.moveTo(px,a.top);c.lineTo(px,a.bottom);c.stroke();c.setLineDash([]);
+    c.fillStyle='#1c3d54';c.font="800 9px 'Plus Jakarta Sans'";const lb='avg '+avg.toFixed(1)+' h';c.fillText(lb,Math.min(px+5,a.right-c.measureText(lb).width-2),a.top+9);c.restore();}};
+  mkChart('chHrs',{type:'bar',plugins:[meanLine],data:{labels:it.map(x=>x.n),datasets:[
+      {label:single?'Hours that day':'Avg per shift',data:it.map(x=>+x.h.toFixed(1)),backgroundColor:it.map(x=>bandCol(x.h)),borderColor:it.map(x=>x.op?'rgba(58,124,165,.9)':'rgba(0,0,0,0)'),borderWidth:it.map(x=>x.op?1.5:0),borderRadius:6,borderSkipped:false,barPercentage:.78,categoryPercentage:.86,order:2},
+      {type:'line',label:'His average on this pad',data:it.map(x=>x.mean!=null?+x.mean.toFixed(1):null),showLine:false,pointStyle:'rectRot',pointRadius:5,pointHoverRadius:7,pointBackgroundColor:'#1c3d54',pointBorderColor:'#fff',pointBorderWidth:1.2,order:1}]},
+    options:{indexAxis:'y',interaction:{mode:'index',intersect:false,axis:'y'},
+      onClick:(e,el)=>{if(!el.length)return;const nm=it[el[0].index].n;const gs=$('gridSearch');const same=(gQ||'')===nm;gQ=same?'':nm;if(gs)gs.value=gQ;buildGrid();},
+      plugins:{legend:{display:false},tooltip:{callbacks:{
+        title:c=>{const x=it[c[0].dataIndex];return x.n+(x.c?' · '+x.c:'');},
+        label:c=>{const x=it[c.dataIndex];if(c.datasetIndex===1)return x.mean!=null?'His average on this pad: '+x.mean.toFixed(1)+' h · estimate '+x.sp.toFixed(1)+' h':null;
+          return (single?'Hours that day: ':'Average per shift: ')+x.h.toFixed(1)+' h'+(single?'':' ('+x.days+' day'+(x.days===1?'':'s')+')');},
+        afterBody:c=>{const x=it[c[0].dataIndex];const L2=[];
+          if(single)x.L.forEach(e=>L2.push('Shift: '+_hTxt(e)));
+          L2.push('vs average of these drivers: '+(x.h-avg>=0?'+':'−')+Math.abs(x.h-avg).toFixed(1)+' h');
+          if(x.mean!=null)L2.push('vs his own average: '+(x.h-x.mean>=0?'+':'−')+Math.abs(x.h-x.mean).toFixed(1)+' h');
+          if(x.tm)L2.push('24/7 unit — one login, likely two drivers');return L2;}}}},
+      scales:{x:{...gO,beginAtZero:true,suggestedMax:16,title:{display:true,text:'hours',font:{size:9}}},y:{...gO,ticks:{font:{size:9}}}}}});}
 window.rowExpand=function(tr,data){
   const m=M;const old=document.getElementById('_rowExp');if(old)old.remove();
   if(window._expTr===tr){window._expTr=null;return;}window._expTr=tr;
